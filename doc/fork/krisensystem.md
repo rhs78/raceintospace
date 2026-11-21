@@ -92,7 +92,7 @@ empfohlen“). Sie ist zu 70 % plus Crew-Bonus zuverlässig, aber nicht immer ri
 
 ## Offene Punkte
 
-- Sprache der Spieltexte: Englisch wie das übrige Spiel (Vorschlag) oder Deutsch.
+- Sprache der Spieltexte: Englisch (entschieden 21.11.2026).
 - Zahlenwerte (Band, Kosten, Abzüge) sind Startwerte und werden beim Probespielen justiert.
 
 ## Umsetzungsstand (21.11.2026)
