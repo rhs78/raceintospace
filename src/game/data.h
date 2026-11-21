@@ -557,6 +557,9 @@ struct Astros {
     }
 };
 
+// Version 1 added Race.
+CEREAL_CLASS_VERSION(Astros, 1)
+
 /**
  * \brief For Records of Missions
 */

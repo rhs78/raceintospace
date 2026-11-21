@@ -247,7 +247,15 @@ int Multimedia::decode_audio(void* buf, int buflen)
 bool Multimedia::is_video() { return mmf.video.get() != nullptr;}
 int Multimedia::w() { return (is_video())? mmf.video_info.get()->frame_width : -1;}
 int Multimedia::h() { return (is_video())? mmf.video_info.get()->frame_height : -1;}
-float Multimedia::fps() { return (is_video())? mmf.video_info.get()->fps_numerator / mmf.video_info.get()->fps_denominator : -1;}
+double Multimedia::fps()
+{
+    if (!is_video() || mmf.video_info.get()->fps_denominator == 0) {
+        return -1;
+    }
+
+    return (double)mmf.video_info.get()->fps_numerator
+           / (double)mmf.video_info.get()->fps_denominator;
+}
 
 // returns true if there's still more frames to draw
 bool Multimedia::draw_video_frame(SDL_Overlay& ovl)

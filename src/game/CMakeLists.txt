@@ -141,6 +141,7 @@ if(BUILD_TESTING)
     ${test_dir}/game/mission_step_chain_test.cpp
     ${test_dir}/game/downgrade_test.cpp
     ${test_dir}/game/roster_test.cpp
+    ${test_dir}/game/serialize_test.cpp
     )
 
   add_executable(game_test ${test_dir}/test_main.cpp ${test_sources} ${game_sources})

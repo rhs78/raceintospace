@@ -889,8 +889,25 @@ uint8_t RDUnit(char hardwareTypeIndex, char hardwareIndex, char nRolls, char pla
 {
     assert(hardwareTypeIndex >= PROBE_HARDWARE);
     assert(hardwareTypeIndex <= MISC_HARDWARE);
-    assert(hardwareIndex >= MANNED_HW_ONE_MAN_CAPSULE);
-    assert(hardwareIndex <= MANNED_HW_ONE_MAN_MODULE);
+    assert(hardwareIndex >= 0);
+
+    switch (hardwareTypeIndex) {
+    case PROBE_HARDWARE:
+        assert(hardwareIndex <= PROBE_HW_LUNAR);
+        break;
+
+    case ROCKET_HARDWARE:
+        assert(hardwareIndex <= ROCKET_HW_BOOSTERS);
+        break;
+
+    case MANNED_HARDWARE:
+        assert(hardwareIndex <= MANNED_HW_ONE_MAN_MODULE);
+        break;
+
+    case MISC_HARDWARE:
+        assert(hardwareIndex <= MISC_HW_PHOTO_RECON);
+        break;
+    }
 
     Equipment& eq = HardwareProgram(playerIndex,
                                     hardwareTypeIndex,
@@ -975,7 +992,7 @@ void ShowUnit(char hw, char un, char player_index)
 
     if (player_index != 1 
         || hw != ROCKET_HARDWARE 
-        || un != MANNED_HW_FOUR_MAN_CAPSULE) {
+        || un != ROCKET_HW_BOOSTERS) {
         draw_string(170, 80, &program.Name[0]);
     }
 

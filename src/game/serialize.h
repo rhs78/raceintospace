@@ -12,11 +12,16 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/map.hpp>
 
-#define ARCHIVE_VECTOR(arr, type, size)                 \
+#define ARCHIVE_VECTOR(arr, type, count)                 \
     do {                                                \
-        std::vector<type> vec(arr, arr+size);           \
+        std::vector<type> vec(arr, arr+count);           \
         ar(cereal::make_nvp(#arr, vec));                \
-        memcpy(arr, vec.data(), size * sizeof(type));   \
+        /* The file may hold fewer elements than the array. */ \
+        size_t n_ = std::min<size_t>(count, vec.size()); \
+        memcpy(arr, vec.data(), n_ * sizeof(type));     \
+        if (n_ < (size_t)(count)) {                      \
+            memset((arr) + n_, 0, ((count) - n_) * sizeof(type)); \
+        }                                               \
     } while (0)
 
 #define ARCHIVE_STRING(arr)                             \
@@ -30,7 +35,10 @@
     do {                                                           \
         std::vector<type> vec(arr.begin(), arr.end());             \
         ar(cereal::make_nvp(#arr, vec));                           \
-        std::copy_n(vec.begin(), arr.size(), arr.begin());         \
+        /* The file may hold fewer elements than the array. */    \
+        size_t n_ = std::min<size_t>(arr.size(), vec.size());      \
+        std::copy_n(vec.begin(), n_, arr.begin());                 \
+        std::fill(arr.begin() + n_, arr.end(), type());            \
     } while (0)
 
 #define SERIALIZE_XML_FILE(x, filename)         \

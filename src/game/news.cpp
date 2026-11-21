@@ -30,6 +30,7 @@
 
 #include "news.h"
 
+#include <algorithm>
 #include <stdexcept>
 #include <utility>
 
@@ -306,7 +307,15 @@ void OpenNews(char plr, char* buf, int bud)
         news_idx = (Data->Year - 57) * 4 + Data->Season * 2 + brandom(2) + 1;
     }
 
-    strncpy(&buf[bufsize], news[news_idx].c_str(), news[news_idx].size());
+    if (news_idx < 0 || news_idx >= (int)news.size()) {
+        LOG_WARNING("news index %d out of range (0-%d), clamping",
+                    news_idx, (int)news.size() - 1);
+        news_idx = news.empty() ? 0 : std::max(0, std::min(news_idx, (int)news.size() - 1));
+    }
+
+    if (!news.empty()) {
+        strncpy(&buf[bufsize], news[news_idx].c_str(), news[news_idx].size());
+    }
     strcat(buf, "x");
     bufsize = strlen(buf);
     

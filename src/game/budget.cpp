@@ -228,7 +228,7 @@ void DrawBudget(char plr, char* pStatus)
     }
 
     for (int i = 0; i < 5; i++) {
-        int gameyear = Data->Year - 57 + i;
+        int gameyear = std::max(0, Data->Year - 57 + i);
         fill_rectangle(197 + i * 26, 164 - (    pData.BudgetHistory[gameyear] * 74) / 200,  190 + i * 26, 164, player_colors_1[plr]);
         fill_rectangle(206 + i * 26, 164 - (otherData.BudgetHistoryF[gameyear] * 74) / 200, 199 + i * 26, 164, player_colors_1[other(plr)]);
         fill_rectangle(196 + i * 26, 164 - (    pData.BudgetHistory[gameyear] * 74) / 200,  190 + i * 26, 163, player_colors_2[plr]);

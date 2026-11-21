@@ -122,7 +122,7 @@ public:
     int decode_audio(void* buf, int buflen); // returns number of bytes written to buffer
 
     bool is_video();
-    float fps();
+    double fps();
     int w();
     int h();
     bool draw_video_frame(SDL_Overlay& ovl);

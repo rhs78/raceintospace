@@ -22,6 +22,7 @@
 
 #include "endgame.h"
 
+#include <algorithm>
 #include <string>
 #include <string_view>
 
@@ -631,8 +632,9 @@ void FakeWin(char win)
         yr = 65 + brandom(5);
     } else if (Data->Year <= 70) {
         yr = 70 + brandom(3);
-    } else if (Data->Year <= 77) {
-        yr = Data->Year;
+    } else {
+        // Years after 77 are clamped to the last year of the game.
+        yr = std::min<int>(Data->Year, 77);
     }
 
     r = brandom(100);
