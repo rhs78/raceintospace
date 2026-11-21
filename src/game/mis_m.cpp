@@ -28,6 +28,7 @@
 #include "mis_m.h"
 
 #include <cassert>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,7 @@
 #include "hardware.h"
 #include "mc.h"
 #include "mis_c.h"
+#include "mis_d.h"
 #include "mission_util.h"
 #include "options.h"
 #include "pace.h"
@@ -69,6 +71,8 @@ Equipment* FindLunarModule();
 std::vector<Astros*> LMCrew(int pad, Equipment* module);
 void InvalidatePrestige(MisEval& step);
 void BranchIfAlive(int* FNote, MisEval& step);
+static bool StepIsManned(const MisEval& step, bool noDock);
+static void ApplyCrisisAbort(MisEval& step, int stepInfo);
 
 /**
  * Load the failure state information explaining a mission step
@@ -120,6 +124,43 @@ XFails GetFailStat(char* FName, int rnum)
 }
 
 
+/**
+ * Is the vehicle of this step carrying crew? Mirrors the unmanned
+ * checks in MisCheck(): a step on an unmanned pad counts as manned
+ * once docking has succeeded.
+ */
+static bool StepIsManned(const MisEval& step, bool noDock)
+{
+    return Unm > 0 && (MANNED[step.pad] > 0 || noDock);
+}
+
+
+/**
+ * Resolve a step by a safe abort (crisis abort or alarm abort).
+ *
+ * The crew survives; the step is recorded with one of the STEPINFO_*
+ * codes, which MaxFail() reports as PARTIAL FAILURE. Prestige for the
+ * step is invalidated (as for the "branch to alternate" failure codes),
+ * so the mission's milestones are not achieved. The mission continues on
+ * the alternate branch (mission.json "fgoto") if there is one, otherwise
+ * it ends. Duration steps behave like fail code 30 (end the duration
+ * phase and return home).
+ */
+static void ApplyCrisisAbort(MisEval& step, int stepInfo)
+{
+    step.StepInfo = stepInfo;
+    InvalidatePrestige(step);
+
+    if (step.loc == 27 || step.loc == 28) {
+        step.trace = STEP + 1;
+    } else if (step.fgoto >= 0) {
+        step.trace = step.fgoto;
+    } else {
+        step.trace = 0x7F;
+    }
+}
+
+
 void MisCheck(char plr, char mpad)
 {
     LOG_DEBUG("MisCheck() was called");
@@ -131,6 +172,7 @@ void MisCheck(char plr, char mpad)
     MPad = mpad;
     bool noDock = false;
     SCRUBS = InSpace = 0;
+    CrisisBeginMission();
 
     const int code = Data->P[plr].Mission[mpad].MissionCode;
     const mStr plan = GetMissionPlan(code);
@@ -339,14 +381,39 @@ void MisCheck(char plr, char mpad)
         }
 
 
+        // Crisis system (doc/fork/krisensystem.md): an alarm may sound on
+        // borderline rolls before the result is applied. The player does
+        // not know whether the roll is a success or a failure.
+        bool alarmAbort = false;
+
+        if (!options.want_classic_missions && !options.want_cheats
+            && StepIsManned(Mev[STEP], noDock)
+            && AlarmEligible(GetDecisionData().params, Mev[STEP].loc)
+            && std::abs(val - safety) <= GetDecisionData().params.alarmBand
+            && AlarmTriggered(GetDecisionData().params, Mev[STEP].loc, val,
+                              safety, brandom(100) + 1)) {
+            LOG_DEBUG("alarm at step %d (val %d, safety %d)", STEP, val, safety);
+
+            if (OfferAlarm(plr, Mev[STEP], val, safety, PROBLEM)
+                == AlarmOption::Abort) {
+                alarmAbort = true;
+                GetEquipment(Mev[STEP])->MisFail[Mev[STEP].pad]++;
+                ApplyCrisisAbort(Mev[STEP], STEPINFO_ALARM_ABORT);
+            }
+        }
+
         // Fix wrong anim thing for the Jt Durations
         if (Mev[STEP].loc == 28 || Mev[STEP].loc == 27) {
             strcpy(Mev[STEP].Name, (plr == 0) ? "_BUSC0\0" : "_BSVC0");
             Mev[STEP].Name[5] = GetEquipment(Mev[STEP])->ID[1];
         }
 
-        if (PROBLEM) {  // Step Problem
+        if (alarmAbort) {
+            // Step already resolved by ApplyCrisisAbort() above.
+            PROBLEM = false;
+        } else if (PROBLEM) {  // Step Problem
             LOG_DEBUG("handling problem");
+            const std::string origName(Mev[STEP].Name);
             
             // for the unmanned mission
             if (MANNED[Mev[STEP].pad] == 0 && MANNED[other(Mev[STEP].pad)] == 0) {
@@ -400,16 +467,77 @@ void MisCheck(char plr, char mpad)
             int tom_kludge_rnum = (tomflag)? 7595 : Mev[STEP].rnum;
             XFails Now = GetFailStat(Mev[STEP].FName, tom_kludge_rnum);
 
-            //:::::: STEP FAILURE :::::::::
-            //:::::::::::::::::::::::::::::
+            // Crisis system: for serious failures of a manned vehicle the
+            // player (or the AI policy) may intervene before the
+            // consequences are applied.
+            CrisisOutcome crisis = CrisisOutcome::None;
+            CrisisClass crisisCls = CrisisClass::Minor;
 
-            // copy orig failure
-            std::string name(Mev[STEP].Name);
-            name.push_back(0x30 + (Now.fail / 10));
-            name.push_back(0x30 + Now.fail % 10);
-            PlaySequence(plr, STEP, name.c_str(), 1);
-            FailEval(plr, Now, Mev[STEP], noDock);
-        } else {   // Step Success
+            if (!options.want_classic_missions && tom_kludge_rnum >= 0
+                && StepIsManned(Mev[STEP], noDock)) {
+                // Any failure consumes a pending escalation.
+                crisisCls = ApplyEscalation(CrisisMission(),
+                                            ClassifyFailure(Now.code));
+
+                if (crisisCls != CrisisClass::Minor) {
+                    Equipment* eq = GetEquipment(Mev[STEP]);
+                    CrisisRequest req;
+                    req.plr = plr;
+                    req.step = &Mev[STEP];
+                    req.fail = &Now;
+                    req.cls = crisisCls;
+                    req.safety = safety;
+                    req.hardwareSafety = eq->MisSaf;
+                    req.hardwareBase = eq->Base;
+                    req.hardwareCurrent = eq->Safety;
+                    crisis = OfferCrisis(req);
+                }
+            }
+
+            if (crisis == CrisisOutcome::FixOk) {
+                // Ground team solved the problem: the step counts as a
+                // success. Undo the failure-only name kludges and mark a
+                // saved crew for the prestige bonus.
+                strcpy(Mev[STEP].Name, origName.c_str());
+
+                if (crisisCls == CrisisClass::LifeThreat) {
+                    Mev[STEP].rnum = CRISIS_RESCUED_LIFE_MARK;
+                }
+
+                PROBLEM = false;
+            } else if (crisis == CrisisOutcome::AbortOk) {
+                GetEquipment(Mev[STEP])->MisFail[Mev[STEP].pad]++;
+                ApplyCrisisAbort(Mev[STEP],
+                                 (crisisCls == CrisisClass::LifeThreat)
+                                 ? STEPINFO_ABORT_LIFE : STEPINFO_ABORT);
+            } else if (crisis == CrisisOutcome::Continued) {
+                // The failure is recorded but the mission goes on. The
+                // step is neither a success nor a mission end.
+                GetEquipment(Mev[STEP])->MisFail[Mev[STEP].pad]++;
+                Mev[STEP].StepInfo = STEPINFO_CONTINUED;
+                InvalidatePrestige(Mev[STEP]);
+
+                if (Mev[STEP].sgoto == 100) {
+                    Mev[STEP].trace = 0x7F;
+                } else if (Mev[STEP].sgoto != 0) {
+                    Mev[STEP].trace = Mev[STEP].sgoto;
+                } else {
+                    Mev[STEP].trace = STEP + 1;
+                }
+            } else {
+                //:::::: STEP FAILURE :::::::::
+                //:::::::::::::::::::::::::::::
+
+                // copy orig failure
+                std::string name(Mev[STEP].Name);
+                name.push_back(0x30 + (Now.fail / 10));
+                name.push_back(0x30 + Now.fail % 10);
+                PlaySequence(plr, STEP, name.c_str(), 1);
+                FailEval(plr, Now, Mev[STEP], noDock);
+            }
+        }
+
+        if (!alarmAbort && !PROBLEM) {   // Step Success
             LOG_DEBUG("handling step success");
 
             if (Mev[STEP].loc == 28 || Mev[STEP].loc == 27) {
@@ -607,6 +735,11 @@ int StepSafety(const MisEval& step)
     }
 
     safety += step.asf;
+
+    // Crisis system: "continue at risk" malus for the rest of the mission.
+    if (CrisisMission().malus > 0) {
+        safety = MAX(1, safety - CrisisMission().malus);
+    }
 
     return MIN(safety, 99);
 }

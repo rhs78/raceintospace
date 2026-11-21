@@ -11,6 +11,7 @@ struct game_options {
     unsigned want_cheats;
     unsigned want_debug;
     unsigned classic;
+    unsigned want_classic_missions; /**< 1 = no crisis dialogs (see mis_d.h) */
     unsigned feat_shorter_advanced_training;
     unsigned feat_female_nauts;
     unsigned feat_random_nauts;

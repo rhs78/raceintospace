@@ -1,0 +1,115 @@
+{
+  "version": 1,
+
+  "params": {
+    "abort_safety_divisor": 4,
+    "abort_min": 5,
+    "abort_max": 95,
+
+    "ground_cost_life": 10,
+    "ground_cost_mission": 5,
+    "ground_progress_divisor": 5,
+    "ground_penalty_life": 15,
+    "ground_penalty_mission": 5,
+    "ground_min": 5,
+    "ground_max": 95,
+
+    "continue_malus": 10,
+    "escalate_after_continue": true,
+
+    "hint_reliability": 70,
+    "hint_min": 50,
+    "hint_max": 95,
+
+    "alarm_band": 3,
+    "alarm_chance": 30,
+    "alarm_steps": "ADIS",
+
+    "ai_alarm_go_safety": 75,
+
+    "prestige_saved_crew": 2,
+    "prestige_alarm_abort": -1,
+
+    "outlook_good": 60,
+    "outlook_fair": 35
+  },
+
+  "abort_base": {
+    "default": 40,
+    "by_step": {
+      "A": 25, "B": 50, "C": 60, "D": 10, "E": 15, "F": 70, "G": 60,
+      "H": 70, "I": 65, "J": 40, "K": 20, "L": 35, "M": 65, "N": 45,
+      "O": 45, "P": 70, "Q": 55, "R": 45, "S": 40, "T": 15, "U": 70
+    }
+  },
+
+  "generic": {
+    "life": {
+      "title": "EMERGENCY: CREW IN DANGER",
+      "text": "A SERIOUS FAULT THREATENS THE CREW. FLIGHT CONTROL MUST DECIDE HOW TO RESPOND."
+    },
+    "mission": {
+      "title": "PROBLEM: MISSION AT RISK",
+      "text": "A FAULT ENDANGERS THE MISSION OBJECTIVE. FLIGHT CONTROL MUST DECIDE HOW TO RESPOND."
+    },
+    "alarm": {
+      "title": "WARNING: GO / NO-GO",
+      "text": "A WARNING LIGHT SHOWS ON THE CONSOLE. THE READINGS ARE BORDERLINE. FLIGHT CONTROL MUST DECIDE: GO OR ABORT."
+    }
+  },
+
+  "scenarios": [
+    {
+      "id": "ma6_heat_shield",
+      "kind": "alarm",
+      "fnames": ["F?03"],
+      "title": "WARNING: HEAT SHIELD MAY BE LOOSE",
+      "text": "TELEMETRY INDICATES THE HEAT SHIELD LANDING BAG MAY HAVE DEPLOYED EARLY, AS ON MERCURY-ATLAS 6. KEEPING THE RETRO PACKAGE ON MAY HOLD THE SHIELD IN PLACE. GO OR ABORT?"
+    },
+    {
+      "id": "apollo11_1201",
+      "kind": "alarm",
+      "fnames": ["F?18"],
+      "title": "PROGRAM ALARM 1201",
+      "text": "THE GUIDANCE COMPUTER IS OVERLOADED DURING THE LUNAR DESCENT, AS ON APOLLO 11. THE LANDING MAY CONTINUE ON THE REMAINING TASKS. GO OR ABORT?"
+    },
+    {
+      "id": "alarm_launch",
+      "kind": "alarm",
+      "fnames": ["F?00"],
+      "title": "WARNING: LAUNCH READINGS",
+      "text": "ENGINE PRESSURE READINGS ARE NEAR THE LIMITS DURING ASCENT. GO OR ABORT?"
+    },
+    {
+      "id": "alarm_docking",
+      "kind": "alarm",
+      "fnames": ["F?08"],
+      "title": "WARNING: DOCKING READINGS",
+      "text": "THRUSTER READINGS ARE ERRATIC DURING THE DOCKING APPROACH. GO OR ABORT?"
+    },
+
+    {
+      "id": "gemini8_docking",
+      "kind": "crisis",
+      "fnames": ["F?08"],
+      "title": "THRUSTER STUCK, CAPSULE SPINNING",
+      "text": "A STUCK ATTITUDE THRUSTER SPINS THE DOCKED SPACECRAFT, AS ON GEMINI 8. THE CREW RISKS BLACKING OUT. ABORT, OR WORK THE PROBLEM?"
+    },
+    {
+      "id": "gemini8_orbit",
+      "kind": "crisis",
+      "fnames": ["F?05"],
+      "classes": ["life"],
+      "title": "THRUSTER STUCK, CAPSULE SPINNING",
+      "text": "A STUCK ATTITUDE THRUSTER SPINS THE CAPSULE, AS ON GEMINI 8. THE CREW RISKS BLACKING OUT. ABORT, OR WORK THE PROBLEM?"
+    },
+    {
+      "id": "apollo13_service_module",
+      "kind": "crisis",
+      "fnames": ["F?09", "F?13", "F?14"],
+      "classes": ["life"],
+      "title": "EXPLOSION IN SERVICE MODULE",
+      "text": "AN OXYGEN TANK RUPTURES IN THE SERVICE MODULE, AS ON APOLLO 13. POWER AND AIR ARE FAILING. SWING AROUND THE MOON FOR A SAFE RETURN?"
+    }
+  ]
+}

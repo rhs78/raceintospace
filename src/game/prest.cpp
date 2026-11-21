@@ -30,6 +30,7 @@
 #include "logging.h"
 #include "mc.h"
 #include "mis_c.h"
+#include "mis_d.h"
 #include "mis_m.h"
 #include "mission_util.h"
 #include "pbm.h"
@@ -938,6 +939,10 @@ int AllotPrest(char plr, char mis)
             Set_LM(plr, STEPnum);
         }
     }
+
+    // Crisis system bonus/penalty, read back from the stored Mev[] so that
+    // mail games (which replay stored data) agree.
+    negs += CrisisPrestigeDelta();
 
     // ADD IN NEGATIVES AND RETURN MIN of -10
     LOG_DEBUG("finalizing prestige calculation, total=%i, negs=%i", total, negs);

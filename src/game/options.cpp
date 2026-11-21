@@ -125,6 +125,12 @@ static const struct {
         " forcing them\n# to their 'classic' setting."
     },
     {
+        "classic_missions", &options.want_classic_missions, "%u", 0,
+        "Set to 1 to play missions without crisis decisions (Classic setting)."
+        "\n# By default, manned missions may stop for decisions (abort, ground team,"
+        "\n# GO / NO-GO) when a step fails or a warning alarm sounds."
+    },
+    {
         "short_training", &options.feat_shorter_advanced_training, "%u", 0,
         "Set to non-zero to shorten Advanced Training duration from 4 to 3 seasons (experimental)."
     },
@@ -471,6 +477,7 @@ void ResetToDefaultOptions()
 
     // Gameplay aspects
     options.classic = 0;
+    options.want_classic_missions = 0;
     options.feat_shorter_advanced_training = 0;
     options.feat_female_nauts = 0;
     //Naut Randomize, Nikakd, 10/8/10
@@ -506,6 +513,7 @@ void ResetToDefaultOptions()
 void ResetToClassicOptions()
 {
     options.boosterSafety = 2;
+    options.want_classic_missions = 1;
     options.feat_shorter_advanced_training = 0;
     options.feat_female_nauts = 0;
     options.feat_compat_nauts = 10;
