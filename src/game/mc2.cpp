@@ -34,6 +34,7 @@
 #include "game_main.h"
 #include "mc.h"
 #include "mission_util.h"
+#include "hardware.h"
 #include "options.h"
 #include "pace.h"
 #include "prest.h"
@@ -706,28 +707,28 @@ void MissionSetup(char plr, char mis)
     for (int j = 0; j < (1 + mission.Joint); j++) {
         if ((plan.mVab[j] & 0x10) > 0 
 			&& Data->P[plr].DockingModuleInOrbit > 0) {  // DMO
-            Data->P[plr].Mission[mis + j].Hard[Mission_Probe_DM] = 4;
+            Data->P[plr].Mission[mis + j].Hard[Mission_Probe_DM] = HARD_DOCKING_MODULE;
             DMFake = 1;
         }
 
         if (j == 0) {
             // Apollo (1) + LM (1)
             if (mission.Hard[Mission_Capsule] == 2 && mission.Hard[Mission_LM] >= 0) {
-                mission.Hard[Mission_Probe_DM] = 4;
+                mission.Hard[Mission_Probe_DM] = HARD_DOCKING_MODULE;
                 DMFake = 1;
             }
 
             if (mission.Joint) {
                 // Apollo (2) + LM (1)
                 if (Data->P[plr].Mission[mis + 1].Hard[Mission_Capsule] == 2 && mission.Hard[Mission_LM] >= 0) {
-                    mission.Hard[Mission_Probe_DM] = 4;
+                    mission.Hard[Mission_Probe_DM] = HARD_DOCKING_MODULE;
                     DMFake = 1;
                 }
             }
         }
 
         if (mission.MissionCode == Mission_Soyuz_LL) {  // Soyuz Kicker-C
-            mission.Hard[Mission_Probe_DM] = 4;
+            mission.Hard[Mission_Probe_DM] = HARD_DOCKING_MODULE;
             DMFake = 1;
         }
 
@@ -760,16 +761,15 @@ void MissionSetup(char plr, char mis)
                     break;
 
                 case Mission_Probe_DM:           // Secondary Equipment
-                    if (t != 4) {
-                        eq = &Data->P[plr].Probe[t];
+                    eq = &ProbeOrDockingModule(plr, t);
+
+                    if (!IsDockingModule(t)) {
                         eq->Used++;
 
-                        if (Data->P[plr].Probe[t].Num > 0) {
-                            Data->P[plr].Probe[t].Num -= 1;
+                        if (eq->Num > 0) {
+                            eq->Num -= 1;
                         }
                     } else {
-                        eq = &Data->P[plr].Misc[MISC_HW_DOCKING_MODULE];
-
                         if (DMFake == 0) {
                             if (eq->Num > 0) {
                                 eq->Num--;
@@ -782,18 +782,15 @@ void MissionSetup(char plr, char mis)
                     break;
 
                 case Mission_PrimaryBooster:            // Rocket XX
-                    t--;
+                    eq = &Data->P[plr].Rocket[DecodeRocketIndex(t)];
 
-                    if (t < 4) {
-                        eq = &Data->P[plr].Rocket[t];
-
+                    if (!HasBoosters(t)) {
                         if (eq->Num > 0) {
                             eq->Num--;
                         }
 
                         eq->Used++;
                     } else {
-                        eq = &Data->P[plr].Rocket[t - 4];
                         MH[j][Mission_SecondaryBooster] =
                             &Data->P[plr].Rocket[ROCKET_HW_BOOSTERS];
                         eq->Used++;

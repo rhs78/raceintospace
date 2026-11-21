@@ -411,10 +411,9 @@ int CheckIfMissionGo(char plr, char launchIdx)
             //     Hard[Mission_PrimaryBooster] > 0
             // MissionSetup() will correct for that in mc2.cpp.
         {
-            int rocketIndex = pMission.Hard[idx] - 1;
-            E = &pData.Rocket[rocketIndex % ROCKET_HW_BOOSTERS];
+            E = &pData.Rocket[DecodeRocketIndex(pMission.Hard[idx])];
 
-            if (rocketIndex >= ROCKET_HW_BOOSTERS) {
+            if (HasBoosters(pMission.Hard[idx])) {
                 const Equipment& boosters =
                     pData.Rocket[ROCKET_HW_BOOSTERS];
                 E->MisSaf =
@@ -941,12 +940,9 @@ void VerifySafety(char plr)
         Data->P[plr].Manned,
         Data->P[plr].Misc
     };
-    // Corrected sizes for each Equipment (Probe, Rocket, Manned, Misc)
-    int sizes[4] = { 3, 5, 7, 6 };
-
     // Check for safety for each Equipment
     for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < sizes[i]; j++) {
+        for (int j = 0; j < HardwareCount(i); j++) {
             Equipment& px = arrays[i][j];
 
             if (px.Safety > px.MaxSafety) {

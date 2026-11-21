@@ -38,6 +38,7 @@
 #include "draw.h"
 #include "game_main.h"
 #include "gr.h"
+#include "hardware.h"
 #include "hardware_buttons.h"
 #include "intel.h"
 #include "pace.h"
@@ -286,10 +287,10 @@ void PInfo(char plr, char loc, DisplayContext& dctx)
 
         // This is for boosters
         if (mission.Hard[0][Mission_PrimaryBooster] > 0) {
-            if (mission.Hard[0][Mission_PrimaryBooster] < 5) {
-                PrestigeTable[ROCKET_HARDWARE][mission.Hard[0][Mission_PrimaryBooster] - 1] += prestigeSum;
-            } else {
-                PrestigeTable[ROCKET_HARDWARE][mission.Hard[0][Mission_PrimaryBooster] - 5] += prestigeSum;
+            const int rocketHard = mission.Hard[0][Mission_PrimaryBooster];
+            PrestigeTable[ROCKET_HARDWARE][DecodeRocketIndex(rocketHard)] += prestigeSum;
+
+            if (HasBoosters(rocketHard)) {
                 PrestigeTable[ROCKET_HARDWARE][ROCKET_HW_BOOSTERS] += prestigeSum;
             }
         }                    // end if

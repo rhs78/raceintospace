@@ -377,8 +377,7 @@ void MisAnn(char plr, char pad)
 
             case Mission_PrimaryBooster:
                 {
-                auto& Rocket = (hold < 5)? pData.Rocket[hold - 1]
-                                         : pData.Rocket[hold - 5];
+                auto& Rocket = pData.Rocket[DecodeRocketIndex(hold)];
                 auto& Boosters = pData.Rocket[ROCKET_HW_BOOSTERS];
                     
                 if (Rocket.SaveCard > 0) {

@@ -24,6 +24,7 @@
 
 #include "Buzz_inc.h" // IWYU pragma: keep
 #include "crew.h"
+#include "hardware.h"
 #include "game_main.h"
 #include "mission_util.h"
 
@@ -210,11 +211,7 @@ void FreeLaunchHardware(const char plr, const int pad)
                 break;
 
             case Mission_Probe_DM:  // DM+Probes
-                if (hardwareID == MISC_HW_DOCKING_MODULE) {
-                    Data->P[plr].Misc[MISC_HW_DOCKING_MODULE].Spok--;
-                } else {
-                    Data->P[plr].Probe[hardwareID].Spok--;
-                }
+                ProbeOrDockingModule(plr, hardwareID).Spok--;
 
                 break;
             }
@@ -222,10 +219,10 @@ void FreeLaunchHardware(const char plr, const int pad)
         }
     }
 
-    const uint8_t rocket = (launch.Hard[Mission_PrimaryBooster] - 1) % 4;
+    const int rocket = DecodeRocketIndex(launch.Hard[Mission_PrimaryBooster]);
     Data->P[plr].Rocket[rocket].Spok--;
 
-    if (launch.Hard[Mission_PrimaryBooster] > 3) {
+    if (HasBoosters(launch.Hard[Mission_PrimaryBooster])) {
         Data->P[plr].Rocket[ROCKET_HW_BOOSTERS].Spok--;
     }
 }

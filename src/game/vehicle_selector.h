@@ -1,6 +1,7 @@
 #ifndef VEHICLE_SELECTOR_H
 #define VEHICLE_SELECTOR_H
 
+#include "hardware.h"
 #include "vehicle.h"
 
 
@@ -29,8 +30,9 @@ Vehicle VehicleSelector::start()
 
 Vehicle VehicleSelector::next()
 {
-    bool boosters = mIndex >= 4;
-    int rkIndex = mIndex % 4;
+    // mIndex counts launch vehicles as encoded in Mission.Hard, less one.
+    bool boosters = HasBoosters(mIndex + 1);
+    int rkIndex = DecodeRocketIndex(mIndex + 1);
 
     // By having mIndex track the next vehicle to be used, rather than the
     // current one, there is no need to initially call start()

@@ -26,6 +26,125 @@
 
 
 /**
+ * Number of hardware programs in use for an equipment category.
+ *
+ * \param equipmentIndex  an EquipmentIndex value.
+ * \return  3 (Probe), 5 (Rocket), 7 (Manned) or 6 (Misc).
+ * \throws std::invalid_argument  if equipmentIndex is not valid.
+ */
+int HardwareCount(int equipmentIndex)
+{
+    switch (equipmentIndex) {
+    case PROBE_HARDWARE:
+        return PROBE_HW_COUNT;
+
+    case ROCKET_HARDWARE:
+        return ROCKET_HW_COUNT;
+
+    case MANNED_HARDWARE:
+        return MANNED_HW_COUNT;
+
+    case MISC_HARDWARE:
+        return MISC_HW_COUNT;
+
+    default:
+        throw std::invalid_argument(
+            "Error in function HardwareCount: "
+            "argument is not part of the EquipmentIndex enum");
+    }
+}
+
+
+/**
+ * Encode a launch vehicle for MissionType.Hard[Mission_PrimaryBooster].
+ *
+ * The value is the rocket's index + 1, so that 0 (or less) can mean
+ * "no rocket assigned", plus ROCKET_HW_BOOSTERS if boosters are fitted.
+ *
+ * \param rocketIndex  an EquipRocketIndex, excluding the Boosters.
+ * \param boosters  true if the rocket is fitted with boosters.
+ */
+int EncodeRocket(int rocketIndex, bool boosters)
+{
+    return rocketIndex + 1 + (boosters ? ROCKET_HW_BOOSTERS : 0);
+}
+
+
+/**
+ * Rocket index from a MissionType.Hard[Mission_PrimaryBooster] value.
+ *
+ * \param hardValue  an encoded rocket, see EncodeRocket().
+ * \return  the index into the Rocket array (never the Boosters), or -1
+ *   if hardValue means no rocket is assigned (<= 0).
+ */
+int DecodeRocketIndex(int hardValue)
+{
+    if (hardValue <= 0) {
+        return -1;
+    }
+
+    return (hardValue - 1) % ROCKET_HW_BOOSTERS;
+}
+
+
+/**
+ * Whether an encoded rocket (see EncodeRocket()) has boosters fitted.
+ * False for the "no rocket" value.
+ */
+bool HasBoosters(int hardValue)
+{
+    return hardValue > 0 && (hardValue - 1) >= ROCKET_HW_BOOSTERS;
+}
+
+
+/**
+ * Whether a MissionType.Hard[Mission_Probe_DM] value selects the
+ * Docking Module rather than a Probe.
+ */
+bool IsDockingModule(int hardValue)
+{
+    return hardValue == HARD_DOCKING_MODULE;
+}
+
+
+/**
+ * Resolve the overloaded MissionType.Hard[Mission_Probe_DM] value.
+ *
+ * \param player  0 for the USA, 1 for the USSR
+ * \param hardValue  HARD_DOCKING_MODULE for the Docking Module
+ *   (Misc[MISC_HW_DOCKING_MODULE]), otherwise a Probe index.
+ */
+Equipment &ProbeOrDockingModule(int player, int hardValue)
+{
+    assert(player >= 0 && player < NUM_PLAYERS);
+
+    if (IsDockingModule(hardValue)) {
+        return Data->P[player].Misc[MISC_HW_DOCKING_MODULE];
+    }
+
+    return Data->P[player].Probe[hardValue];
+}
+
+
+/**
+ * Convert a program number (1 to 5, as used by the Manned program
+ * hardware selection: Mercury/Vostok = 1 ... ) to an index into the
+ * Manned array (0 to 4).
+ */
+int ProgramToMannedIndex(int program)
+{
+    return program - 1;
+}
+
+
+/** Inverse of ProgramToMannedIndex(). */
+int MannedIndexToProgram(int mannedIndex)
+{
+    return mannedIndex + 1;
+}
+
+
+/**
  * Check the crew capacity for a Capsule/Minishuttle or Lunar Module.
  *
  * \param program  a Manned hardware program.
