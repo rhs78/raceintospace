@@ -94,3 +94,12 @@ empfohlen“). Sie ist zu 70 % plus Crew-Bonus zuverlässig, aber nicht immer ri
 
 - Sprache der Spieltexte: Englisch wie das übrige Spiel (Vorschlag) oder Deutsch.
 - Zahlenwerte (Band, Kosten, Abzüge) sind Startwerte und werden beim Probespielen justiert.
+
+## Umsetzungsstand (21.11.2026)
+
+- Umgesetzt in `src/game/mis_d.cpp/.h`, Einbindung in `MisCheck` (`mis_m.cpp`), Prestige in `AllotPrest` (`prest.cpp`).
+- Parameter in `data/gamedata/decisions.json` (`params`, Abbruchbasis je Schrittbuchstabe, Texte, Szenarien).
+- Ergebniscodes `StepInfo` 1960 (Abbruch), 1961 (Abbruch bei Lebensgefahr), 1962 (Alarm-Abbruch), 1963 (Weiterflug mit Risiko) – alle im Bereich „Teilfehlschlag“.
+- Abweichung von der Spezifikation: Das Bodenteam erhält einen Abzug (`ground_penalty_life` 15, `ground_penalty_mission` 5), sonst wäre es gegenüber „Folgen hinnehmen“ immer überlegen.
+- Abschalten: Zeile `classic_missions 1` in der Datei `config` im Spielstandverzeichnis; `game_style 1` schaltet ebenfalls ab.
+- Getestet: Logik (Klassen, Wahrscheinlichkeiten, KI-Regel, Alarm-Auslöser, Laden der Daten). Nicht getestet: Dialog und Ablauf in einer echten Mission – Probespielen auf dem Mac erforderlich.
