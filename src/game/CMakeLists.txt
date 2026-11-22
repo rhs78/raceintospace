@@ -154,6 +154,7 @@ if(BUILD_TESTING)
     ${test_dir}/game/timeline_test.cpp
     ${test_dir}/game/scenario_test.cpp
     ${test_dir}/game/news_events_test.cpp
+    ${test_dir}/game/autoplay_test.cpp
     )
 
   add_executable(game_test ${test_dir}/test_main.cpp ${test_sources} ${game_sources})
@@ -169,4 +170,18 @@ if(BUILD_TESTING)
     NAME game_test
     COMMAND game_test --catch_system_errors=yes
     )
+
+  # Short autoplay smoke run (2 AI vs. AI games, headless, < 2 minutes).
+  # Needs the game binary to be built: cmake --build <dir> && ctest -R autoplay
+  # (see doc/fork/autoplay.md).
+  if(TARGET raceintospace AND NOT WINDOWS)
+    add_test(
+      NAME autoplay_smoke
+      COMMAND "${PROJECT_SOURCE_DIR}/tools/autoplay.sh" --smoke --no-build
+              --binary "$<TARGET_FILE:raceintospace>"
+              --results "${CMAKE_BINARY_DIR}/autoplay-smoke"
+              --timeout 90
+      )
+    set_tests_properties(autoplay_smoke PROPERTIES TIMEOUT 110)
+  endif()
 endif()
