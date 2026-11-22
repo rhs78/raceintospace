@@ -103,3 +103,37 @@ empfohlen“). Sie ist zu 70 % plus Crew-Bonus zuverlässig, aber nicht immer ri
 - Abweichung von der Spezifikation: Das Bodenteam erhält einen Abzug (`ground_penalty_life` 15, `ground_penalty_mission` 5), sonst wäre es gegenüber „Folgen hinnehmen“ immer überlegen.
 - Abschalten: Zeile `classic_missions 1` in der Datei `config` im Spielstandverzeichnis; `game_style 1` schaltet ebenfalls ab.
 - Getestet: Logik (Klassen, Wahrscheinlichkeiten, KI-Regel, Alarm-Auslöser, Laden der Daten). Nicht getestet: Dialog und Ablauf in einer echten Mission – Probespielen auf dem Mac erforderlich.
+
+## Erweiterung: realistische Rettungssysteme (Entwurf 22.11.2026)
+
+Der Abbruch hängt künftig vom **Rettungssystem der Kapsel** ab, nicht nur vom Missionsschritt.
+Neues Katalogfeld je bemannter Kapsel/Lander: `abort_system`.
+
+### Historische Grundlage
+
+| Kapsel | Rettungssystem beim Start | Quelle |
+|---|---|---|
+| Mercury | Rettungsturm (Launch Escape System), getestet mit Little Joe; danach Abtrennen der Kapsel | Project Mercury (Wikipedia, verweist auf SP-4201) |
+| Gemini | Schleudersitze (Titan II mit hypergolem Treibstoff, kleinerer Explosionsradius); in größerer Höhe Abtrennen der Kapsel | Project Gemini (Wikipedia) |
+| Apollo | Rettungsturm, später Abbruch mit SPS-Triebwerk | Launch escape system (Wikipedia) |
+| Wostok | Schleudersitz: in den ersten 40 s Ausschuss; 40–150 s Abschalten der Rakete, dann Ausschuss in geringerer Höhe; danach Abtrennen der Landekapsel | Vostok (spacecraft) (Wikipedia) |
+| Woschod | **keine** Rettungsmöglichkeit in den ersten ca. 2,5 min (Schleudersitz ausgebaut, Rettungsturm nicht fertig) | Voskhod (spacecraft) (Wikipedia) |
+| Sojus | Rettungsturm (SAS) | Launch escape system (Wikipedia) |
+| Apollo-LM / LK | Abbruch der Landung durch Zünden der Aufstiegsstufe | ⚠ noch zu belegen |
+
+⚠ Fiktive Programme des klassischen Szenarios (XMS-2, Lapot, Jupiter, Kvartet): Annahme
+Schleudersitze (Minishuttles) bzw. Rettungsturm (Vierer-Kapseln).
+
+### Spielregeln
+
+| `abort_system` | Abbruch beim Start (Schritt A) | Folgen |
+|---|---|---|
+| `escape_tower` | „ABORT: ESCAPE TOWER“, hohe Basis (Vorschlag 70) | Crew unverletzt |
+| `ejection_seats` | „ABORT: EJECTION SEATS“, mittlere Basis (Vorschlag 50) | Verletzungsrisiko je Crewmitglied (Vorschlag 25 %) |
+| `none` | Option gesperrt: „NO ESCAPE SYSTEM“ | nur Bodenteam oder Folgen hinnehmen |
+
+- Andere Schritte: Abbruch über das Abtrennen der Kapsel mit den bisherigen Basiswerten je Schritt.
+- Mondlandung (Schritt S): „ABORT: ASCENT STAGE“ mit Basis aus dem Lander-Eintrag.
+- Werte in `decisions.json` je System, Zuordnung im Hardware-Katalog.
+- KI: Ist kein Abbruch möglich, wählt sie Bodenteam (falls bezahlbar) oder Folgen hinnehmen.
+- Umsetzung nach Schritt 4b, weil beide den Hardware-Katalog ändern.
