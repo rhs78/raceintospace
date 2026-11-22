@@ -39,7 +39,10 @@ endforeach(datafile)
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 
 # Add the platform-specific source files needed for testing
-list(APPEND ui_sources platform_macosx/music_osx.cpp)
+# Use the Ogg Vorbis music player (as on Linux and Windows) instead of the
+# legacy MIDI player, so the music from raceintospace-nonfree
+# (data/audio/music/*.ogg) is played.
+list(APPEND ui_sources music_vorbis.cpp)
 
 # set(app "Race Into Space") # vcpkg does not like this
 set(app "raceintospace")
