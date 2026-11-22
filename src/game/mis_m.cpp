@@ -72,6 +72,7 @@ std::vector<Astros*> LMCrew(int pad, Equipment* module);
 void InvalidatePrestige(MisEval& step);
 void BranchIfAlive(int* FNote, MisEval& step);
 static bool StepIsManned(const MisEval& step, bool noDock);
+static std::string StepAbortSystem(char plr, const MisEval& step);
 static void ApplyCrisisAbort(MisEval& step, int stepInfo);
 
 /**
@@ -132,6 +133,43 @@ XFails GetFailStat(char* FName, int rnum)
 static bool StepIsManned(const MisEval& step, bool noDock)
 {
     return Unm > 0 && (MANNED[step.pad] > 0 || noDock);
+}
+
+
+/**
+ * The rescue system (catalog abort_system) relevant for a step.
+ *
+ * At launch (loc 0) the step's own equipment is the launcher, so the
+ * capsule/minishuttle is taken from the mission's Capsule slot of the
+ * step's pad (or the other pad of a joint mission). At the lunar
+ * landing the step's equipment is the lander if there is one (direct
+ * ascent capsules fly the landing themselves and keep the generic abort).
+ * Returns "" if no system applies.
+ */
+static std::string StepAbortSystem(char plr, const MisEval& step)
+{
+    const Equipment* vehicle = nullptr;
+
+    if (step.loc == 0) {
+        vehicle = MH[(int)step.pad][Mission_Capsule];
+
+        if (vehicle == nullptr) {
+            vehicle = MH[other(step.pad)][Mission_Capsule];
+        }
+    } else if (step.loc == 18) {
+        const Equipment* eq = GetEquipment(step);
+
+        if (eq != nullptr && HasRole(*eq, HardwareRole::Lander)) {
+            vehicle = eq;
+        }
+    }
+
+    if (vehicle == nullptr) {
+        return "";
+    }
+
+    const HardwareEntry* entry = CatalogEntryForEquipment(*vehicle, plr);
+    return entry ? entry->abortSystem : std::string();
 }
 
 
@@ -394,7 +432,8 @@ void MisCheck(char plr, char mpad)
                               safety, brandom(100) + 1)) {
             LOG_DEBUG("alarm at step %d (val %d, safety %d)", STEP, val, safety);
 
-            if (OfferAlarm(plr, Mev[STEP], val, safety, PROBLEM)
+            if (OfferAlarm(plr, Mev[STEP], val, safety, PROBLEM,
+                           StepAbortSystem(plr, Mev[STEP]))
                 == AlarmOption::Abort) {
                 alarmAbort = true;
                 GetEquipment(Mev[STEP])->MisFail[Mev[STEP].pad]++;
@@ -490,6 +529,7 @@ void MisCheck(char plr, char mpad)
                     req.hardwareSafety = eq->MisSaf;
                     req.hardwareBase = eq->Base;
                     req.hardwareCurrent = eq->Safety;
+                    req.abortSystem = StepAbortSystem(plr, Mev[STEP]);
                     crisis = OfferCrisis(req);
                 }
             }

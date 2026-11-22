@@ -924,4 +924,58 @@ BOOST_AUTO_TEST_CASE(anim_ids_match_sequence_keys)
     BOOST_CHECK(unused == expectedUnused);
 }
 
+
+BOOST_AUTO_TEST_CASE(abort_system_assignment_and_validation)
+{
+    const HardwareCatalog& cat = GetHardwareCatalog();
+    const std::map<std::string, std::string> expected = {
+        {"US.MERCURY", "escape_tower"}, {"US.GEMINI", "ejection_seats"},
+        {"US.APOLLO", "escape_tower"}, {"US.XMS2", "ejection_seats"},
+        {"US.JUPITER", "escape_tower"}, {"US.EAGLE", "ascent_stage"},
+        {"US.CRICKET", "ascent_stage"}, {"SV.VOSTOK", "ejection_seats"},
+        {"SV.VOSKHOD", "none"}, {"SV.SOYUZ", "escape_tower"},
+        {"SV.LAPOT", "ejection_seats"}, {"SV.LK700", "escape_tower"},
+        {"SV.LKM", "ascent_stage"}, {"SV.LK", "ascent_stage"}
+    };
+
+    for (const auto& kv : expected) {
+        const HardwareEntry* e = cat.FindById(kv.first);
+        BOOST_REQUIRE_MESSAGE(e != nullptr, kv.first);
+        BOOST_CHECK_MESSAGE(e->abortSystem == kv.second, kv.first);
+    }
+
+    for (const HardwareEntry& e : cat.entries()) {
+        if (expected.count(e.id) == 0) {
+            BOOST_CHECK_MESSAGE(e.abortSystem.empty(), e.id);
+        }
+    }
+
+    auto setSystem = [](const char* id, const char* value) {
+        return Mutate([=](Json::Value& d) {
+            for (Json::Value& e : d["hardware"]) {
+                if (e["id"] == id) {
+                    e["abort_system"] = value;
+                }
+            }
+        });
+    };
+
+    BOOST_CHECK_NO_THROW(HardwareCatalog::FromJsonText(setSystem("US.GEMINI", "none")));
+    BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(setSystem("US.GEMINI", "parachute")),
+                      std::runtime_error);
+    BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(setSystem("US.GEMINI", "ascent_stage")),
+                      std::runtime_error);
+    BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(setSystem("US.EAGLE", "escape_tower")),
+                      std::runtime_error);
+    BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(setSystem("US.ATLAS", "escape_tower")),
+                      std::runtime_error);
+    BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(Mutate([](Json::Value& d) {
+        for (Json::Value& e : d["hardware"]) {
+            if (e["id"] == "US.MERCURY") {
+                e.removeMember("abort_system");
+            }
+        }
+    })), std::runtime_error);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

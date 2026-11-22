@@ -14,6 +14,7 @@
 #ifndef MIS_D_H
 #define MIS_D_H
 
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
@@ -111,8 +112,22 @@ struct DecisionScenario {
     ScenarioText text;
 };
 
+/**
+ * Parameters of one rescue system (catalog field abort_system), from
+ * decisions.json "abort_systems".
+ */
+struct AbortSystemParams {
+    int launchBase = -1;       /**< replaces the abort base at launch; -1 = keep */
+    int landingBase = -1;      /**< replaces the abort base at the lunar landing; -1 = keep */
+    int injuryChance = 0;      /**< percent per crew member on a successful abort */
+    bool availableAtLaunch = true;
+    std::string label;         /**< shown as "ABORT: <label>" */
+};
+
 struct DecisionData {
     DecisionParams params;
+    /** By catalog abort_system value (escape_tower, ejection_seats, ...). */
+    std::map<std::string, AbortSystemParams> abortSystems;
     int abortBaseDefault = 40;
     std::map<char, int> abortBase;     /**< by step letter */
     ScenarioText genericLife;
@@ -158,6 +173,38 @@ int AbortBase(const DecisionData& d, int loc);
 int AbortChance(const DecisionData& d, int loc, int hardwareSafety,
                 int crewBonus);
 
+/**
+ * Rescue system rules. \p system is the catalog abort_system of the
+ * vehicle that matters for the step ("" if unknown or not applicable).
+ * The launch step (loc 0) uses the capsule's system, the lunar landing
+ * (loc 18) the lander's "ascent_stage"; all other steps are unaffected.
+ */
+const AbortSystemParams* AbortSystemFor(const DecisionData& d, int loc,
+                                        const std::string& system);
+
+/** Is an abort possible at all (false for "none" at launch)? */
+bool AbortAvailable(const DecisionData& d, int loc,
+                    const std::string& system);
+
+/** Abort base chance, honouring the rescue system. */
+int AbortBase(const DecisionData& d, int loc, const std::string& system);
+
+/** Percent chance of a successful abort, honouring the rescue system. */
+int AbortChance(const DecisionData& d, int loc, const std::string& system,
+                int hardwareSafety, int crewBonus);
+
+/** "ABORT MISSION" or "ABORT: <SYSTEM LABEL>". */
+std::string AbortLabel(const DecisionData& d, int loc,
+                       const std::string& system);
+
+/**
+ * Which crew members are injured by a successful abort? Each of
+ * \p crew members is injured independently with \p injuryChance percent.
+ * \param roll100  returns a random number in 1..100
+ */
+std::vector<bool> RollAbortInjuries(int crew, int injuryChance,
+                                    const std::function<int()>& roll100);
+
 int GroundCost(const DecisionParams& p, CrisisClass c);
 
 /** Bonus added to the ground team re-roll. */
@@ -194,9 +241,16 @@ AlarmOption AlarmHint(const DecisionParams& p, bool problem, int crewBonus,
 // AI policy (no dialog)
 enum class CrisisChoice { Accept, Abort, GroundTeam, Continue };
 
+/**
+ * \param abortAvailable  false if the vehicle has no escape system for
+ *                        this step: the AI then tries the ground team
+ *                        and otherwise accepts the consequences.
+ */
 CrisisChoice AiCrisisChoice(const DecisionParams& p, CrisisClass c,
-                            int cash, bool groundUsed);
-AlarmOption AiAlarmChoice(const DecisionParams& p, int safety);
+                            int cash, bool groundUsed,
+                            bool abortAvailable = true);
+AlarmOption AiAlarmChoice(const DecisionParams& p, int safety,
+                          bool abortAvailable = true);
 
 // Scenario lookup
 bool FNameMatches(const std::string& pattern, const std::string& fname);
@@ -247,6 +301,8 @@ struct CrisisRequest {
     int hardwareSafety = 0;   /**< equipment MisSaf (without crew bonus) */
     int hardwareBase = 0;     /**< equipment Base safety */
     int hardwareCurrent = 0;  /**< equipment Safety */
+    /** Catalog abort_system of the relevant capsule/lander ("" = none known). */
+    std::string abortSystem;
 };
 
 /**
@@ -260,6 +316,6 @@ CrisisOutcome OfferCrisis(const CrisisRequest& req);
  * \param problem  whether the (hidden) roll is a failure
  */
 AlarmOption OfferAlarm(char plr, const MisEval& step, int dice, int safety,
-                       bool problem);
+                       bool problem, const std::string& abortSystem = "");
 
 #endif // MIS_D_H
