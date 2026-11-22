@@ -47,6 +47,7 @@
 #include "crew.h"
 #include "endgame.h"
 #include "filesystem.h"
+#include "fs.h"
 #include "gr.h"
 #include "hardware.h"
 #include "intel.h"
@@ -171,6 +172,18 @@ int game_main_impl(int argc, char *argv[])
     setup_options(argc, argv);
     Filesystem::addPath(options.dir_gamedata);
     Filesystem::addPath(options.dir_savegame);
+
+    // User-supplied replacement files (doc/fork/eigene-grafiken.md).
+    // PhysFS searches the most recently mounted directory first, so mount
+    // in reverse order of priority.
+    {
+        const std::vector<std::string> custom = custom_dirs();
+
+        for (auto it = custom.rbegin(); it != custom.rend(); ++it) {
+            LOG_NOTICE("custom files directory: %s", it->c_str());
+            Filesystem::addPath(it->c_str());
+        }
+    }
     /* hacking... */
     log_setThreshold(&_LOGV(LOG_ROOT_CAT), MAX(0, LP_NOTICE - (int)options.want_debug));
     

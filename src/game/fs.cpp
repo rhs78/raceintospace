@@ -27,7 +27,9 @@
 #include <cctype>
 #include <cerrno>
 
+#include <string>
 #include <sys/stat.h>
+#include <vector>
 #include <physfs.h>
 
 #include "Buzz_inc.h" // IWYU pragma: keep
@@ -165,6 +167,129 @@ static file s_open_helper(const char* base, const char* name, const char* mode, 
     return f;
 }
 
+/** Search one base directory for a file of the given type.
+ *
+ * \param base  base directory (game data, savegame or a custom dir)
+ * \param where receives a description of the searched location
+ */
+static file find_in_base(const char* base, const char* name,
+                         const char* mode, int type, const char*& where)
+{
+    file f = {nullptr, nullptr};
+
+    switch (type) {
+    case FT_DATA:
+        f = s_open_helper(base, name, mode,
+                          "gamedata",
+                          nullptr);
+        where = "game data";
+        break;
+
+    case FT_SAVE:
+    case FT_SAVE_CHECK:
+        f = s_open_helper(base, name, mode,
+                          "",
+                          nullptr);
+        where = "savegame";
+        break;
+
+    case FT_AUDIO:
+        f = s_open_helper(base, name, mode,
+                          "audio/mission",
+                          "audio/music",
+                          "audio/news",
+                          "audio/sounds",
+                          nullptr);
+        where = "audio";
+        break;
+
+    case FT_VIDEO:
+        f = s_open_helper(base, name, mode,
+                          "video/mission",
+                          "video/news",
+                          "video/training",
+                          nullptr);
+        where = "video";
+        break;
+
+    case FT_IMAGE:
+        f = s_open_helper(base, name, mode,
+                          "images",
+                          nullptr);
+        where = "image";
+        break;
+
+    case FT_MIDI:
+        f = s_open_helper(base, name, mode,
+                          "audio/midi",
+                          "midi",
+                          "audio/music",
+                          nullptr);
+        where = "midi";
+        break;
+
+    default:
+        assert("Unknown FT_* specified");
+    }
+
+    return f;
+}
+
+
+/** Directories with user-supplied replacement files ("custom" overlay).
+ *
+ * Files found there take precedence over the original game data, so
+ * graphics, videos, audio and data files can be replaced without touching
+ * the original files. Searched in this order:
+ *   1. $BARIS_CUSTOM (if set)
+ *   2. <per-user preference dir>/custom
+ *      (macOS: ~/Library/Application Support/Race Into Space/custom)
+ *   3. <game data dir>/custom
+ * Each custom dir mirrors the layout of the data dir, e.g.
+ * custom/images/main_menu.png or custom/video/mission/apol_01.ogg.
+ */
+std::vector<std::string> custom_dirs()
+{
+    std::vector<std::string> dirs;
+    const char* env = getenv("BARIS_CUSTOM");
+
+    if (env && *env) {
+        dirs.push_back(env);
+    }
+
+    if (PHYSFS_isInit()) {
+        const char* pref = PHYSFS_getPrefDir("raceintospace.org",
+                                             "Race Into Space");
+
+        if (pref) {
+            std::string d(pref);
+
+            if (!d.empty() && d.back() != '/' && d.back() != '\\') {
+                d += '/';
+            }
+
+            dirs.push_back(d + "custom");
+        }
+    }
+
+    if (options.dir_gamedata) {
+        dirs.push_back(std::string(options.dir_gamedata) + "/custom");
+    }
+
+    // Keep only existing directories
+    std::vector<std::string> existing;
+
+    for (const std::string& d : dirs) {
+        struct stat st;
+
+        if (stat(d.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+            existing.push_back(d);
+        }
+    }
+
+    return existing;
+}
+
 /** tries to find a file and open it
  *
  * The function knows about the relative
@@ -205,59 +330,21 @@ static file try_find_file(const char* name, const char* mode, int type)
         }
     }
 
-    switch (type) {
-    case FT_DATA:
-        f = s_open_helper(gd, name, newmode,
-                          "gamedata",
-                          nullptr);
-        where = "game data";
-        break;
+    // User-supplied replacements first (not for savegames)
+    if (type != FT_SAVE && type != FT_SAVE_CHECK) {
+        for (const std::string& dir : custom_dirs()) {
+            f = find_in_base(dir.c_str(), name, newmode, type, where);
 
-    case FT_SAVE:
-    case FT_SAVE_CHECK:
-        f = s_open_helper(sd, name, newmode,
-                          "",
-                          nullptr);
-        where = "savegame";
-        break;
+            if (f.handle) {
+                LOG_INFO("using custom file `%s'", f.path);
+                break;
+            }
+        }
+    }
 
-    case FT_AUDIO:
-        f = s_open_helper(gd, name, newmode,
-                          "audio/mission",
-                          "audio/music",
-                          "audio/news",
-                          "audio/sounds",
-                          nullptr);
-        where = "audio";
-        break;
-
-    case FT_VIDEO:
-        f = s_open_helper(gd, name, newmode,
-                          "video/mission",
-                          "video/news",
-                          "video/training",
-                          nullptr);
-        where = "video";
-        break;
-
-    case FT_IMAGE:
-        f = s_open_helper(gd, name, newmode,
-                          "images",
-                          nullptr);
-        where = "image";
-        break;
-
-    case FT_MIDI:
-        f = s_open_helper(gd, name, newmode,
-                          "audio/midi",
-                          "midi",
-                          "audio/music",
-                          nullptr);
-        where = "midi";
-        break;
-
-    default:
-        assert("Unknown FT_* specified");
+    if (f.handle == nullptr) {
+        const char* base = (type == FT_SAVE || type == FT_SAVE_CHECK) ? sd : gd;
+        f = find_in_base(base, name, newmode, type, where);
     }
 
     if (f.handle == nullptr && type != FT_SAVE_CHECK) {

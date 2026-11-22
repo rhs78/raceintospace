@@ -9,3 +9,6 @@ CMakeUserPresets.json
 vcpkg_installed
 .cache
 /data/audio/music/
+
+# User-supplied replacement graphics/videos (see doc/fork/eigene-grafiken.md)
+data/custom/

@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <string>
+#include <vector>
 
 #include <physfs.h>
 
@@ -47,5 +48,8 @@ FILE* open_savedat(const char* name, const char* mode);
 char* load_gamedata(const char* name);
 int create_save_dir();
 int remove_savedat(const char* name);
+
+/** Existing directories with user-supplied replacement files. */
+std::vector<std::string> custom_dirs();
 
 #endif /* _FS_H */
