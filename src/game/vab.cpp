@@ -1480,7 +1480,9 @@ void VAB(char plr)
 void BuildVAB(char plr, char mis, char ty, char pa, char pr)
 {
     auto& pData = Data->P[plr];
-    auto& mission = pData.Mission[mis];
+    // Autoplay fix: for ty > 0 (AI) `mis` is a mission code, not a pad, so
+    // Mission[mis] was an out-of-bounds reference.  Only bind it for pads.
+    MissionType* missionPtr = (ty == 0) ? &pData.Mission[mis] : nullptr;
     
     char part, prog, ext = 0;
     unsigned char VX;
@@ -1489,6 +1491,7 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
 
     char mcode;
     if (ty == 0) {
+        auto& mission = *missionPtr;
         part = mission.part;
         mcode = mission.MissionCode;
         prog = mission.Prog - 1;

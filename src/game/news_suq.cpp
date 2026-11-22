@@ -57,15 +57,25 @@ bool MissionCrewCantFly(char plr, char pad)
     
     int prog = mission.Prog;
     int P_crew = mission.PCrew - 1;
-    if (pData.CrewCount[prog][P_crew] != 0) return false; // primary crew is fine
-    
+    // Autoplay fix: PCrew == 0 (crew already removed, e.g. by VerifyCrews)
+    // gave P_crew == -1 and read CrewCount[prog][-1] out of bounds.
+    // No primary crew assigned means the crew cannot fly.
+    if (P_crew >= 0 && pData.CrewCount[prog][P_crew] != 0) return false; // primary crew is fine
+
+    // The former backup crew check repeated the primary crew test, so it
+    // never had an effect.  Launch() flies the backup crew if the primary
+    // crew is gone, so a backup crew with members is fine, too.
     int B_crew = mission.BCrew - 1;
-    if (pData.CrewCount[prog][P_crew] != 0) return false; // backup crew is fine
+    if (B_crew >= 0 && pData.CrewCount[prog][B_crew] != 0) return false; // backup crew is fine
 
     if (mission.Men <= 0) return false; // don't care about unmanned missions(?)
 
-    if (AI[plr]) return false; // ???
-    
+    // Autoplay fix: the AI used to skip this check, but VerifyCrews() is
+    // not called for it, so a manned AI mission whose crews were broken up
+    // (dead/retired/injured members) was flown with Pool[-1] as crew.
+    // Scrub it quietly instead (no help dialog for the AI).
+    if (AI[plr]) return true;
+
     switch (pad) {              // THE PRIMARY AND SECONDARY CREWS
     case 0:                     // OF THE MISSION ON PAD [] HAVE BEEN
         Help("i138");           // REMOVED FOR ONE REASON OR ANOTHER.

@@ -187,8 +187,12 @@ int Launch(char plr, char mis)
     for (int i = 0; i < (1 + JOINT); i++) {
         auto& launch_part = pData.Mission[mis + i];
         // Decide who to use for each pad
-        launch_part.Crew = (launch_part.PCrew > 0) ? launch_part.PCrew 
-                                                   : launch_part.BCrew;
+        // Autoplay fix: a primary crew that was broken up in the meantime
+        // (CheckFlightCrews) has no members left, use the backup crew then.
+        const bool primaryUsable = launch_part.PCrew > 0
+            && pData.CrewCount[launch_part.Prog][launch_part.PCrew - 1] > 0;
+        launch_part.Crew = primaryUsable ? launch_part.PCrew
+                                         : launch_part.BCrew;
 
         for (int j = 0; j < MANNED[i]; j++) {
             int t = launch_part.Prog;

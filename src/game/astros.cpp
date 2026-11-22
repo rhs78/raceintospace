@@ -68,7 +68,12 @@ void CheckFlightCrews(int player)
             auto& crew = Data->P[player].Crew[k][j];
 
             bool invalid_crew = false;
-            for (int i = 0; i < crew_count + 1; i++) {
+            // Autoplay fix: CrewCount is the number of members (the
+            // last is Crew[..][CrewCount - 1]).  The former bound
+            // crew_count + 1 read Crew[..][CrewCount] == 0 and thus
+            // Pool[-1] (and wrote to it below), corrupting the memory
+            // in front of the astronaut pool.
+            for (int i = 0; i < crew_count; i++) {
                 const auto& spaceman = Data->P[player].Pool[crew[i] - 1];
                 if (spaceman.Status == AST_ST_DEAD ||
                     spaceman.Status == AST_ST_RETIRED ||
@@ -79,7 +84,7 @@ void CheckFlightCrews(int player)
             }
             if (!invalid_crew) continue;
 
-            for (int i = 0; i < crew_count + 1; i++) {
+            for (int i = 0; i < crew_count; i++) {
                 auto& spaceman = Data->P[player].Pool[crew[i] - 1];
                 spaceman.oldAssign = spaceman.Assign;
                 spaceman.Assign = 0;

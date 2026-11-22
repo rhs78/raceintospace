@@ -239,14 +239,23 @@ void DelayMission(const char plr, int pad)
         for (int j = 0; j < Data->P[plr].Future[i].Men; j++) {
             int poolIndex;
 
+            // Autoplay fix: a crew that was broken up meanwhile (members
+            // dead/retired) has empty slots; Crew[..] - 1 == -1 indexed
+            // Pool[-1].
             if (pCrew > 0) {
                 poolIndex = Data->P[plr].Crew[program][pCrew - 1][j] - 1;
-                Data->P[plr].Pool[poolIndex].Prime++;
+
+                if (poolIndex >= 0) {
+                    Data->P[plr].Pool[poolIndex].Prime++;
+                }
             }
 
             if (bCrew > 0) {
                 poolIndex = Data->P[plr].Crew[program][bCrew - 1][j] - 1;
-                Data->P[plr].Pool[poolIndex].Prime++;
+
+                if (poolIndex >= 0) {
+                    Data->P[plr].Pool[poolIndex].Prime++;
+                }
             }
         }
 
