@@ -8,6 +8,7 @@
 #include "Buzz_inc.h" // IWYU pragma: keep
 #include "gr.h"
 #include "mmfile.h"
+#include "options.h"
 #include "sdlhelper.h"
 #include "utils.h"
 
@@ -241,6 +242,12 @@ void randomize()
  */
 void idle_loop_secs(double secs)
 {
+    // Autoplay: no waiting (also keeps the run independent of wall time).
+    if (options.autoplay) {
+        av_step();
+        return;
+    }
+
     av_sync();
 
     double start = get_time();

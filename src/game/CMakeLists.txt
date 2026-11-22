@@ -15,6 +15,7 @@ set(game_sources
   aimast.cpp
   aimis.cpp
   aipur.cpp
+  autoplay.cpp
   ast0.cpp
   ast1.cpp
   ast2.cpp

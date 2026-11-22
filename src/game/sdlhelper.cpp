@@ -245,6 +245,12 @@ void av_setup()
     SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,
                         SDL_DEFAULT_REPEAT_INTERVAL);
 
+    // Autoplay: no audio device; play() then queues nothing, so
+    // AnimSoundCheck() reports "idle" and sound waits end at once.
+    if (options.autoplay) {
+        have_audio = 0;
+    }
+
     if (have_audio) {
         audio_desired.freq = 44100;
         audio_desired.format = AUDIO_S16SYS;
@@ -272,7 +278,9 @@ void av_setup()
         }
     }
 
-    SDL_AddTimer(30, sdl_timer_callback, nullptr);
+    if (!options.autoplay) {
+        SDL_AddTimer(30, sdl_timer_callback, nullptr);
+    }
 }
 
 void av_process_event(SDL_Event* evp)
@@ -431,6 +439,19 @@ void av_step()
 void av_block()
 {
     SDL_Event ev;
+
+    if (options.autoplay) {
+        // Autoplay: never wait.  Whatever the caller is waiting for (key,
+        // mouse button, a timeout) is answered with a neutral ENTER key
+        // press; callers that wait for a time span (idle_loop_secs) return
+        // at once, see pace.cpp.
+        if (keybuf_in_idx == keybuf_out_idx) {
+            keybuf[keybuf_in_idx] = K_ENTER;
+            keybuf_in_idx = (keybuf_in_idx + 1) % KEYBUF_SIZE;
+        }
+
+        return;
+    }
 
     if (SDL_WaitEvent(&ev)) {
         av_process_event(&ev);
@@ -687,6 +708,11 @@ void av_sync()
 {
     SDL_Rect r;
 
+    // Autoplay: nobody looks at the screen, skip the (costly) scaling.
+    if (options.autoplay) {
+        return;
+    }
+
 #ifdef PROFILE_GRAPHICS
     float tot_area = 0;
     int i = 0;
@@ -762,7 +788,7 @@ void av_set_fading(int type, int from, int to, int steps, int preserve)
     unsigned st;
     unsigned st_end;
 
-    if (!do_fading) {
+    if (!do_fading || options.autoplay) {
         return;
     }
 

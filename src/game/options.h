@@ -27,6 +27,7 @@ struct game_options {
     unsigned cheat_atlasOnMoon;
     unsigned cheat_addMaxS;
     unsigned boosterSafety;
+    unsigned autoplay;              /**< 1 = headless AI vs. AI run (autoplay.h) */
 };
 
 extern game_options options;

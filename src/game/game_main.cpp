@@ -41,6 +41,7 @@
 
 #include "admin.h"
 #include "aimast.h"
+#include "autoplay.h"
 #include "ast4.h"
 #include "Buzz_inc.h"
 #include "crash.h"
@@ -234,6 +235,13 @@ int game_main_impl(int argc, char *argv[])
     OpenEmUp();                   // OPEN SCREEN AND SETUP GOODIES
 
     ConfigureAudio();
+
+    if (options.autoplay) {
+        // Headless AI vs. AI run instead of intro and main menu.
+        AutoplayNewGame();
+        display::graphics.destroy();
+        exit(EXIT_SUCCESS);
+    }
 
     if (options.want_intro) {
         Introd();
@@ -519,6 +527,10 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
 
     while (Data->Year <= Data->EndYear) {  // WHILE THE GAME HAS NOT ENDED
 
+        if (options.autoplay) {
+            AutoplayLogTurn();
+        }
+
         if (newTurn) {
             for (int i = 0; i < NUM_PLAYERS; i++) {
                 auto& pData = Data->P[i];
@@ -708,6 +720,13 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
             if (Data->P[Order[i].plr].Mission[Order[i].loc].Hard[4] == 0) continue; // ??
             
             int prest = Launch(Order[i].plr, Order[i].loc);
+
+            if (options.autoplay) {
+                AutoplayLog("mission: %s pad %d code %d prestige %d",
+                            Order[i].plr ? "USSR" : "USA", (int) Order[i].loc,
+                            (int) Data->P[Order[i].plr].Mission[Order[i].loc].MissionCode,
+                            prest);
+            }
 
             // check for prestige firsts
             if (AI[Order[i].plr] == 1 

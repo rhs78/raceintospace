@@ -20,6 +20,8 @@
 
 #include "options.h"
 
+#include "autoplay.h"
+
 #include <cassert>
 #include <cerrno>
 #include <cstdio>
@@ -235,6 +237,9 @@ usage(int fail)
             "\t-v verbose mode\n\t\tadd this several times to get to DEBUG level\n"
             "\t-f fullscreen mode\n"
             "\t-s 4x scale mode\n"
+            "\t--autoplay  headless AI vs. AI test run (doc/fork/autoplay.md)\n"
+            "\t  --seed N  --start-year 55|56|57  --model basic|historical|random\n"
+            "\t  --sandbox  --scenario ID  --years N\n"
            );
     exit((fail) ? EXIT_FAILURE : EXIT_SUCCESS);
 }
@@ -494,6 +499,7 @@ void ResetToDefaultOptions()
     options.feat_random_eq = 0;
     options.feat_eq_new_name = 0;
     options.boosterSafety = 0;
+    options.autoplay = 0;
 
     // Cheats
     //Damaged Equipment Cheat, Nikakd, 10/8/10
@@ -602,6 +608,49 @@ setup_options(int argc, char *argv[])
             options.want_4xscale = 0;
         } else if (strcmp(str, "-v") == 0) {
             options.want_debug++;
+        } else if (strcmp(str, "--autoplay") == 0) {
+            options.autoplay = 1;
+        } else if (strcmp(str, "--sandbox") == 0) {
+            autoplayConfig.sandbox = true;
+        } else if (strcmp(str, "--seed") == 0
+                   || strcmp(str, "--start-year") == 0
+                   || strcmp(str, "--model") == 0
+                   || strcmp(str, "--scenario") == 0
+                   || strcmp(str, "--years") == 0) {
+            // Autoplay options with a value: consume the next argument too.
+            if (pos + 1 >= argc) {
+                ERROR2("option %s needs a value", str);
+                usage(1);
+            }
+
+            const char* val = argv[pos + 1];
+
+            if (strcmp(str, "--seed") == 0) {
+                autoplayConfig.seed = (unsigned) strtoul(val, nullptr, 10);
+            } else if (strcmp(str, "--start-year") == 0) {
+                autoplayConfig.startYear = atoi(val);
+            } else if (strcmp(str, "--years") == 0) {
+                autoplayConfig.years = atoi(val);
+            } else if (strcmp(str, "--scenario") == 0) {
+                autoplayConfig.scenario = val;
+            } else {
+                autoplayConfig.model = -1;
+
+                for (int m = 0; AutoplayModelName(m); ++m) {
+                    if (strcmp(val, AutoplayModelName(m)) == 0) {
+                        autoplayConfig.model = m;
+                    }
+                }
+
+                if (autoplayConfig.model < 0) {
+                    ERROR2("unknown model %s", val);
+                    usage(1);
+                }
+            }
+
+            // drop the value; the option itself is dropped below
+            shift_argv(argv + pos + 1, argc - pos - 1, 1);
+            argc--;
         } else {
             ERROR2("unknown option %s", str);
             usage(1);
@@ -653,6 +702,15 @@ setup_options(int argc, char *argv[])
 
     if (options.classic) {
         ResetToClassicOptions();
+    }
+
+    if (options.autoplay) {
+        // Headless test run: no intro, no sound, nothing from the user's
+        // configuration that could change the game flow.
+        options.want_intro = 0;
+        options.want_audio = 0;
+        options.want_fullscreen = 0;
+        options.want_4xscale = 0;
     }
 
     return argc;

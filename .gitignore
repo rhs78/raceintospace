@@ -12,3 +12,5 @@ vcpkg_installed
 
 # User-supplied replacement graphics/videos (see doc/fork/eigene-grafiken.md)
 data/custom/
+build-asan
+autoplay-results
