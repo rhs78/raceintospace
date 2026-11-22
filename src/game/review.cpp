@@ -324,7 +324,7 @@ void PresPict(char image)
 
 void CalcPresRev()
 {
-    if (Data->Year == 57 && Data->Season == 0) {
+    if (Data->IsFirstTurn()) {
         return;
     }
 

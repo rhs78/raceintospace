@@ -47,6 +47,7 @@
 #include "randomize.h"
 #include "sdlhelper.h"
 #include "settings.h"
+#include "timeline.h"
 
 
 enum PreferencesMode {
@@ -68,6 +69,7 @@ void DrawLevel(char side, char button, char level, DisplayContext& dctx);
 void DrawMapOutline(int x, int y);
 void DrawMap(char side, char country, DisplayContext& dctx);
 void DrawPlayerIcon(char side, bool is_AI, DisplayContext& dctx);
+void DrawStartYear(PreferencesMode where);
 int Preferences(int player, PreferencesMode where);
 void SavePreferences(const AudioConfig& audio);
 
@@ -176,10 +178,31 @@ void DrawPrefs(PreferencesMode where, bool is_AI_1, bool is_AI_2, AudioConfig au
         dctx.prefs_image, (audio.soundFX.muted ? 221 : 255), 0, 33, 29, 101, 71);
 
     display::graphics.legacyScreen()->draw(dctx.prefs_image, 216, 30, 71, 29, 147, 31);
-    display::graphics.legacyScreen()->draw(dctx.prefs_image, 72 * (Data->Def.Anim), 90, 71, 29, 147, 71);
+    DrawStartYear(where);
     DrawModel(Data->Def.Input);
 
     FadeIn(2, 10, 0, 0);
+}
+
+
+/**
+ * Draw the start year selection into the fourth button of the middle
+ * panel (the animation level button, which is disabled in this game).
+ * The year can only be changed when a new game is set up.
+ */
+void DrawStartYear(PreferencesMode where)
+{
+    if (where == PREFS_INGAME) {
+        InBox(144, 68, 221, 103);
+    } else {
+        IOBox(144, 68, 221, 103);
+    }
+
+    fill_rectangle(146, 70, 219, 101, 0);
+    display::graphics.setForegroundColor(5);
+    draw_string(183, 80, "START YEAR", ALIGN_CENTER);
+    display::graphics.setForegroundColor(where == PREFS_INGAME ? 6 : 11);
+    draw_string(183, 94, FormatYear(Data->StartYear).c_str(), ALIGN_CENTER);
 }
 
 
@@ -592,8 +615,15 @@ int Preferences(int player, PreferencesMode where)
             Data->Def.Input = (Data->Def.Input + 1) % numHModels;
             DrawModel(Data->Def.Input);
 
-        } else if ((x >= 146 && y >= 70 && x <= 219 && y <= 101 && mousebuttons > 0) || key == 'A') {
-            /* disable this option right now */
+        } else if ((x >= 146 && y >= 70 && x <= 219 && y <= 101 && mousebuttons > 0) || key == 'Y') {
+            if (where == PREFS_INGAME) continue;
+            /* Start year: cycle 1955, 1956, 1957 */
+
+            InBox(144, 68, 221, 103);
+            WaitForMouseUp();
+            Data->StartYear = (Data->StartYear >= MAX_START_YEAR) ? MIN_START_YEAR
+                                                                  : Data->StartYear + 1;
+            DrawStartYear(where);
         } else if ((x >= 100 && y >= 30 && x <= 135 && y <= 61 && mousebuttons > 0) || key == 'M') {
             if (audio.master.muted) continue;
             /* Music mute toggle */

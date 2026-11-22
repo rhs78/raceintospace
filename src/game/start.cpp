@@ -40,6 +40,7 @@
 #include "options.h"
 #include "pace.h"
 #include "prest.h"
+#include "timeline.h"
 
 
 void AssignMissionName(int plr, int pad);
@@ -51,59 +52,23 @@ void UpdateFlybys();
 void UpdateHardTurn(int plr);
 
 
-#define EVENT_PERIODS 6
-#define EVENT_PERIOD_POOL 5
-
 /**
  * Initialize the event cards.
+ *
+ * The cards for all turns of the game (Players::TotalTurns()) are
+ * drawn in advance, see FillEventCards() for the algorithm.
  */
 void InitializeEvents()
 {
-    std::vector<std::vector<int>> event_cards(EVENT_PERIOD_POOL); // initialize and fill in Event pools
-    event_cards[0].resize(3);  std::iota(event_cards[0].begin(), event_cards[0].end(), 1);
-    event_cards[1].resize(40); std::iota(event_cards[1].begin(), event_cards[1].end(), 4);
-    event_cards[2].resize(19); std::iota(event_cards[2].begin(), event_cards[2].end(), 44);
-    event_cards[3].resize(17); std::iota(event_cards[3].begin(), event_cards[3].end(), 63);
-    event_cards[4].resize(20); std::iota(event_cards[4].begin(), event_cards[4].end(), 80);
-    
-    int cardCount = 2;  // Starting event card index
-    char quantityInSet[EVENT_PERIODS] = {2, 8, 8, 12, 16, 52};  // Number of events in each period
-    char poolPercentages[EVENT_PERIODS][EVENT_PERIOD_POOL] = {
-        {100, 100, 100, 100, 100},
-        {  0, 100, 100, 100, 100},
-        {  0,  62, 100, 100, 100},
-        {  0,  50,  70, 100, 100},
-        {  0,  35,  55,  75, 100},
-        {  0,  25,  50,  75, 100}
-    };
+    const int turns = Data->TotalTurns();
+    assert(2 * turns <= MAXIMUM_NEWS_EVENTS);
 
     // Initialize base event data to 0's
     for (int i = 0; i < MAXIMUM_NEWS_EVENTS; i++) {
         Data->Events[i] = 0;
     }
 
-    for (int period = 0; period < EVENT_PERIODS; period++) {
-        auto& pool_distribution = poolPercentages[period];
-        for (int set = 0; set < quantityInSet[period]; set++) {
-            int pool_idx; // TODO: take this out into random utility function
-            do{
-                // Randomly pick which pool to take event from
-                // by choosing number [0;100) and finding first pool whose "inclusion zone" is bigger
-                int randomPoolChoice = brandom(100);
-                auto iter = std::find_if(std::begin(pool_distribution), std::end(pool_distribution), [=](char c){return c > randomPoolChoice;});
-                pool_idx = std::distance(std::begin(pool_distribution), iter);
-            // If the pool we chose has been exhausted, choose again
-            }while(event_cards[pool_idx].empty());
-            auto& chosen_pool = event_cards[pool_idx];
-
-            // choose random event from the pool
-            int card_idx = brandom(chosen_pool.size());
-            // add it to Data->Events
-            Data->Events[cardCount++] = chosen_pool[card_idx];
-            // and remove from the pool
-            chosen_pool.erase(chosen_pool.begin()+card_idx);
-        }
-    }
+    FillEventCards(Data->Events, turns, [](int n) { return brandom(n); });
 
     // Set defaults for Prestige
     for (int i = 0; i < MAXIMUM_PRESTIGE_NUM; i++) {

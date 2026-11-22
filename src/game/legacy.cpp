@@ -30,7 +30,10 @@
 #include "endianness.h"
 #include "game_main.h"
 #include "legacy.h"
+#include "logging.h"
 #include "pace.h"
+
+LOG_DEFAULT_CATEGORY(LOG_ROOT_CAT);
 
 void _SwapEquipment(struct LegacyPlayers *pData)
 {
@@ -186,6 +189,12 @@ void _SwapGameDat(struct LegacyPlayers *pData)
     // End of GameDatSwap
 }
 
+// Layout of the legacy save files: 100 replays and 42 news items a side.
+// The new layout has room for longer games, see MAX_MISSION_COUNT and
+// MAX_NEWS_PER_PLAYER.
+#define LEGACY_REPLAY_ITEMS 200
+#define LEGACY_NEWS_ITEMS 84
+
 /**
  * Load function for old save game formats.
  */
@@ -196,6 +205,15 @@ void LegacyLoad(SaveFileHdr header, FILE *fin, size_t fileLength)
     int i;
     const int legacySize = 38866;
     struct LegacyPlayers *legacyData;
+
+    // The in-memory layout of the game state changed with the
+    // parameterized timeline (Players version 2: start/end year, longer
+    // history arrays), so the binary BARIS image can no longer be read
+    // into LegacyPlayers and converted.  Old savegames are not supported.
+    LOG_WARNING("legacy save games are not supported by this version");
+    fclose(fin);
+    BadFileType();
+    return;
 
     legacyData = new struct LegacyPlayers;
     memset(legacyData, 0x00, sizeof(struct LegacyPlayers));
@@ -245,14 +263,14 @@ void LegacyLoad(SaveFileHdr header, FILE *fin, size_t fileLength)
     delete legacyData;
 
     // Read the Replay Data
-    load_buffer = (LEGACY_REPLAY *)malloc((sizeof(LEGACY_REPLAY)) * MAX_REPLAY_ITEMS);
-    fread(load_buffer, 1, sizeof(LEGACY_REPLAY) * MAX_REPLAY_ITEMS, fin);
+    load_buffer = (LEGACY_REPLAY *)malloc((sizeof(LEGACY_REPLAY)) * LEGACY_REPLAY_ITEMS);
+    fread(load_buffer, 1, sizeof(LEGACY_REPLAY) * LEGACY_REPLAY_ITEMS, fin);
 
     if (endianSwap) {
         LEGACY_REPLAY *r = nullptr;
         r = load_buffer;
 
-        for (int j = 0; j < MAX_REPLAY_ITEMS; j++) {
+        for (int j = 0; j < LEGACY_REPLAY_ITEMS; j++) {
             for (int k = 0; k < r->Qty; k++) {
                 r[j].Off[k] = _Swap16bit(r[j].Off[k]);
             }
@@ -265,8 +283,10 @@ void LegacyLoad(SaveFileHdr header, FILE *fin, size_t fileLength)
     DESERIALIZE_JSON_FILE(&seq, locate_file("legacy-seq.json", FT_DATA));
     DESERIALIZE_JSON_FILE(&fseq, locate_file("legacy-fseq.json", FT_DATA));
 
-    for (i = 0; i < MAX_REPLAY_ITEMS; i++) {
-        interimData.tempReplay.at(i).clear();
+    for (i = 0; i < LEGACY_REPLAY_ITEMS; i++) {
+        // 100 replays per side in the file, MAX_MISSION_COUNT in memory
+        const int dst = (i / 100) * MAX_MISSION_COUNT + i % 100;
+        interimData.tempReplay.at(dst).clear();
         assert(load_buffer[i].Qty <= 35);
 
         for (int j = 0; j < load_buffer[i].Qty; j++) {
@@ -274,9 +294,9 @@ void LegacyLoad(SaveFileHdr header, FILE *fin, size_t fileLength)
             int code = load_buffer[i].Off[j];
 
             if (code < 1000) {
-                interimData.tempReplay.at(i).push_back({false, seq.at(code)});
+                interimData.tempReplay.at(dst).push_back({false, seq.at(code)});
             } else {
-                interimData.tempReplay.at(i).push_back({true, fseq.at(code)});
+                interimData.tempReplay.at(dst).push_back({true, fseq.at(code)});
             }
 
         }
@@ -305,13 +325,15 @@ void LegacyLoad(SaveFileHdr header, FILE *fin, size_t fileLength)
 
     // Save Event information
 
-    for (int j = 0; j < MAX_NEWS_ITEMS; j++) {
+    for (int j = 0; j < LEGACY_NEWS_ITEMS; j++) {
         OLDNEWS *on = (OLDNEWS *) load_buffer + j;
         char *text = (char *) load_buffer + on->offset;
-        interimData.tempEvents.at(j) = "";
+        // 42 news items per side in the file, MAX_NEWS_PER_PLAYER in memory
+        const int dst = (j / 42) * MAX_NEWS_PER_PLAYER + j % 42;
+        interimData.tempEvents.at(dst) = "";
 
         for (int k = 0; k < on->size; k++) {
-            interimData.tempEvents.at(j).push_back(text[k]);
+            interimData.tempEvents.at(dst).push_back(text[k]);
         }
     }
 

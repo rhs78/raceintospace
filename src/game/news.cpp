@@ -49,6 +49,7 @@
 #include "news_suq.h"
 #include "pace.h"
 #include "sdlhelper.h"
+#include "timeline.h"
 #include "utils.h"
 
 LOG_DEFAULT_CATEGORY(LOG_ROOT_CAT);
@@ -134,7 +135,7 @@ void GoNews(char plr)
     OpenNews(plr, buffer + 6000, (int) Data->Events[Data->Count]);
 
     Data->P[plr].eCount++;
-    assert(Data->P[plr].eCount <= MAX_NEWS_ITEMS / 2);
+    assert(Data->P[plr].eCount <= MAX_NEWS_PER_PLAYER);
 
     DispNews(plr, buffer + 6000, buffer);
 
@@ -212,7 +213,7 @@ void OpenNews(char plr, char* buf, int bud)
         spaceman.Special = 0;
     }
 
-    if (Data->Year >= 58) {
+    if (Data->Year >= Data->StartYear + 1) {  // intelligence exists from the first Fall briefing on
         if (Data->Season == 1 && plr == 0) {
             strcpy(&buf[strlen(buf)], "xCHECK INTELLIGENCE: THE CIA REPORTS NEW INFORMATION.x\0");
         } else if (Data->Season == 1 && plr == 1) {
@@ -301,10 +302,10 @@ void OpenNews(char plr, char* buf, int bud)
     int news_idx;
     if (plr == 0) {
         // Pool of 6 us news per year
-        news_idx = (Data->Year - 57) * 6 + Data->Season * 3 + brandom(3) + 1;
+        news_idx = NewsYearIndex(Data->Year) * 6 + Data->Season * 3 + brandom(3) + 1;
     } else {
         // Pool of 4 soviet news per year
-        news_idx = (Data->Year - 57) * 4 + Data->Season * 2 + brandom(2) + 1;
+        news_idx = NewsYearIndex(Data->Year) * 4 + Data->Season * 2 + brandom(2) + 1;
     }
 
     if (news_idx < 0 || news_idx >= (int)news.size()) {
@@ -546,21 +547,21 @@ void News(char plr)
     // introduction, the current turn is calculated, compared with the
     // number of news events (1/turn) and a flag is set to replay the
     // news if the save has already accounted for the events.
-    int turn = 2 * (Data->Year - 57) + Data->Season + 1;  // start at turn 1
+    int turn = Data->TurnIndex() + 1;  // start at turn 1
     bool freshNews = (turn > Data->P[plr].eCount);
 
     if (freshNews) {
         GoNews(plr);
 
         // GoNews increments player eCount, so it should equal the turn
-        // File Structure is 84 longs 42 per side
-        size_t eventIndex = plr * 42 + Data->P[plr].eCount - 1;
+        // File structure: MAX_NEWS_PER_PLAYER entries per side
+        size_t eventIndex = plr * MAX_NEWS_PER_PLAYER + Data->P[plr].eCount - 1;
         interimData.tempEvents.at(eventIndex) = buffer;
 
     } else {
         // Copy the recorded news event for the turn into the buffer
         // so it will be available for display.
-        strncpy(buffer, interimData.tempEvents.at(plr * 42 + turn - 1).c_str(),
+        strncpy(buffer, interimData.tempEvents.at(plr * MAX_NEWS_PER_PLAYER + turn - 1).c_str(),
                 BUFFER_SIZE - 1000);
         memset(buffer + BUFFER_SIZE - 1000, 0, 999);
     }
@@ -573,9 +574,8 @@ void News(char plr)
             draw_heading(37 + (BW * 200), 40 - (plr * 4), "SPRING", 0, -1);
         }
 
-        char cYr[5];
-        snprintf(cYr, sizeof(cYr), "%d", 1900 + Data->Year);
-        draw_heading(48 + (BW * 200), 63 - (4 * plr), &cYr[0], 0, -1);
+        std::string cYr = FormatYear(Data->Year);
+        draw_heading(48 + (BW * 200), 63 - (4 * plr), cYr.c_str(), 0, -1);
 
     }
 
@@ -798,7 +798,7 @@ void News(char plr)
 
 void AIEvent(char plr)
 {
-    int turn = 2 * (Data->Year - 57) + Data->Season + 1;  // start at turn 1
+    int turn = Data->TurnIndex() + 1;  // start at turn 1
     bool freshNews = (turn > Data->P[plr].eCount);
 
     ResolveEvent(plr);
@@ -806,7 +806,7 @@ void AIEvent(char plr)
     // Do not update event counter when loading saved game
     if (freshNews) {
         Data->P[plr].eCount++;
-        assert(Data->P[plr].eCount <= MAX_NEWS_ITEMS / 2);
+        assert(Data->P[plr].eCount <= MAX_NEWS_PER_PLAYER);
     }
 }
 

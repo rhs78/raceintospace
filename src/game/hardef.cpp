@@ -30,6 +30,7 @@
 #include "hardef.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "display/graphics.h"
 #include "display/surface.h"
@@ -1501,9 +1502,16 @@ void DrawRank(char plr)
 
     display::graphics.setForegroundColor(6);
 
-    for (int i = 0; i < 11; i++) {
-        draw_number(29 + (24 * i), 43, (i * 2) + 57);
-        draw_number(41 + (24 * i), 192, (i * 2) + 58);
+    // One label every labelStep years, alternating between the upper and
+    // the lower edge of the graph (2 years apart in the 21 year game).
+    {
+        const double pxPerYear = 252.0 / (Data->EndYear - Data->StartYear + 1);
+        const int labelStep = std::max(1, static_cast<int>(std::ceil(12.0 / pxPerYear)));
+        for (int yi = 0, n = 0; Data->StartYear + yi <= Data->EndYear; yi += labelStep, n++) {
+            int lx = 29 + static_cast<int>(pxPerYear * yi);
+            draw_number(lx, n % 2 ? 192 : 43,
+                        (Data->StartYear + yi) % 100);
+        }
     }
 
     display::graphics.setForegroundColor(6);
@@ -1538,6 +1546,9 @@ void DrawRank(char plr)
     //Win=Data->Prestige[Prestige_MannedLunarLanding].Place;
     //if ((Option==-1 && MAIL==-1) || Option==0 || MAIL==0)
 
+    // The graph is 252 pixels wide: 12 pixels a year in the original
+    // 21 year game, wider or narrower for other game lengths.
+    const double pxPerYear = 252.0 / (Data->EndYear - Data->StartYear + 1);
     int colors[2] = {5,9};
     for (int plr_idx = 0; plr_idx < 2; ++plr_idx) {
         if (Option == other(plr_idx)) continue;
@@ -1549,8 +1560,7 @@ void DrawRank(char plr)
         for (int i=0; i < pData.PastMissionCount; ++i) {
             auto& mission = pData.History[i];
             t1 -= mission.Prestige * ((float) 24 / OffSet);
-            int Year_Inc = 12;
-            grLineTo(34 + Year_Inc * (mission.MissionYear - 57) + mission.Month, t1);
+            grLineTo(34 + static_cast<int>(pxPerYear * (mission.MissionYear - Data->StartYear + mission.Month / 12.0)), t1);
         }
     }
 

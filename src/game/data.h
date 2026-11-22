@@ -96,12 +96,27 @@
 #define MAX_LAUNCHPADS          3 /**< number of launchpads available */
 #define MAX_MISSIONS            3 /**< number of concurrent missions available */
 
-#define MAXIMUM_NEWS_EVENTS         100
+/* Timeline limits.  The game year is stored as "years since 1900" and the
+ * game may start as early as 1955 and end as late as 1999.  All
+ * per-year / per-turn arrays are sized for the longest possible game. */
+#define MAX_GAME_YEARS              48                  /**< longest game (years) */
+#define MAX_GAME_TURNS              (2 * MAX_GAME_YEARS) /**< two seasons a year */
+#define BUDGET_HISTORY_PAD          4                   /**< empty slots before the first year */
+#define MAX_BUDGET_HISTORY          (MAX_GAME_YEARS + BUDGET_HISTORY_PAD)
+#define MAX_NEWS_PER_PLAYER         MAX_GAME_TURNS      /**< one news card per turn */
+
+#define MAXIMUM_NEWS_EVENTS         (2 * MAX_GAME_TURNS) /**< two event cards per turn */
 #define MAXIMUM_PRESTIGE_NUM        28
 #define MAX_STEPS                   60
-#define MAX_MISSION_COUNT           100
-#define MAX_REPLAY_ITEMS            200
-#define MAX_NEWS_ITEMS              84
+#define MAX_MISSION_COUNT           300
+#define MAX_REPLAY_ITEMS            (2 * MAX_MISSION_COUNT)
+#define MAX_NEWS_ITEMS              (2 * MAX_NEWS_PER_PLAYER)
+
+/* Range of selectable start years (years since 1900).  The default
+ * start year and the end year are stored in data/gamedata/urast.json
+ * ("StartYear" and "EndYear" of the initial game state). */
+#define MIN_START_YEAR              55
+#define MAX_START_YEAR              57
 
 #define MAX_PORT_LEVEL              40
 #define MAX_PORT_REGION             4
@@ -169,7 +184,7 @@ struct PrestType {
     int8_t Add[4];        /**< 4&5 used for qty completed */
     int8_t Goal[NUM_PLAYERS];       /**< Goal steps used for prest calculations */
     int16_t Points[NUM_PLAYERS];  /**< Total points earned */
-    int8_t Index;         /**< the index for the first into .History[] */
+    int16_t Index;        /**< the index for the first into .History[] */
     int8_t Place;         /**< Who got the prestige first. */
     int8_t mPlace;        /**< If you've done it at all */
     int8_t Month;         /**< Date of the First */
@@ -627,8 +642,8 @@ struct BuzzData {                   // master data list for Buzz Aldrin's
     int16_t PrestHist[5][2];             // Prestige History array -- [][historical|random]
     int16_t PresRev[5];                  // Pres. Review History
     int16_t tempPrestige[2];                 // Holds this and prev prestige
-    int16_t BudgetHistory[40];         // Record of Last 40 Budgets
-    int16_t BudgetHistoryF[40];        // Record of Last 40 Budgets
+    int16_t BudgetHistory[MAX_BUDGET_HISTORY];   // Budget of each year, see Players::BudgetIndex()
+    int16_t BudgetHistoryF[MAX_BUDGET_HISTORY];  // Estimated budget of each year
     int16_t Spend[5][4];                 // Record of last 5 seasons spending
     //  of each equip type
     int8_t RD_Mods_For_Turn;                     // R & D Mods for turn only
@@ -693,7 +708,7 @@ struct BuzzData {                   // master data list for Buzz Aldrin's
     // 2 = Program Death
     // 3 = Program First
     uint8_t Buy[4][7];  // Record of R&D for Turn - encoded dices & rolls
-    int8_t eCount;
+    int16_t eCount;
     struct {
         int8_t code;
         int16_t num;
@@ -714,7 +729,7 @@ struct BuzzData {                   // master data list for Buzz Aldrin's
             ar(CEREAL_NVP(SafetyFactor));
             ar(CEREAL_NVP(cdex));
         }
-    } PastIntel[30];
+    } PastIntel[MAX_GAME_YEARS];
     char unused_AIpath[23]; // unused
     int8_t AIStrategy[10];                  // AI Strategy Values
     int8_t AILunar,                    // Flag to tell way to moon
@@ -784,7 +799,7 @@ struct BuzzData {                   // master data list for Buzz Aldrin's
 
         // SECURITY: Data sanitization
         ASSERT(PastMissionCount >= 0 && PastMissionCount < MAX_MISSION_COUNT);
-        ASSERT(eCount >= 0 && eCount < MAX_NEWS_ITEMS / 2);
+        ASSERT(eCount >= 0 && eCount <= MAX_NEWS_PER_PLAYER);
         ASSERT(AstroCount >= 0 && AstroCount <= MAX_POOL);
 
         for (int i = 0; i < MAX_PORT_LEVEL; i++) {
@@ -866,11 +881,13 @@ struct Players {
     Defl Def;                 /**< Defaults */
     int8_t Year;                    /**< Game Turn */
     int8_t Season;                  /**< Season of Year */
+    int8_t StartYear;               /**< First year of the game (years since 1900) */
+    int8_t EndYear;                 /**< Last year of the game (years since 1900); the game ends after Fall of this year */
     PrestType Prestige[MAXIMUM_PRESTIGE_NUM];   /**< Definitions of Prest Vals */
     BuzzData P[NUM_PLAYERS];  /**< Player Game Data */
     int8_t unused_EMark[3]           ; /**< unused - Event Marker */
     int8_t Events[MAXIMUM_NEWS_EVENTS]; /**< History of Event Cards */
-    int8_t Count;                      /**< Number of Events Picked */
+    int16_t Count;                     /**< Number of Events Picked */
     int8_t PD[NUM_PLAYERS][MAXIMUM_PRESTIGE_NUM]; /**< Prestige First Displayed: First Bit: Seen in MisRev, Second Bit: Seen by Opponent */
     int8_t Mile[NUM_PLAYERS][10];      /**< MileStone Calcs */
     int8_t Mail;                       /* Current status of PBEM game */
@@ -886,6 +903,8 @@ struct Players {
         ar(CEREAL_NVP(Def));
         ar(CEREAL_NVP(Year));
         ar(CEREAL_NVP(Season));
+        ar(CEREAL_NVP(StartYear));
+        ar(CEREAL_NVP(EndYear));
         ar(CEREAL_NVP(Prestige));
         ar(CEREAL_NVP(P));
         ar(CEREAL_NVP(unused_EMark));
@@ -902,13 +921,40 @@ struct Players {
         ar(CEREAL_NVP(Step));
 
         // SECURITY: Data sanitization
-        ASSERT(Count >= 0 && Count < MAX_NEWS_ITEMS);
-        ASSERT(Year >= 57 && Year <= 78);
+        ASSERT(StartYear >= MIN_START_YEAR && StartYear <= MAX_START_YEAR);
+        ASSERT(EndYear >= StartYear && EndYear - StartYear < MAX_GAME_YEARS);
+        ASSERT(Count >= 0 && Count <= MAX_NEWS_ITEMS);
+        ASSERT(Year >= StartYear && Year <= EndYear + 1);
         ASSERT(Season == 0 || Season == 1);
     }
+
+    /** Years elapsed since the start of the game (0 in the first year). */
+    int YearIndex() const { return Year - StartYear; }
+
+    /** Turns elapsed since the start of the game (0 = Spring of StartYear). */
+    int TurnIndex() const { return 2 * (Year - StartYear) + Season; }
+
+    /** Index into BudgetHistory[] / BudgetHistoryF[] for the current year. */
+    int BudgetIndex() const { return Year - StartYear + BUDGET_HISTORY_PAD; }
+
+    /** Total number of turns of the configured game. */
+    int TotalTurns() const { return 2 * (EndYear - StartYear + 1); }
+
+    /** True when the current turn is the first one of the game. */
+    bool IsFirstTurn() const { return TurnIndex() == 0; }
+
+    /** True while no intelligence briefing can exist yet: the whole first
+     *  year and Spring of the second year (briefings are made in Fall). */
+    bool BeforeFirstIntel() const
+    {
+        return Year == StartYear || (Year == StartYear + 1 && Season == 0);
+    }
+
+    /** True when the current turn is the last one of the game. */
+    bool IsLastTurn() const { return Year == EndYear && Season == 1; }
 };
 
-CEREAL_CLASS_VERSION(struct Players, 1)
+CEREAL_CLASS_VERSION(struct Players, 2)
 
 struct MisAst {  // This struct will be -1's if empty
     Astros* A;
@@ -1410,14 +1456,14 @@ struct AssetData {
 // Double-check that the structs we write to disk have the proper size
 // Errors in these lines mean that the struct is the wrong shape
 #include <boost/static_assert.hpp>
-BOOST_STATIC_ASSERT(sizeof(PrestType) == 15);
+BOOST_STATIC_ASSERT(sizeof(PrestType) == 16);
 BOOST_STATIC_ASSERT(sizeof(Equipment) == 60);
 BOOST_STATIC_ASSERT(sizeof(MissionType) == 43);
 BOOST_STATIC_ASSERT(sizeof(Astros) == 65);
 BOOST_STATIC_ASSERT(sizeof(PastInfo) == 84);
-BOOST_STATIC_ASSERT(sizeof(BuzzData) == 15706);
+BOOST_STATIC_ASSERT(sizeof(BuzzData) == 32699);
 BOOST_STATIC_ASSERT(sizeof(MisEval) == 40);
-BOOST_STATIC_ASSERT(sizeof(Players) == 39238);
+BOOST_STATIC_ASSERT(sizeof(Players) == 73347);
 
 #endif // RIS_DATA_H
 

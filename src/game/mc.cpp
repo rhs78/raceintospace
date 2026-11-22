@@ -566,7 +566,7 @@ void MissionPast(char plr, char pad, int prest)
 
     }
 
-    if (interimData.tempReplay.at((plr * 100) + loc).size() == 1 && hist.spResult < 3000) {
+    if (interimData.tempReplay.at((plr * MAX_MISSION_COUNT) + loc).size() == 1 && hist.spResult < 3000) {
         hist.spResult = 1999;
     }
 

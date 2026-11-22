@@ -56,7 +56,7 @@ void Replay(char plr, int num,
     std::vector<REPLAY> Rep;
 
     if (Type == "OOOO") { // replay the whole mission
-        Rep = interimData.tempReplay.at((plr * 100) + num);
+        Rep = interimData.tempReplay.at((plr * MAX_MISSION_COUNT) + num);
     } else { // play single video
         Rep.push_back({false, Type});
     }
@@ -198,7 +198,7 @@ void AbzFrame(int plr, int dx, int dy, int width, int height,
               int mission)
 {
     AbzFrame(plr, dx, dy, width, height,
-             interimData.tempReplay.at(plr * 100 + mission).at(0).seq);
+             interimData.tempReplay.at(plr * MAX_MISSION_COUNT + mission).at(0).seq);
 }
 
 

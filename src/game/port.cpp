@@ -28,6 +28,7 @@
 // This file handles the main Spaceport screen.
 
 #include "port.h"
+#include "timeline.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -384,22 +385,22 @@ void DrawSpaceport(char plr)
     display::graphics.setForegroundColor(0);
 
     if (Data->Season == 0) {
-        draw_string(166, 197, "SPRING 19");
+        draw_string(166, 197, "SPRING ");
     } else {
-        draw_string(166, 197, "FALL 19");
+        draw_string(166, 197, "FALL ");
     }
 
-    draw_number(0, 0, Data->Year);
+    draw_year(0, 0, Data->Year);
 
     display::graphics.setForegroundColor(11);
 
     if (Data->Season == 0) {
-        draw_string(165, 196, "SPRING 19");
+        draw_string(165, 196, "SPRING ");
     } else {
-        draw_string(165, 196, "FALL 19");
+        draw_string(165, 196, "FALL ");
     }
 
-    draw_number(0, 0, Data->Year);
+    draw_year(0, 0, Data->Year);
 
     if (plr == 0) {
         display::graphics.screen()->draw(flaggy, FCtr * 23, 0, 23, 22, 49, 121);
@@ -627,7 +628,7 @@ bool EndTurnOk(int plr)
         // turn, except on the first turn of the game, or if you can't
         // buy rockets next turn. -Leon
         if (Data->P[plr].Rocket[0].Delay < 1 &&
-            !(Data->Year == 57 && Data->Season == 0)) {
+            !Data->IsFirstTurn()) {
             bool future = false;
 
             for (int i = 0; i < MAX_MISSIONS; i++) {
@@ -1052,7 +1053,7 @@ void Port(char plr)
 
                             if (!(i == PORT_FlagPole || i == PORT_Gate 
                                   || i == PORT_Monument || i == PORT_SovMonumentAlt 
-                                  || (Data->Year == 57 || (Data->Year == 58 && Data->Season == 0)))) {
+                                  || Data->BeforeFirstIntel())) {
 #if SPOT_ON
                                 SpotKill();
 #endif
@@ -1189,7 +1190,7 @@ char PortSel(char plr, char loc)
         return pNOREDRAW;  // Monuments
 
     case PORT_Pentagon:
-        if (Data->Year == 57 || (Data->Year == 58 && Data->Season == 0)) {
+        if (Data->BeforeFirstIntel()) {
             Help("i108");
             return pNOREDRAW;
         }

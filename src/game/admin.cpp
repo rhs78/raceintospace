@@ -60,6 +60,7 @@
 #include "prest.h"
 #include "rdplex.h"
 #include "sdlhelper.h"
+#include "timeline.h"
 #include "utils.h"
 
 #include <zlib.h>
@@ -1118,8 +1119,7 @@ void FileText(const char* name)
         }
     }
 
-    draw_number(0, 0, 19);
-    draw_number(0, 0, header.Year);
+    draw_year(0, 0, header.Year);
     draw_string(0, 0, ".");
 }
 

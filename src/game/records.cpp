@@ -1678,15 +1678,15 @@ void UpdateRecords(char Ty)
 
                     if (Ty != 1) break;
                     
-                    for (int loop = 0; loop < 40; ++loop) {
+                    for (int loop = 0; loop < MAX_BUDGET_HISTORY; ++loop) {
                         if (pData.BudgetHistory[loop] != 0) {
                             temp += pData.BudgetHistory[loop];
-                        } else if (loop >= 6 && max == 0) {
+                        } else if (loop >= BUDGET_HISTORY_PAD + 2 && max == 0) {
                             max = loop - 1;
                         }
                     }
 
-                    temp = temp / max;
+                    temp = temp / std::max(max, 1);
 
                     if (rec[k][0].place == 0) {
                         Rec_Change = 0;
@@ -1704,15 +1704,15 @@ void UpdateRecords(char Ty)
 
                     if (Ty != 1) break;
                     
-                    for (int loop = 0; loop < 40; ++loop) {
+                    for (int loop = 0; loop < MAX_BUDGET_HISTORY; ++loop) {
                         if (pData.BudgetHistory[loop] != 0) {
                             temp += pData.BudgetHistory[loop];
-                        } else if (loop >= 6 && max == 0) {
+                        } else if (loop >= BUDGET_HISTORY_PAD + 2 && max == 0) {
                             max = loop - 1;
                         }
                     }
 
-                    temp = temp / max;
+                    temp = temp / std::max(max, 1);
 
                     if (rec[k][0].place == 0) {
                         Rec_Change = 0;

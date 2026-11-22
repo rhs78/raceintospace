@@ -67,6 +67,7 @@
 #include "sdlhelper.h"
 #include "settings.h"
 #include "start.h"
+#include "timeline.h"
 #include "state_utils.h"
 #include "utils.h"
 
@@ -294,6 +295,11 @@ int game_main_impl(int argc, char *argv[])
                     AI[0] = AI[1] = 0;
                 }
 
+                // The game starts in Spring of the start year chosen in the
+                // preferences (the default comes from urast.json).
+                Data->Year = Data->StartYear;
+                Data->Season = 0;
+
                 InitData();                   // PICK EVENT CARDS N STUFF
                 MainLoop();                   // PLAY GAME
                 display::graphics.screen()->clear();
@@ -488,14 +494,14 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
     // happen every turn. If a news event has been recorded, assume all
     // other start-of-turn upkeep occured.
     //
-    // Turn 1 is Spring 1957. The event count begins at 0, and is
-    // incremented as the news event text is being generated.
-    turn = 2 * (Data->Year - 57) + Data->Season + 1; // Start on turn 1
+    // Turn 1 is Spring of the start year. The event count begins at 0,
+    // and is incremented as the news event text is being generated.
+    turn = Data->TurnIndex() + 1; // Start on turn 1
     newTurn = (turn > Data->P[MAIL_INVERTED == 1 ? 1 : 0].eCount); // eCount starts at 0.
 
     LOAD = 0;                           // CLEAR LOAD FLAG
 
-    while (Data->Year < 78) {            // WHILE THE YEAR IS NOT 1977
+    while (Data->Year <= Data->EndYear) {  // WHILE THE GAME HAS NOT ENDED
 
         if (newTurn) {
             for (int i = 0; i < NUM_PLAYERS; i++) {
@@ -505,10 +511,10 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
                 pData.RD_Mods_For_Turn = 0;
 
                 // RECORD BUDGET
-                pData.BudgetHistory[Data->Year - 53] = pData.Budget;
+                pData.BudgetHistory[Data->BudgetIndex()] = pData.Budget;
                     
                 // MAKE ESTIMATE OF BUDGETS
-                pData.BudgetHistoryF[Data->Year - 53] =
+                pData.BudgetHistoryF[Data->BudgetIndex()] =
                     (pData.Budget * (brandom(40) + 80)) / 100;
                 
                 // MOVE EXPENDITURES DOWN
@@ -594,8 +600,8 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
                         return;
                     }
 
-                    if (Data->Year == 77 && Data->Season == 1 && Data->Prestige[Prestige_MannedLunarLanding].Place == -1 && MAIL == 1) { // Nobody won
-                        SpecialEnd();
+                    if (Data->IsLastTurn() && Data->Prestige[Prestige_MannedLunarLanding].Place == -1 && MAIL == 1) { // Nobody landed: decide on points
+                        FinalScoreEnd();
                         FadeOut(2, 10, 0, 0);
                         return;
                     }
@@ -639,7 +645,7 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
 
             // Only increase the global event counter if this is really a new
             // turn and not one already played in a save game
-            if (Data->Count == 2 * (2 * (Data->Year - 57) + Data->Season)
+            if (Data->Count == 2 * Data->TurnIndex()
                 + (MAIL_INVERTED == 1 ? other(i) : i)) {
                 Data->Count++;
             }
@@ -727,9 +733,10 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
 
         Update();  /* Moves Future launches to Missions + More */
 
-        if (Data->Year == 77 && Data->Season == 1 && Data->Prestige[Prestige_MannedLunarLanding].Place == -1) {
-            // nobody wins .....
-            SpecialEnd();
+        if (Data->IsLastTurn() && Data->Prestige[Prestige_MannedLunarLanding].Place == -1) {
+            // End of the game without a lunar landing: the country with
+            // more prestige points wins, a tie is a failed objective.
+            FinalScoreEnd();
             MailSwitchEndgame();
             return;
         }

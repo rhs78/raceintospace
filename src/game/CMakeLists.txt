@@ -86,6 +86,7 @@ set(game_sources
   vab.cpp
   vehicle.cpp
   sdlhelper.cpp
+  timeline.cpp
   )
 
 # Files related only to UI
@@ -145,6 +146,7 @@ if(BUILD_TESTING)
     ${test_dir}/game/serialize_test.cpp
     ${test_dir}/game/hardware_test.cpp
     ${test_dir}/game/crisis_test.cpp
+    ${test_dir}/game/timeline_test.cpp
     )
 
   add_executable(game_test ${test_dir}/test_main.cpp ${test_sources} ${game_sources})

@@ -105,8 +105,10 @@ BOOST_AUTO_TEST_CASE(MissionTimingOk_Mars_windows)
     BOOST_TEST(! MissionTimingOk(Mission_MarsFlyby, 60, 1)); // wrong season
     BOOST_TEST(MissionTimingOk(Mission_MarsFlyby, 62, 0));
     BOOST_TEST(! MissionTimingOk(Mission_MarsFlyby, 61, 0)); // wrong year
-    BOOST_TEST(MissionTimingOk(Mission_MarsFlyby, 69, 1));
-    BOOST_TEST(! MissionTimingOk(Mission_MarsFlyby, 69, 0)); // wrong season
+    // Windows after 1966 follow the synodic period (2.135 years) and
+    // differ from the old hand-made table, see timeline_test.cpp.
+    BOOST_TEST(MissionTimingOk(Mission_MarsFlyby, 68, 1));
+    BOOST_TEST(! MissionTimingOk(Mission_MarsFlyby, 69, 0));
 }
 
 BOOST_AUTO_TEST_CASE(MissionTimingOk_Jupiter_windows)

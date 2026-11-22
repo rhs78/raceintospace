@@ -26,6 +26,7 @@
 // This file handles missions in progress, particularly mission failures and their results
 
 #include "mis_c.h"
+#include "timeline.h"
 
 #include <array>
 #include <cassert>
@@ -295,9 +296,9 @@ void PlaySequence(char plr, int step, const char* InSeq, char mode)
     }
 
     if (mode == 0) {
-        interimData.tempReplay.at((plr * 100) + Data->P[plr].PastMissionCount).push_back({false, ID});
+        interimData.tempReplay.at((plr * MAX_MISSION_COUNT) + Data->P[plr].PastMissionCount).push_back({false, ID});
     } else {
-        interimData.tempReplay.at((plr * 100) + Data->P[plr].PastMissionCount).push_back({true, ID});
+        interimData.tempReplay.at((plr * MAX_MISSION_COUNT) + Data->P[plr].PastMissionCount).push_back({true, ID});
     }
 
     if (AI[plr] == 1) {
@@ -1151,8 +1152,7 @@ char DrawMoonSelection(char plr, char nauts, const MisEval& step)
     draw_number(198, 170, dayOnMoon);
     draw_string(0, 0, " ");
     draw_string(0, 0, Month[Data->P[plr].Mission[step.pad].Month]);
-    draw_string(0, 0, "19");
-    draw_number(0, 0, Data->Year);
+    draw_year(0, 0, Data->Year);
 
     InRFBox(25, 51, 135, 85, 10);
     display::graphics.setForegroundColor(11);

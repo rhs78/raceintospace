@@ -40,6 +40,7 @@
    ksel   Which side is currently selected (0=Right, 1=Left) */
 
 #include "ast1.h"
+#include "timeline.h"
 
 #include <algorithm>
 #include <cassert>
@@ -226,11 +227,11 @@ void DrawAstCheck(char plr)
     draw_string(0,0, RomanNumeral(pData.AstroLevel + 1).c_str());
     
     if (Data->Season == 0) {
-        draw_string(160, 73, "SPRING 19");
+        draw_string(160, 73, "SPRING ");
     } else {
-        draw_string(170, 73, "FALL 19");
+        draw_string(170, 73, "FALL ");
     }
-    draw_number(0, 0, Data->Year);
+    draw_year(0, 0, Data->Year);
 
     int pos_table[] = {ASTRO_POOL_LVL1, ASTRO_POOL_LVL2, ASTRO_POOL_LVL3, ASTRO_POOL_LVL4, ASTRO_POOL_LVL5};
     int pos = pos_table[pData.AstroLevel];
@@ -380,11 +381,11 @@ void DrawAstSel(char plr)
     draw_string(185, 41, "REMAINING POSITIONS: ");
 
     if (Data->Season == 0) {
-        draw_string(88, 41, "SPRING 19");
+        draw_string(88, 41, "SPRING ");
     } else {
-        draw_string(98, 41, "FALL 19");
+        draw_string(98, 41, "FALL ");
     }
-    draw_number(0, 0, Data->Year);
+    draw_year(0, 0, Data->Year);
     
     display::graphics.setForegroundColor(9);
     draw_string(12, 52, "NAME:");

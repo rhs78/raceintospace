@@ -28,6 +28,7 @@
 // This file handles the R&D and Purchasing Facilities, and Technology Transfer
 
 #include "rdplex.h"
+#include "timeline.h"
 
 #include <algorithm>
 #include <cassert>
@@ -211,8 +212,7 @@ void DrawRD(char player_index)
         draw_string(162, 9, "FALL");
     }
 
-    draw_string(163, 16, "19");
-    draw_number(0, 0, Data->Year);
+    draw_year(163, 16, Data->Year);
 
     draw_string(200, 9, "CASH:");
     DrawCashOnHand(player_index);
@@ -1215,8 +1215,7 @@ void DrawHPurc(char player_index)
         draw_string(162, 9, "FALL");
     }
 
-    draw_string(163, 16, "19");
-    draw_number(0, 0, Data->Year);
+    draw_year(163, 16, Data->Year);
 
     draw_string(200, 9, "CASH:");
     DrawCashOnHand(player_index);
