@@ -198,11 +198,19 @@ void DrawStartYear(PreferencesMode where)
         IOBox(144, 68, 221, 103);
     }
 
+    // Upper half: start year, lower half: sandbox mode
     fill_rectangle(146, 70, 219, 101, 0);
     display::graphics.setForegroundColor(5);
-    draw_string(183, 80, "START YEAR", ALIGN_CENTER);
+    draw_string(150, 79, "START");
     display::graphics.setForegroundColor(where == PREFS_INGAME ? 6 : 11);
-    draw_string(183, 94, FormatYear(Data->StartYear).c_str(), ALIGN_CENTER);
+    draw_string(215, 79, FormatYear(Data->StartYear).c_str(), ALIGN_RIGHT);
+    display::graphics.setForegroundColor(4);
+    grMoveTo(147, 85);
+    grLineTo(218, 85);
+    display::graphics.setForegroundColor(5);
+    draw_string(150, 96, "SANDBOX");
+    display::graphics.setForegroundColor(where == PREFS_INGAME ? 6 : 11);
+    draw_string(215, 96, Data->Def.Sandbox ? "ON" : "OFF", ALIGN_RIGHT);
 }
 
 
@@ -461,6 +469,7 @@ int Preferences(int player, PreferencesMode where)
             Data->Def.Lev1 = Data->Def.Ast1 = Data->Def.Ast2 = 0;
             Data->Def.Lev2 = 2;   // start computer level 3
             Data->Def.Input = 2;  // Historical Model / Historical Roster
+            Data->Def.Sandbox = 0;
         }
 
         if (Data->Def.Plr1 > 1) {
@@ -615,7 +624,15 @@ int Preferences(int player, PreferencesMode where)
             Data->Def.Input = (Data->Def.Input + 1) % numHModels;
             DrawModel(Data->Def.Input);
 
-        } else if ((x >= 146 && y >= 70 && x <= 219 && y <= 101 && mousebuttons > 0) || key == 'Y') {
+        } else if ((x >= 146 && y >= 86 && x <= 219 && y <= 101 && mousebuttons > 0) || key == 'B') {
+            if (where == PREFS_INGAME) continue;
+            /* Sandbox mode on/off */
+
+            InBox(144, 68, 221, 103);
+            WaitForMouseUp();
+            Data->Def.Sandbox = !Data->Def.Sandbox;
+            DrawStartYear(where);
+        } else if ((x >= 146 && y >= 70 && x <= 219 && y <= 85 && mousebuttons > 0) || key == 'Y') {
             if (where == PREFS_INGAME) continue;
             /* Start year: cycle 1955, 1956, 1957 */
 

@@ -601,6 +601,12 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
             }
 
             if (!AI[i]) {
+                // Sandbox mode: money plays no role for human players.
+                // 999 MB is the largest amount the budget screens can show.
+                if (Data->Def.Sandbox) {
+                    Data->P[plr[i]].Cash = 999;
+                }
+
                 NextTurn(plr[i]);
                 VerifySafety(plr[i]);
 

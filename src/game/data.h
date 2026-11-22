@@ -155,7 +155,7 @@ struct Defl {
     int8_t Ast1, Ast2;  /**< 0=Easy, 1=Medium, 2=Hard */
     int8_t Input;       /**< 0=Mouse, 1=Keyboard, 2=Joystick */
     int8_t Anim;        /**< 0=Full, 1=Partial, 2=Results Only */
-    int8_t Music;       /**< 0=Full, 1=Partial, 2=None (DEPRECATED)*/
+    int8_t Sandbox;     /**< 1 = sandbox mode: human players never run out of money (was: Music, deprecated) */
     int8_t Sound;       /**< 0=On, 1=Off (DEPRECATED) */
 
     template<class Archive>
@@ -169,7 +169,7 @@ struct Defl {
         ar(CEREAL_NVP(Ast2));
         ar(CEREAL_NVP(Input));
         ar(CEREAL_NVP(Anim));
-        ar(CEREAL_NVP(Music));
+        ar(CEREAL_NVP(Sandbox));
         ar(CEREAL_NVP(Sound));
 
         // SECURITY: Data sanitization

@@ -706,7 +706,7 @@ int RunDialog(char plr, const char* heading, const MisEval& step,
     display::graphics.setForegroundColor(9);
     draw_string(9, 59, scenario.title.c_str());
     display::graphics.setForegroundColor(11);
-    DrawWrapped(9, 70, scenario.text, 296, 7, 5);
+    DrawWrapped(9, 68, scenario.text, 296, 7, 6);
 
     // Options
     for (size_t i = 0; i < opts.size(); ++i) {
@@ -874,6 +874,16 @@ CrisisOutcome OfferCrisis(const CrisisRequest& req)
     ScenarioText scenario = FindScenario(data, "crisis", step.FName,
                                          req.fail ? req.fail->code : -1,
                                          req.cls);
+
+    // Show the concrete failure from fails.json first, then the
+    // (historical or generic) crisis text.
+    if (req.fail) {
+        std::string failText(req.fail->text);
+
+        if (!failText.empty()) {
+            scenario.text = failText + " " + scenario.text;
+        }
+    }
 
     std::vector<UiOption> opts;
     std::vector<CrisisChoice> map;
