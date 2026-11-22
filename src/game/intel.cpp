@@ -933,20 +933,22 @@ void HarIntel(char plr, char acc)
     } else {
         auto& otherData = Data->P[other(plr)];
         // accurate programs pick one
+        // The candidate slots are positional: 7 per category (programs
+        // beyond the 7th of a list can not be picked).
         for (int i = 0; i < 7; i++) {
-            if (otherData.Probe[i].Num >= 0) {
+            if (i < (int)otherData.Probe.size() && otherData.Probe[i].Num >= 0) {
                 save[i] = 1;
             }
 
-            if (otherData.Rocket[i].Num >= 0) {
+            if (i < (int)otherData.Rocket.size() && otherData.Rocket[i].Num >= 0) {
                 save[i + 7] = 1;
             }
 
-            if (otherData.Manned[i].Num >= 0) {
+            if (i < (int)otherData.Manned.size() && otherData.Manned[i].Num >= 0) {
                 save[i + 14] = 1;
             }
 
-            if (otherData.Misc[i].Num >= 0) {
+            if (i < (int)otherData.Misc.size() && otherData.Misc[i].Num >= 0) {
                 save[i + 21] = 1;
             }
         }
@@ -1093,6 +1095,30 @@ void DrawIntelImage(char plr, char poff)
 
 
 /**
+ * The intelligence safety factor of a program: [category][unit].  The
+ * table is sized by the hardware lists; the intelligence code also uses
+ * positions beyond them (the classic game's padded 7 columns), which
+ * grow the table on demand with zeros.
+ */
+int8_t& IntelTableAt(BuzzData& player, int category, int unit)
+{
+    auto& table = player.IntelHardwareTable;
+
+    if (size_t(category) >= table.size()) {
+        table.resize(category + 1);
+    }
+
+    auto& row = table[category];
+
+    if (size_t(unit) >= row.size()) {
+        row.resize(unit + 1, 0);
+    }
+
+    return row[unit];
+}
+
+
+/**
  * Save an Intel Library briefing to record.
  *
  * Each Intel briefing is given a unique ID, its record # within
@@ -1199,7 +1225,7 @@ void SaveIntel(char plr, char prg, char ind)
     intel.SafetyFactor = safetyFactor;
 
     if (prg != 5) {
-        pData.IntelHardwareTable[prg][ind] = safetyFactor;
+        IntelTableAt(pData, prg, ind) = safetyFactor;
     }
 }
 
@@ -1220,7 +1246,7 @@ void ImpHard(char plr, char hd, char dx)
 {
     // based on the hardware improve safety factor
     Equipment& program = HardwareProgram(plr, hd, dx);
-    Data->P[plr].IntelHardwareTable[hd][dx] =
+    IntelTableAt(Data->P[plr], hd, dx) =
         program.MaxRD - brandom(program.MaxSafety - program.MaxRD);
 }
 
@@ -1761,7 +1787,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
     case ROCKET_HARDWARE:  //draw_string(137,150,"ROCKETS");
         for (int i = 0; i < 4; i++) {
             int sfu = (pData.Rocket[i].Num >= 0)? pData.Rocket[i].Safety : -1;
-            int sfs = pData.IntelHardwareTable[ROCKET_HARDWARE][i];
+            int sfs = IntelTableAt(pData, ROCKET_HARDWARE, i);
             if (plr == 1) std::swap(sfu, sfs);
 
             switch (i) {
@@ -1827,7 +1853,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
     case MANNED_HARDWARE:  // draw_string(137,150,"CAPSULES");
         for (int i = 0; i < 5; i++) {
             int sfu = (pData.Manned[i].Num >= 0)? pData.Manned[i].Safety : -1;
-            int sfs = pData.IntelHardwareTable[MANNED_HARDWARE][i];
+            int sfs = IntelTableAt(pData, MANNED_HARDWARE, i);
             if (plr == 1) std::swap(sfu, sfs);
 
             switch (i) {
@@ -1905,7 +1931,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
 
     case PROBE_HARDWARE:  // draw_string(100,150,"SATELLITES & LM'S");
         sfu = (pData.Manned[MANNED_HW_ONE_MAN_MODULE].Num >= 0)? pData.Manned[MANNED_HW_ONE_MAN_MODULE].Safety : -1;
-        sfs = pData.IntelHardwareTable[MANNED_HARDWARE][MANNED_HW_ONE_MAN_MODULE];
+        sfs = IntelTableAt(pData, MANNED_HARDWARE, MANNED_HW_ONE_MAN_MODULE);
         if (plr == 1) std::swap(sfu, sfs);
 
         if (sfu > 0) {
@@ -1919,7 +1945,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
         }
 
         sfu = (pData.Manned[MANNED_HW_TWO_MAN_MODULE].Num >= 0)? pData.Manned[MANNED_HW_TWO_MAN_MODULE].Safety : -1;
-        sfs = pData.IntelHardwareTable[MANNED_HARDWARE][MANNED_HW_TWO_MAN_MODULE];
+        sfs = IntelTableAt(pData, MANNED_HARDWARE, MANNED_HW_TWO_MAN_MODULE);
         if (plr == 1) std::swap(sfu, sfs);
 
         if (sfu > 0) {
@@ -1934,7 +1960,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
 
         for (int i = 0; i < 3; i++) {
             sfu = (pData.Probe[i].Num >= 0)? pData.Probe[i].Safety : -1;
-            sfs = pData.IntelHardwareTable[PROBE_HARDWARE][i];
+            sfs = IntelTableAt(pData, PROBE_HARDWARE, i);
             if (plr == 1) std::swap(sfu, sfs);
 
             switch (i) {
@@ -1986,7 +2012,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
 
     case MISC_HARDWARE:  // draw_string(100,150,"ADDITIONAL PROGRAMS");
         sfu = (pData.Misc[MISC_HW_EVA_SUITS].Num >= 0)? pData.Misc[MISC_HW_EVA_SUITS].Safety : -1;
-        sfs = pData.IntelHardwareTable[MISC_HARDWARE][MISC_HW_EVA_SUITS];
+        sfs = IntelTableAt(pData, MISC_HARDWARE, MISC_HW_EVA_SUITS);
         if (plr == 1) std::swap(sfu, sfs);
 
         if (sfu > 0) {
@@ -2000,7 +2026,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
         }
 
         sfu = (pData.Misc[MISC_HW_DOCKING_MODULE].Num >= 0)? pData.Misc[MISC_HW_DOCKING_MODULE].Safety : -1;
-        sfs = pData.IntelHardwareTable[MISC_HARDWARE][MISC_HW_DOCKING_MODULE];
+        sfs = IntelTableAt(pData, MISC_HARDWARE, MISC_HW_DOCKING_MODULE);
         if (plr == 1) std::swap(sfu, sfs);
 
         if (sfu > 0) {
@@ -2014,7 +2040,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
         }
 
         sfu = (pData.Rocket[ROCKET_HW_BOOSTERS].Num >= 0)? pData.Rocket[ROCKET_HW_BOOSTERS].Safety : -1;
-        sfs = pData.IntelHardwareTable[ROCKET_HARDWARE][ROCKET_HW_BOOSTERS];
+        sfs = IntelTableAt(pData, ROCKET_HARDWARE, ROCKET_HW_BOOSTERS);
         if (plr == 1) std::swap(sfu, sfs);
 
         if (sfu > 0) {
@@ -2028,7 +2054,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
         }
 
         sfu = (pData.Misc[MISC_HW_KICKER_A].Num >= 0)? pData.Misc[MISC_HW_KICKER_A].Safety : -1;
-        sfs = pData.IntelHardwareTable[MISC_HARDWARE][MISC_HW_KICKER_A];
+        sfs = IntelTableAt(pData, MISC_HARDWARE, MISC_HW_KICKER_A);
         if (plr == 1) std::swap(sfu, sfs);
 
         if (sfu > 0) {
@@ -2042,7 +2068,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
         }
 
         sfu = (pData.Misc[MISC_HW_KICKER_B].Num >= 0)? pData.Misc[MISC_HW_KICKER_B].Safety : -1;
-        sfs = pData.IntelHardwareTable[MISC_HARDWARE][MISC_HW_KICKER_B];
+        sfs = IntelTableAt(pData, MISC_HARDWARE, MISC_HW_KICKER_B);
         if (plr == 1) std::swap(sfu, sfs);
 
         if (sfu > 0) {
@@ -2062,7 +2088,7 @@ void IInfo(char plr, char loc, char w, const DisplayContext& dctx)
                 sfs = pData.Misc[MISC_HW_KICKER_C].Safety;
             }
         } else if (plr == 0) {
-            sfs = pData.IntelHardwareTable[MISC_HARDWARE][MISC_HW_KICKER_C];
+            sfs = IntelTableAt(pData, MISC_HARDWARE, MISC_HW_KICKER_C);
         }
 
         if (sfs > 0) {

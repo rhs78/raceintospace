@@ -618,7 +618,7 @@ void Programs(char plr, char prog)
     }
 
     DispLeft(plr, BarA, count, now2, &M[0]);
-    NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+    NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
     FadeIn(2, 10, 0, 0);
 
     if (CheckProgram(plr, prog) == PROGRAM_IS_UNDERCREWED) {
@@ -818,7 +818,7 @@ void Programs(char plr, char prog)
                 }
 
                 Flts(ksel, grp);
-                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
 
                 if (key > 0) {
                     delay(150);
@@ -829,7 +829,7 @@ void Programs(char plr, char prog)
                 ClearIt();
                 Flts(grp, 0);
                 grp = 0;
-                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
                 WaitForMouseUp();
             } else if (x >= 164 && y >= 154 && x <= 238 && y <= 166
                        && mousebuttons > 0) {
@@ -837,7 +837,7 @@ void Programs(char plr, char prog)
                 ClearIt();
                 Flts(grp, 1);
                 grp = 1;
-                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
                 WaitForMouseUp();
             } else if (x >= 164 && y >= 169 && x <= 238 && y <= 181
                        && mousebuttons > 0) {
@@ -845,7 +845,7 @@ void Programs(char plr, char prog)
                 ClearIt();
                 Flts(grp, 2);
                 grp = 2;
-                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
                 WaitForMouseUp();
             } else if (x >= 164 && y >= 184 && x <= 238 && y <= 196
                        && mousebuttons > 0) {
@@ -853,7 +853,7 @@ void Programs(char plr, char prog)
                 ClearIt();
                 Flts(grp, 3);
                 grp = 3;
-                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
                 WaitForMouseUp();
             } else if (x >= 241 && y >= 139 && x <= 315 && y <= 151
                        && mousebuttons > 0) {
@@ -861,7 +861,7 @@ void Programs(char plr, char prog)
                 ClearIt();
                 Flts(grp, 4);
                 grp = 4;
-                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
                 WaitForMouseUp();
             } else if (x >= 241 && y >= 154 && x <= 315 && y <= 166
                        && mousebuttons > 0) {
@@ -869,7 +869,7 @@ void Programs(char plr, char prog)
                 ClearIt();
                 Flts(grp, 5);
                 grp = 5;
-                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
                 WaitForMouseUp();
             } else if (x >= 241 && y >= 169 && x <= 315 && y <= 181
                        && mousebuttons > 0) {
@@ -877,7 +877,7 @@ void Programs(char plr, char prog)
                 ClearIt();
                 Flts(grp, 6);
                 grp = 6;
-                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
                 WaitForMouseUp();
             } else if (x >= 241 && y >= 184 && x <= 315 && y <= 196
                        && mousebuttons > 0) {
@@ -885,7 +885,7 @@ void Programs(char plr, char prog)
                 ClearIt();
                 Flts(grp, 7);
                 grp = 7;
-                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
                 WaitForMouseUp();
             } else if (((x >= 245 && y >= 88 && x <= 314 && y <= 100
                          && mousebuttons > 0) || key == 'A')
@@ -938,7 +938,7 @@ void Programs(char plr, char prog)
                     FltsTxt(grp, 9);
                 }
 
-                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp]);
+                NewAstList(plr, prog, Data->P[plr].Crew[prog][grp].data());
                 WaitForMouseUp();
 
                 if (key > 0) {

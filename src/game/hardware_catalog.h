@@ -31,6 +31,11 @@ enum class HardwareRole {
     Eva,
     DockingModule,
     PhotoRecon,
+    // Schema extension of stage 4c: roles for later content (validation
+    // only, no game mechanics yet).
+    Spaceplane,   ///< winged vehicle, lands on a runway (manned category)
+    LabModule,    ///< lab flown with a capsule (misc category)
+    Station,      ///< long-lived object in orbit (misc category)
 };
 
 struct HardwareImages {
@@ -124,11 +129,39 @@ struct HardwareEntry {
     std::string animId;         /**< two characters, e.g. "C2" */
     HardwareImages images;
     std::string helpId;         /**< e.g. "i20103" */
-    int legacyCat = 0;          /**< EquipmentIndex */
-    int legacyIdx = 0;          /**< index within the legacy array */
+    /** Position in the 21 original programs per side (EquipmentIndex and
+     *  index); -1 for programs that are not part of the original game. */
+    int legacyCat = -1;
+    int legacyIdx = -1;
+
+    // Schema extensions of stage 4c (checked by validation, no mechanics).
+    /** "rocket" (default) or "air_launch" (dropped from a carrier plane). */
+    std::string launchMode = "rocket";
+    /** False for vehicles that survive the flight (spaceplanes, stations). */
+    bool consumedOnFlight = true;
+    /** Probe kind: satellite, impact, flyby, orbiter, lander, rover,
+     *  sample_return, atmosphere; "" for non-probes. */
+    std::string probeType;
+    std::vector<std::string> targets;   ///< earth, moon, venus, mars ...
+    /** For satellites: research, weather, communication, reconnaissance. */
+    std::string satelliteGoal;
+    std::vector<std::string> compatibleLabs;  ///< lab_module ids
+    /**
+     * Capsule with compatible landers: on which pad of a joint mission the
+     * kicker is flown.  "all" = on every pad, "second_pad" = only on the
+     * lander's pad (default).
+     */
+    std::string kickerOnPart = "second_pad";
+    /** Entry exists only for tests (scenario test_extra.json). */
+    bool testOnly = false;
+    /** Offered by the research and purchase screens (default true). */
+    bool researchable = true;
 
     /** The mission slot this hardware fills. */
     MissionHardwareType missionType() const;
+
+    /** The EquipmentIndex of the category (PROBE_HARDWARE ...). */
+    int categoryIndex() const;
 };
 
 class HardwareCatalog
@@ -143,6 +176,12 @@ public:
     const std::vector<HardwareEntry>& entries() const { return mEntries; }
 
     const HardwareEntry* FindById(const std::string& id) const;
+
+    /** Catalog index (position in entries()) of an id, -1 if unknown. */
+    int IndexOf(const std::string& id) const;
+
+    /** Entry by catalog index, nullptr if out of range. */
+    const HardwareEntry* At(int index) const;
 
     /** Lookup by player (0/1) and legacy (EquipmentIndex, index). */
     const HardwareEntry* FindByLegacy(int player, int cat, int idx) const;
@@ -170,13 +209,13 @@ private:
 const HardwareCatalog& GetHardwareCatalog();
 
 /**
- * Catalog entry for an Equipment, looked up via its ID characters
- * (category letter and index). Equipment carries no side, so this is only
- * meaningful for side-independent data. Returns nullptr if not found.
+ * Catalog entry of an Equipment, via its CatalogIndex.  The entry carries
+ * the side, so the result is side specific.  Returns nullptr if the
+ * Equipment has no valid catalog index.
  */
 const HardwareEntry* CatalogEntryForEquipment(const Equipment& program);
 
-/** Like above, but for the given side (player 0/1): for side-specific data. */
+/** Same as above; the player argument is only kept for older callers. */
 const HardwareEntry* CatalogEntryForEquipment(const Equipment& program,
                                               int player);
 

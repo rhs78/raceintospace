@@ -322,7 +322,7 @@ char HeroCheck(int which)
  */
 int SetCapsuleFirstGoal(char plr, int program)
 {
-    const HardwareEntry* entry = GetHardwareCatalog().FindByLegacy(
+    const HardwareEntry* entry = HardwareEntryAt(
                                      plr, MANNED_HARDWARE,
                                      ProgramToMannedIndex(program));
 

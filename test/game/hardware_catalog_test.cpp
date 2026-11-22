@@ -24,6 +24,7 @@
 #include "game/data.h"
 #include "game/fs.h"
 #include "game/hardware.h"
+#include "game/scenario.h"
 #include "game/hardware_catalog.h"
 #include "game/mission_util.h"
 #include "game/serialize.h"
@@ -269,12 +270,25 @@ std::string OrigLiftoffImage(int plr, int hw, int unit)
 
 const char CATEGORY_ID[4] = {'P', 'R', 'C', 'M'};
 
+/** The classic program (US side, equal to the USSR one for the checked
+ *  data) of a category letter and index, identified by its catalog index. */
 Equipment MakeEquipment(char category, int index)
 {
-    Equipment eq;
-    std::memset(&eq, 0, sizeof(eq));
+    Equipment eq{};
     eq.ID[0] = category;
     eq.ID[1] = static_cast<char>('0' + index);
+
+    for (int c = 0; c < 4; c++) {
+        if (category == CATEGORY_ID[c]) {
+            const HardwareEntry* e =
+                GetHardwareCatalog().FindByLegacy(0, c, index);
+
+            if (e != nullptr) {
+                eq.CatalogIndex = GetHardwareCatalog().IndexOf(e->id);
+            }
+        }
+    }
+
     return eq;
 }
 
@@ -319,7 +333,14 @@ BOOST_AUTO_TEST_SUITE(hardware_catalog_suite)
 BOOST_AUTO_TEST_CASE(catalog_loads_and_has_all_legacy_slots)
 {
     const HardwareCatalog& cat = GetHardwareCatalog();
-    BOOST_CHECK_EQUAL(cat.entries().size(), 42u);
+    // 21 original programs per side plus the test-only entries
+    size_t classic = 0;
+
+    for (const HardwareEntry& e : cat.entries()) {
+        classic += e.testOnly ? 0 : 1;
+    }
+
+    BOOST_CHECK_EQUAL(classic, 42u);
 
     for (int player = 0; player < NUM_PLAYERS; player++) {
         for (int c = PROBE_HARDWARE; c <= MISC_HARDWARE; c++) {
@@ -363,10 +384,7 @@ BOOST_AUTO_TEST_CASE(catalog_lookup_by_id_and_role)
 BOOST_AUTO_TEST_CASE(catalog_matches_urast_json)
 {
     std::unique_ptr<Players> players(new Players());
-    std::memset(players.get(), 0, sizeof(Players));
-    std::string path = locate_file("urast.json", FT_DATA);
-    BOOST_REQUIRE(!path.empty());
-    DESERIALIZE_JSON_FILE(players, path);
+    BuildStartState(*players, "CLASSIC", StartModel::Basic);
 
     const HardwareCatalog& cat = GetHardwareCatalog();
 
@@ -799,10 +817,7 @@ BOOST_AUTO_TEST_CASE(rule_fields_match_former_rules)
 BOOST_AUTO_TEST_CASE(role_helpers_replace_name_checks)
 {
     std::unique_ptr<Players> players(new Players());
-    std::memset(players.get(), 0, sizeof(Players));
-    std::string path = locate_file("urast.json", FT_DATA);
-    BOOST_REQUIRE(!path.empty());
-    DESERIALIZE_JSON_FILE(players, path);
+    BuildStartState(*players, "CLASSIC", StartModel::Basic);
 
     for (int plr = 0; plr < NUM_PLAYERS; plr++) {
         const BuzzData& p = players->P[plr];
@@ -893,10 +908,13 @@ BOOST_AUTO_TEST_CASE(anim_ids_match_sequence_keys)
         char sideLetter = (e.player == 0) ? 'U' : 'S';
         known.insert({sideLetter, e.animId});
 
-        // anim_id equals the original ID characters
-        BOOST_CHECK_EQUAL(e.animId,
-                          std::string(1, CATEGORY_ID[e.legacyCat])
-                          + std::to_string(e.legacyIdx));
+        // anim_id equals the original ID characters (test-only entries
+        // reuse the animations of other programs)
+        if (e.legacyCat >= 0) {
+            BOOST_CHECK_EQUAL(e.animId,
+                              std::string(1, CATEGORY_ID[e.legacyCat])
+                              + std::to_string(e.legacyIdx));
+        }
 
         if (!used.count({sideLetter, e.animId})) {
             unused.insert(e.id);

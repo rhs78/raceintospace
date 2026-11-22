@@ -41,10 +41,12 @@
 #include "game_main.h"
 #include "gamedata.h"
 #include "gr.h"
+#include "hardware.h"
 #include "ioexception.h"
 #include "options.h"
 #include "pace.h"
 #include "randomize.h"
+#include "scenario.h"
 #include "sdlhelper.h"
 #include "settings.h"
 #include "timeline.h"
@@ -186,9 +188,10 @@ void DrawPrefs(PreferencesMode where, bool is_AI_1, bool is_AI_2, AudioConfig au
 
 
 /**
- * Draw the start year selection into the fourth button of the middle
- * panel (the animation level button, which is disabled in this game).
- * The year can only be changed when a new game is set up.
+ * Draw the start year, sandbox mode and scenario selection into the
+ * fourth button of the middle panel (the animation level button, which is
+ * disabled in this game).  They can only be changed when a new game is
+ * set up.
  */
 void DrawStartYear(PreferencesMode where)
 {
@@ -198,19 +201,35 @@ void DrawStartYear(PreferencesMode where)
         IOBox(144, 68, 221, 103);
     }
 
-    // Upper half: start year, lower half: sandbox mode
+    // Three rows: start year, sandbox mode, scenario
     fill_rectangle(146, 70, 219, 101, 0);
     display::graphics.setForegroundColor(5);
-    draw_string(150, 79, "START");
+    draw_string(150, 77, "START");
     display::graphics.setForegroundColor(where == PREFS_INGAME ? 6 : 11);
-    draw_string(215, 79, FormatYear(Data->StartYear).c_str(), ALIGN_RIGHT);
+    draw_string(215, 77, FormatYear(Data->StartYear).c_str(), ALIGN_RIGHT);
     display::graphics.setForegroundColor(4);
-    grMoveTo(147, 85);
-    grLineTo(218, 85);
+    grMoveTo(147, 79);
+    grLineTo(218, 79);
     display::graphics.setForegroundColor(5);
-    draw_string(150, 96, "SANDBOX");
+    draw_string(150, 87, "SANDBOX");
     display::graphics.setForegroundColor(where == PREFS_INGAME ? 6 : 11);
-    draw_string(215, 96, Data->Def.Sandbox ? "ON" : "OFF", ALIGN_RIGHT);
+    draw_string(215, 87, Data->Def.Sandbox ? "ON" : "OFF", ALIGN_RIGHT);
+    display::graphics.setForegroundColor(4);
+    grMoveTo(147, 89);
+    grLineTo(218, 89);
+    display::graphics.setForegroundColor(5);
+    draw_string(150, 97, "SCENARIO");
+
+    std::string scenario = DefaultScenarioId();
+
+    try {
+        scenario = ScenarioOf(*Data).name();
+    } catch (const std::exception&) {
+        // Show the default name if the scenario cannot be loaded.
+    }
+
+    display::graphics.setForegroundColor(where == PREFS_INGAME ? 6 : 11);
+    draw_string(215, 97, scenario.c_str(), ALIGN_RIGHT);
 }
 
 
@@ -546,21 +565,9 @@ int Preferences(int player, PreferencesMode where)
             key = 0;
 
             if (where != PREFS_INGAME && (Data->Def.Input == 2 || Data->Def.Input == 3)) {
-                std::ifstream os{locate_file("hist.json", FT_DATA)};
-                cereal::JSONInputArchive ar{os};
-
-                // Don't make a loop over the players as this
-                // will break the preprocessor macro.
-
-                ARCHIVE_VECTOR(Data->P[0].Probe, struct Equipment, 7);
-                ARCHIVE_VECTOR(Data->P[0].Rocket, struct Equipment, 7);
-                ARCHIVE_VECTOR(Data->P[0].Manned, struct Equipment, 7);
-                ARCHIVE_VECTOR(Data->P[0].Misc, struct Equipment, 7);
-
-                ARCHIVE_VECTOR(Data->P[1].Probe, struct Equipment, 7);
-                ARCHIVE_VECTOR(Data->P[1].Rocket, struct Equipment, 7);
-                ARCHIVE_VECTOR(Data->P[1].Manned, struct Equipment, 7);
-                ARCHIVE_VECTOR(Data->P[1].Misc, struct Equipment, 7);
+                // Historical model: start values of the scenario
+                ApplyStartModel(*Data, ScenarioOf(*Data),
+                                StartModel::Historical);
             }
 
             // Random Equipment
@@ -569,11 +576,10 @@ int Preferences(int player, PreferencesMode where)
             }
 
             for (int i = 0; i < NUM_PLAYERS; i++) {
-                for (int k = 0; k < 7; k++) {
-                    Data->P[i].Probe[k].MSF = Data->P[i].Probe[k].MaxRD;
-                    Data->P[i].Rocket[k].MSF = Data->P[i].Rocket[k].MaxRD;
-                    Data->P[i].Manned[k].MSF = Data->P[i].Manned[k].MaxRD;
-                    Data->P[i].Misc[k].MSF = Data->P[i].Misc[k].MaxRD;
+                for (int c = PROBE_HARDWARE; c <= MISC_HARDWARE; c++) {
+                    for (Equipment& e : HardwareList(Data->P[i], c)) {
+                        e.MSF = e.MaxRD;
+                    }
                 }
             }
 
@@ -624,7 +630,7 @@ int Preferences(int player, PreferencesMode where)
             Data->Def.Input = (Data->Def.Input + 1) % numHModels;
             DrawModel(Data->Def.Input);
 
-        } else if ((x >= 146 && y >= 86 && x <= 219 && y <= 101 && mousebuttons > 0) || key == 'B') {
+        } else if ((x >= 146 && y >= 80 && x <= 219 && y <= 89 && mousebuttons > 0) || key == 'B') {
             if (where == PREFS_INGAME) continue;
             /* Sandbox mode on/off */
 
@@ -632,7 +638,31 @@ int Preferences(int player, PreferencesMode where)
             WaitForMouseUp();
             Data->Def.Sandbox = !Data->Def.Sandbox;
             DrawStartYear(where);
-        } else if ((x >= 146 && y >= 70 && x <= 219 && y <= 85 && mousebuttons > 0) || key == 'Y') {
+        } else if ((x >= 146 && y >= 90 && x <= 219 && y <= 101 && mousebuttons > 0) || key == 'C') {
+            if (where == PREFS_INGAME) continue;
+            /* Scenario: cycle through the selectable scenarios.  There is
+             * only CLASSIC for now, so nothing changes. */
+
+            InBox(144, 68, 221, 103);
+            WaitForMouseUp();
+            const std::vector<std::string> scenarios = ListScenarios(false);
+
+            if (scenarios.size() > 1) {
+                size_t next = 0;
+
+                for (size_t i = 0; i < scenarios.size(); i++) {
+                    if (scenarios[i] == ScenarioOf(*Data).id()) {
+                        next = (i + 1) % scenarios.size();
+                    }
+                }
+
+                // New hardware lists; keeps the players' names and settings.
+                BuildHardware(*Data, GetScenario(scenarios[next]),
+                              StartModel::Basic);
+            }
+
+            DrawStartYear(where);
+        } else if ((x >= 146 && y >= 70 && x <= 219 && y <= 79 && mousebuttons > 0) || key == 'Y') {
             if (where == PREFS_INGAME) continue;
             /* Start year: cycle 1955, 1956, 1957 */
 

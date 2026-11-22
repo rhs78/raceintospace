@@ -19,14 +19,96 @@
 
 #include "state_utils.h"
 
-#include <stdexcept>
 #include <cstdio>
+#include <sstream>
+#include <stdexcept>
 
 #include "Buzz_inc.h" // IWYU pragma: keep
 #include "crew.h"
 #include "hardware.h"
 #include "game_main.h"
+#include "fs.h"
+#include "logging.h"
 #include "mission_util.h"
+#include "serialize.h"
+
+LOG_DEFAULT_CATEGORY(LOG_ROOT_CAT)
+
+
+/**
+ * Serialize the whole game state (JSON text, no indentation).  This is
+ * the format of the Players part of save games, also used for the undo
+ * files of the purchase screens.
+ */
+std::string SerializeGameState(Players& state)
+{
+    std::stringstream stream;
+    {
+        using Opt = cereal::JSONOutputArchive::Options;
+        cereal::JSONOutputArchive archive(stream, Opt::NoIndent());
+        archive(cereal::make_nvp("Data", state));
+    }
+    return stream.str();
+}
+
+
+/**
+ * Restore a game state from SerializeGameState() text, in place.
+ *
+ * \throws std::exception  if the text is not a valid game state.
+ */
+void DeserializeGameState(Players& state, const std::string& text)
+{
+    std::stringstream stream(text);
+    cereal::JSONInputArchive archive(stream);
+    archive(cereal::make_nvp("Data", state));
+}
+
+
+/** Write the game state (Data) to a file of the save directory. */
+bool WriteUndoFile(const char* name)
+{
+    const std::string text = SerializeGameState(*Data);
+    FILE* file = sOpen(name, "wb", FT_SAVE);
+
+    if (file == nullptr) {
+        return false;
+    }
+
+    const bool ok = fwrite(text.data(), 1, text.size(), file) == text.size();
+    fclose(file);
+    return ok;
+}
+
+
+/** Restore the game state (Data) from a file written by WriteUndoFile(). */
+bool ReadUndoFile(const char* name)
+{
+    FILE* file = sOpen(name, "rb", FT_SAVE);
+
+    if (file == nullptr) {
+        return false;
+    }
+
+    std::string text;
+    char chunk[65536];
+    size_t n;
+
+    while ((n = fread(chunk, 1, sizeof(chunk), file)) > 0) {
+        text.append(chunk, n);
+    }
+
+    fclose(file);
+
+    try {
+        DeserializeGameState(*Data, text);
+    } catch (const std::exception& e) {
+        LOG_WARNING("cannot restore %s: %s", name, e.what());
+        return false;
+    }
+
+    return true;
+}
 
 
 namespace

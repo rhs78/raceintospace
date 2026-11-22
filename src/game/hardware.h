@@ -2,13 +2,15 @@
 #define HARDWARE_H
 
 #include <array>
+#include <vector>
 
 #include "data.h"
 #include "hardware_catalog.h"
 
 /**
- * Number of hardware programs in use per category (the arrays in
- * PlayerData are padded to 7 entries, but only these are used).
+ * Number of hardware programs per category in the CLASSIC scenario.  Only
+ * for code and tests that are specific to the classic hardware; other code
+ * must use HardwareCount() (list sizes of the game state).
  */
 const int PROBE_HW_COUNT = 3;
 const int ROCKET_HW_COUNT = 5;   // includes the Boosters
@@ -21,10 +23,27 @@ const int MISC_HW_COUNT = 6;
  */
 const int HARD_DOCKING_MODULE = 4;
 
-/** Number of crewed programs (Manned[0..4] - capsules/minishuttle). */
+/**
+ * Number of crewed programs (Manned[0..4] - capsules/minishuttle) in the
+ * CLASSIC scenario.  See ProgramCount() for the general value.
+ */
 const int MANNED_PROGRAM_COUNT = 5;
 
 int HardwareCount(int equipmentIndex);
+int HardwareCount(int player, int equipmentIndex);
+std::vector<Equipment>& HardwareList(BuzzData& player, int equipmentIndex);
+const std::vector<Equipment>& HardwareList(const BuzzData& player,
+                                           int equipmentIndex);
+int ProgramCount(const BuzzData& player);
+int ProgramCount(int player);
+void SizeHardwareTables(BuzzData& player);
+void ValidateHardwareState(const Players& data);
+const HardwareEntry* HardwareEntryAt(int player, int equipmentIndex, int unit);
+bool IsResearchable(const Equipment& program);
+int FirstResearchableUnit(const BuzzData& player, int equipmentIndex);
+int CycleResearchableUnit(const BuzzData& player, int equipmentIndex,
+                          int unit, int step);
+int HardwareListIndex(int player, const HardwareEntry& entry);
 int EncodeRocket(int rocketIndex, bool boosters);
 int DecodeRocketIndex(int hardValue);
 bool HasBoosters(int hardValue);

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "scenario": "classic",
-  "_comment": "Catalog of the 21 original programs per side (stage 4a) with the hardware rules of stage 4b (tech_transfer, capsule limits, VAB pairing). Numerical stats stay in urast.json/hist.json.",
+  "_comment": "Catalog of the 21 original programs per side (stage 4a) with the hardware rules of stage 4b (tech_transfer, capsule limits, VAB pairing). Entries flagged test_only are used by the hidden scenario test_extra only. Start values per scenario live in data/gamedata/scenarios/.",
   "hardware": [
     {
       "id": "US.EXPLORER",
@@ -437,6 +437,7 @@
         "US.CRICKET"
       ],
       "lander_needs_docking_module": true,
+      "kicker_on_part": "all",
       "compatible_kickers": [
         "US.KICKER_A",
         "US.KICKER_B"
@@ -505,6 +506,7 @@
         "US.CRICKET"
       ],
       "lander_needs_docking_module": false,
+      "kicker_on_part": "second_pad",
       "compatible_kickers": [
         "US.KICKER_A",
         "US.KICKER_B"
@@ -568,6 +570,7 @@
         "US.CRICKET"
       ],
       "lander_needs_docking_module": true,
+      "kicker_on_part": "all",
       "compatible_kickers": [
         "US.KICKER_A",
         "US.KICKER_B"
@@ -821,6 +824,7 @@
       "side": "US",
       "category": "misc",
       "role": "kicker",
+      "researchable": false,
       "name": "KICKER-C",
       "type_label": "BOOSTER",
       "crew": 0,
@@ -912,6 +916,7 @@
       "side": "US",
       "category": "misc",
       "role": "photo_recon",
+      "researchable": false,
       "name": "PHOTO RECON",
       "type_label": "",
       "crew": 0,
@@ -1367,6 +1372,7 @@
         "SV.LK"
       ],
       "lander_needs_docking_module": true,
+      "kicker_on_part": "all",
       "compatible_kickers": [
         "SV.KICKER_A",
         "SV.KICKER_B"
@@ -1435,6 +1441,7 @@
         "SV.LK"
       ],
       "lander_needs_docking_module": false,
+      "kicker_on_part": "second_pad",
       "compatible_kickers": [
         "SV.KICKER_A",
         "SV.KICKER_B"
@@ -1499,6 +1506,7 @@
         "SV.LK"
       ],
       "lander_needs_docking_module": true,
+      "kicker_on_part": "all",
       "compatible_kickers": [
         "SV.KICKER_A",
         "SV.KICKER_B"
@@ -1843,6 +1851,7 @@
       "side": "SV",
       "category": "misc",
       "role": "photo_recon",
+      "researchable": false,
       "name": "PHOTO RECON",
       "type_label": "",
       "crew": 0,
@@ -1862,6 +1871,112 @@
         "cat": 3,
         "idx": 5
       }
+    },
+    {
+      "id": "US.TEST_PROBE",
+      "side": "US",
+      "category": "probe",
+      "role": "orbital_probe",
+      "name": "TEST PROBE",
+      "type_label": "SATELLITE",
+      "crew": 0,
+      "unit_weight": 400,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P0",
+      "images": {
+        "rd": "images/rd/rdfull.but.0.png",
+        "liftoff": "images/liftoff.abz.USP0.png",
+        "vab_sprite": 9
+      },
+      "help_id": "i201",
+      "probe_type": "satellite",
+      "targets": [
+        "earth"
+      ],
+      "satellite_purpose": "research",
+      "test_only": true
+    },
+    {
+      "id": "US.TEST_ROCKET",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "TEST ROCKET",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 2000,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R0",
+      "images": {
+        "rd": "images/rd/rdfull.but.8.png",
+        "liftoff": "images/liftoff.abz.USR0.png",
+        "vab_sprite": 0,
+        "vab_sprite_boosters": 4
+      },
+      "help_id": "i207",
+      "test_only": true
+    },
+    {
+      "id": "SV.TEST_PROBE",
+      "side": "SV",
+      "category": "probe",
+      "role": "orbital_probe",
+      "name": "TEST PROBE",
+      "type_label": "SATELLITE",
+      "crew": 0,
+      "unit_weight": 400,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P0",
+      "images": {
+        "rd": "images/rd/rdfull.but.32.png",
+        "liftoff": "images/liftoff.abz.SVP0.png",
+        "vab_sprite": 9
+      },
+      "help_id": "i202",
+      "probe_type": "satellite",
+      "targets": [
+        "earth"
+      ],
+      "satellite_purpose": "research",
+      "test_only": true
+    },
+    {
+      "id": "SV.TEST_ROCKET",
+      "side": "SV",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "TEST ROCKET",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 2000,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R0",
+      "images": {
+        "rd": "images/rd/rdfull.but.40.png",
+        "liftoff": "images/liftoff.abz.SVR0.png",
+        "vab_sprite": 0,
+        "vab_sprite_boosters": 4
+      },
+      "help_id": "i208",
+      "test_only": true
     }
   ]
 }

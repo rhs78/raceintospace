@@ -71,6 +71,7 @@ set(game_sources
   prest.cpp
   radar.cpp
   randomize.cpp
+  scenario.cpp
   rdplex.cpp
   records.cpp
   replay.cpp

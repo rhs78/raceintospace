@@ -989,16 +989,20 @@ namespace
 /** Mission code of the joint "Lunar Orbital: EOR/LOR-L" mission (see BuildVAB). */
 const int MISSION_JT_LUNAR_ORBITAL_EOR_LM = 52;
 
-/** Catalog entry for a legacy slot of a player, nullptr if there is none. */
+/**
+ * Catalog entry of the program at a position of a player's list (the
+ * position is an Equip<type>Index of the classic order), nullptr if there
+ * is none.
+ */
 const HardwareEntry* FindEntry(int plr, int cat, int idx)
 {
-    return GetHardwareCatalog().FindByLegacy(plr, cat, idx);
+    return HardwareEntryAt(plr, cat, idx);
 }
 
 /** Like FindEntry(), for slots that must exist. */
 const HardwareEntry& LegacyEntry(int plr, int cat, int idx)
 {
-    const HardwareEntry* e = GetHardwareCatalog().FindByLegacy(plr, cat, idx);
+    const HardwareEntry* e = HardwareEntryAt(plr, cat, idx);
 
     if (e == nullptr) {
         throw std::logic_error("VAB: hardware is not in the catalog");
@@ -1022,8 +1026,15 @@ const HardwareEntry& RoleEntry(int plr, HardwareRole role)
 /** Add a catalog hardware item to the current VAS row. */
 void AddHardware(char plr, char slot, const HardwareEntry& e, int sprite = -1)
 {
-    VVals(plr, slot, HardwareProgram(plr, e.legacyCat, e.legacyIdx),
-          e.legacyIdx, sprite >= 0 ? sprite : e.images.vabSprite);
+    const int category = e.categoryIndex();
+    const int unit = HardwareListIndex(plr, e);
+
+    if (unit < 0) {
+        throw std::logic_error("VAB: the player does not have " + e.id);
+    }
+
+    VVals(plr, slot, HardwareProgram(plr, category, unit), unit,
+          sprite >= 0 ? sprite : e.images.vabSprite);
 }
 
 bool Contains(const std::vector<std::string>& ids, const HardwareEntry& e)
@@ -1653,11 +1664,11 @@ void LMAdd(char plr, char prog, char kic, char part)
         }
     }
 
-    // A capsule that needs a docking module for its lander flies the
-    // kicker on every pad; otherwise (capsule docks directly) only the
-    // lander's pad (part 1) carries it.
+    // The capsule's kicker_on_part says on which pads the kicker is flown:
+    // "all" (capsule needs a docking module for its lander), or only on
+    // the lander's pad (part 1).
     const bool withKicker = kicker != nullptr
-                            && (part == 1 || capsule.landerNeedsDockingModule);
+                            && (part == 1 || capsule.kickerOnPart == "all");
 
     // One payload row per lander the capsule can pair with.
     for (const std::string& landerId : capsule.compatibleLanders) {

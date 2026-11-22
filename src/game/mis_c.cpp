@@ -907,9 +907,9 @@ char FailureMode(char plr, int prelim, const char* text)
         }
     } else {
         // if LEMS (the original ID check, characters '5' and '6',
-        // also matched the photo reconnaissance program)
-        if (((HasRole(*e, HardwareRole::Lander)
-              || HasRole(*e, HardwareRole::PhotoRecon)) && STEP > 5)) {
+        // also matched the photo reconnaissance program; fixed: only
+        // real landers show the lander crew)
+        if (HasRole(*e, HardwareRole::Lander) && STEP > 5) {
             GuyDisp(49, 138, MA[1][LM[1]].A);
 
             if (EVA[1] != LM[1]) {

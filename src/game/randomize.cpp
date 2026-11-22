@@ -45,194 +45,23 @@ RD cost is loosely based on the Basic Model
 #include "game_main.h"
 #include "gamedata.h"
 #include "pace.h"
+#include "scenario.h"
 #include "sdlhelper.h"
-
-
-/*random_number divides the randomization in 2,
- so there is a lower chance of getting an extreme */
-/*random_min is used to give more chances of getting a 1 */
 
 
 char GetNewName(char name[20]);
 
 
-static inline int
-random_aux(int x, int y)
-{
-    return (brandom((y) - (x) + 1) + (x));
-}
-
-static inline int
-random_number(int x, int y)
-{
-    return (random_aux((x) / 2, ((y) + 1) / 2) + random_aux(((x) + 1) / 2, (y) / 2));
-}
-
-static inline int
-random_min(int n)
-{
-    return (MAX(1, random_number(0, n)));
-}
-
-
+/**
+ * Randomize the equipment values of the game state.
+ *
+ * The rules (which program's values depend on which, the ranges) are part
+ * of the scenario's "random" model, see ApplyRandomModel().  They address
+ * programs by role, not by list position.
+ */
 void RandomizeEq(void)
 {
-    int i;
-
-    for (i = 0; i < 2; i++) {  // for each player
-        //Satellite
-        Data->P[i].Probe[PROBE_HW_ORBITAL].UnitWeight  = random_number(100, 500);
-        Data->P[i].Probe[PROBE_HW_ORBITAL].MaxSafety   = random_number(86, 98);
-        Data->P[i].Probe[PROBE_HW_ORBITAL].MaxRD   = Data->P[i].Probe[PROBE_HW_ORBITAL].MaxSafety - random_number(2, 10);
-        Data->P[i].Probe[PROBE_HW_ORBITAL].InitCost    = random_number(3, 9);
-        Data->P[i].Probe[PROBE_HW_ORBITAL].UnitCost    = random_min(Data->P[i].Probe[PROBE_HW_ORBITAL].InitCost / 2 - 1);
-        Data->P[i].Probe[PROBE_HW_ORBITAL].RDCost  = random_min(2);
-
-        //Lunar Satellite
-        Data->P[i].Probe[PROBE_HW_INTERPLANETARY].UnitWeight  = Data->P[i].Probe[PROBE_HW_ORBITAL].UnitWeight + random_number(200, 600);
-        Data->P[i].Probe[PROBE_HW_INTERPLANETARY].MaxSafety   = random_number(86, 98);
-        Data->P[i].Probe[PROBE_HW_INTERPLANETARY].MaxRD   = Data->P[i].Probe[PROBE_HW_INTERPLANETARY].MaxSafety - random_number(2, 10);
-        Data->P[i].Probe[PROBE_HW_INTERPLANETARY].InitCost    = random_number(18, 30);
-        Data->P[i].Probe[PROBE_HW_INTERPLANETARY].UnitCost    = random_number(2, Data->P[i].Probe[PROBE_HW_INTERPLANETARY].InitCost / 4);
-        Data->P[i].Probe[PROBE_HW_INTERPLANETARY].RDCost  = random_number(2, 4);
-
-        //Lunar Probe
-        Data->P[i].Probe[PROBE_HW_LUNAR].UnitWeight  = Data->P[i].Probe[PROBE_HW_INTERPLANETARY].UnitWeight + random_number(300, 700);
-        Data->P[i].Probe[PROBE_HW_LUNAR].MaxSafety   = random_number(86, 98);
-        Data->P[i].Probe[PROBE_HW_LUNAR].MaxRD   = Data->P[i].Probe[PROBE_HW_LUNAR].MaxSafety - random_number(2, 10);
-        Data->P[i].Probe[PROBE_HW_LUNAR].InitCost    = random_number(20, 40);
-        Data->P[i].Probe[PROBE_HW_LUNAR].UnitCost    = random_number(4, 2 + Data->P[i].Probe[PROBE_HW_LUNAR].InitCost / 5);
-        Data->P[i].Probe[PROBE_HW_LUNAR].RDCost  = random_number(2, 6);
-
-        //Mercury/Vostok
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_CAPSULE].UnitWeight = random_number(400, 600);
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_CAPSULE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_CAPSULE].MaxRD  = Data->P[i].Manned[MANNED_HW_ONE_MAN_CAPSULE].MaxSafety - random_number(2, 10);
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_CAPSULE].InitCost   = random_number(12, 24);
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_CAPSULE].UnitCost   = random_min(Data->P[i].Manned[MANNED_HW_ONE_MAN_CAPSULE].InitCost / 4);
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_CAPSULE].RDCost = random_min(2);
-
-        //Gemini/Voskhod
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_CAPSULE].UnitWeight = Data->P[i].Manned[MANNED_HW_ONE_MAN_CAPSULE].UnitWeight + random_number(500, 900);
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_CAPSULE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_CAPSULE].MaxRD  = Data->P[i].Manned[MANNED_HW_TWO_MAN_CAPSULE].MaxSafety - random_number(2, 10);
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_CAPSULE].InitCost   = random_number(18, 30);
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_CAPSULE].UnitCost   = random_number(4, Data->P[i].Manned[MANNED_HW_TWO_MAN_CAPSULE].InitCost / 3);
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_CAPSULE].RDCost = random_number(1, 3);
-
-        //Apollo/Soyuz
-        Data->P[i].Manned[MANNED_HW_THREE_MAN_CAPSULE].UnitWeight = Data->P[i].Manned[MANNED_HW_TWO_MAN_CAPSULE].UnitWeight + random_number(300, 500);
-        Data->P[i].Manned[MANNED_HW_THREE_MAN_CAPSULE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Manned[MANNED_HW_THREE_MAN_CAPSULE].MaxRD  = Data->P[i].Manned[MANNED_HW_THREE_MAN_CAPSULE].MaxSafety - random_number(2, 10);
-        Data->P[i].Manned[MANNED_HW_THREE_MAN_CAPSULE].InitCost   = random_number(28, 44);
-        Data->P[i].Manned[MANNED_HW_THREE_MAN_CAPSULE].UnitCost   = random_number(8, Data->P[i].Manned[MANNED_HW_THREE_MAN_CAPSULE].InitCost / 2 - 2);
-        Data->P[i].Manned[MANNED_HW_THREE_MAN_CAPSULE].RDCost = random_number(3, 7);
-
-        //Minishuttle
-        Data->P[i].Manned[MANNED_HW_MINISHUTTLE].UnitWeight = Data->P[i].Manned[MANNED_HW_TWO_MAN_CAPSULE].UnitWeight + random_number(200, 400);
-        Data->P[i].Manned[MANNED_HW_MINISHUTTLE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Manned[MANNED_HW_MINISHUTTLE].MaxRD  = Data->P[i].Manned[MANNED_HW_MINISHUTTLE].MaxSafety - random_number(2, 10);
-        Data->P[i].Manned[MANNED_HW_MINISHUTTLE].InitCost   = random_number(45, 75);
-        Data->P[i].Manned[MANNED_HW_MINISHUTTLE].UnitCost   = random_number(20, 10 + Data->P[i].Manned[MANNED_HW_MINISHUTTLE].InitCost / 2);
-        Data->P[i].Manned[MANNED_HW_MINISHUTTLE].RDCost = random_number(5, 9);
-
-        //Jupiter/Kvartet
-        Data->P[i].Manned[MANNED_HW_FOUR_MAN_CAPSULE].UnitWeight = random_number(Data->P[i].Manned[MANNED_HW_THREE_MAN_CAPSULE].UnitWeight * 2, Data->P[i].Manned[MANNED_HW_THREE_MAN_CAPSULE].UnitWeight * 3.25);
-        Data->P[i].Manned[MANNED_HW_FOUR_MAN_CAPSULE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Manned[MANNED_HW_FOUR_MAN_CAPSULE].MaxRD  = Data->P[i].Manned[MANNED_HW_FOUR_MAN_CAPSULE].MaxSafety - random_number(2, 10);
-        Data->P[i].Manned[MANNED_HW_FOUR_MAN_CAPSULE].InitCost   = random_number(45, 75);
-        Data->P[i].Manned[MANNED_HW_FOUR_MAN_CAPSULE].UnitCost   = random_number(20, 10 + Data->P[i].Manned[MANNED_HW_FOUR_MAN_CAPSULE].InitCost / 2);
-        Data->P[i].Manned[MANNED_HW_FOUR_MAN_CAPSULE].RDCost = random_number(6, 10);
-
-        //Eagle/Duet
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_MODULE].UnitWeight = random_number(1200, 1800);
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_MODULE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_MODULE].MaxRD  = Data->P[i].Manned[MANNED_HW_TWO_MAN_MODULE].MaxSafety - random_number(2, 10);
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_MODULE].InitCost   = random_number(24, 36);
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_MODULE].UnitCost   = random_number(4, Data->P[i].Manned[MANNED_HW_TWO_MAN_MODULE].InitCost / 2 - 3);
-        Data->P[i].Manned[MANNED_HW_TWO_MAN_MODULE].RDCost = random_min(4);
-
-        //Cricket/L-3
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_MODULE].UnitWeight = random_number(800, 1200);
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_MODULE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_MODULE].MaxRD  = Data->P[i].Manned[MANNED_HW_ONE_MAN_MODULE].MaxSafety - random_number(2, 10);
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_MODULE].InitCost   = random_number(36, 48);
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_MODULE].UnitCost   = random_number(4, Data->P[i].Manned[MANNED_HW_ONE_MAN_MODULE].InitCost / 3 - 2);
-        Data->P[i].Manned[MANNED_HW_ONE_MAN_MODULE].RDCost = random_number(2, 6);
-
-        //1-Stage Rocket (Max Payload is at least the satellite and the 1-man capsule)
-        Data->P[i].Rocket[ROCKET_HW_ONE_STAGE].MaxPay = MAX(Data->P[i].Manned[MANNED_HW_ONE_MAN_CAPSULE].UnitWeight, Data->P[i].Probe[PROBE_HW_ORBITAL].UnitWeight) + random_min(200);
-        Data->P[i].Rocket[ROCKET_HW_ONE_STAGE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Rocket[ROCKET_HW_ONE_STAGE].MaxRD  = Data->P[i].Rocket[ROCKET_HW_ONE_STAGE].MaxSafety - random_number(2, 10);
-        Data->P[i].Rocket[ROCKET_HW_ONE_STAGE].InitCost   = random_number(18, 30);
-        Data->P[i].Rocket[ROCKET_HW_ONE_STAGE].UnitCost   = random_number(2, Data->P[i].Rocket[ROCKET_HW_ONE_STAGE].InitCost / 6);
-        Data->P[i].Rocket[ROCKET_HW_ONE_STAGE].RDCost = random_number(1, 3);
-
-        //2-Stage Rocket
-        Data->P[i].Rocket[ROCKET_HW_TWO_STAGE].MaxPay = Data->P[i].Rocket[ROCKET_HW_ONE_STAGE].MaxPay + random_number(700, 1100);
-        Data->P[i].Rocket[ROCKET_HW_TWO_STAGE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Rocket[ROCKET_HW_TWO_STAGE].MaxRD  = Data->P[i].Rocket[ROCKET_HW_TWO_STAGE].MaxSafety - random_number(2, 10);
-        Data->P[i].Rocket[ROCKET_HW_TWO_STAGE].InitCost   = random_number(45, 75);
-        Data->P[i].Rocket[ROCKET_HW_TWO_STAGE].UnitCost   = random_number(6, Data->P[i].Rocket[ROCKET_HW_TWO_STAGE].InitCost / 3 - 2);
-        Data->P[i].Rocket[ROCKET_HW_TWO_STAGE].RDCost = random_number(2, 6);
-
-        //3-Stage Rocket
-        Data->P[i].Rocket[ROCKET_HW_THREE_STAGE].MaxPay = Data->P[i].Rocket[ROCKET_HW_TWO_STAGE].MaxPay + random_number(1400, 2000);
-        Data->P[i].Rocket[ROCKET_HW_THREE_STAGE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Rocket[ROCKET_HW_THREE_STAGE].MaxRD  = Data->P[i].Rocket[ROCKET_HW_THREE_STAGE].MaxSafety - random_number(2, 10);
-        Data->P[i].Rocket[ROCKET_HW_THREE_STAGE].InitCost   = random_number(68, 100);
-        Data->P[i].Rocket[ROCKET_HW_THREE_STAGE].UnitCost   = random_number(14, Data->P[i].Rocket[ROCKET_HW_THREE_STAGE].InitCost / 4 + 1);
-        Data->P[i].Rocket[ROCKET_HW_THREE_STAGE].RDCost = random_number(4, 8);
-
-        //Mega Rocket (Max Payload is at least the 4-man capsule, but maxed at 9999, because otherwise it can show strange symbols)
-        Data->P[i].Rocket[ROCKET_HW_MEGA_STAGE].MaxPay = MIN(Data->P[i].Manned[MANNED_HW_FOUR_MAN_CAPSULE].UnitWeight + random_min(Data->P[i].Manned[MANNED_HW_FOUR_MAN_CAPSULE].UnitWeight), 9999);
-        Data->P[i].Rocket[ROCKET_HW_MEGA_STAGE].MaxSafety  = random_number(86, 98);
-        Data->P[i].Rocket[ROCKET_HW_MEGA_STAGE].MaxRD  = Data->P[i].Rocket[ROCKET_HW_MEGA_STAGE].MaxSafety - random_number(2, 10);
-        Data->P[i].Rocket[ROCKET_HW_MEGA_STAGE].InitCost   = random_number(120, 170);
-        Data->P[i].Rocket[ROCKET_HW_MEGA_STAGE].UnitCost   = random_number(20, Data->P[i].Rocket[ROCKET_HW_MEGA_STAGE].InitCost / 3 - 10);
-        Data->P[i].Rocket[ROCKET_HW_MEGA_STAGE].RDCost = random_number(6, 10);
-
-        //Boosters
-        Data->P[i].Rocket[ROCKET_HW_BOOSTERS].MaxPay = random_number(750, 1250);
-        Data->P[i].Rocket[ROCKET_HW_BOOSTERS].MaxSafety  = random_number(86, 98);
-        Data->P[i].Rocket[ROCKET_HW_BOOSTERS].MaxRD  = Data->P[i].Rocket[ROCKET_HW_BOOSTERS].MaxSafety - random_number(2, 10);
-        Data->P[i].Rocket[ROCKET_HW_BOOSTERS].InitCost   = random_number(10, 14);
-        Data->P[i].Rocket[ROCKET_HW_BOOSTERS].UnitCost   = random_min(Data->P[i].Rocket[ROCKET_HW_BOOSTERS].InitCost / 2);
-        Data->P[i].Rocket[ROCKET_HW_BOOSTERS].RDCost = random_min(4);
-
-        //A-Kicker
-        Data->P[i].Misc[MISC_HW_KICKER_A].UnitWeight   = random_number(200, 400);
-        Data->P[i].Misc[MISC_HW_KICKER_A].MaxSafety    = random_number(86, 98);
-        Data->P[i].Misc[MISC_HW_KICKER_A].MaxRD    = Data->P[i].Misc[MISC_HW_KICKER_A].MaxSafety - random_number(2, 10);
-        Data->P[i].Misc[MISC_HW_KICKER_A].InitCost     = random_number(9, 15);
-        Data->P[i].Misc[MISC_HW_KICKER_A].UnitCost = random_min(Data->P[i].Misc[MISC_HW_KICKER_A].InitCost / 2);
-        Data->P[i].Misc[MISC_HW_KICKER_A].RDCost   = random_min(2);
-
-        //B-Kicker (Unit Weight is 2 times A-Kicker weight)
-        Data->P[i].Misc[MISC_HW_KICKER_B].UnitWeight   = Data->P[i].Misc[MISC_HW_KICKER_A].UnitWeight * 2;
-        Data->P[i].Misc[MISC_HW_KICKER_B].MaxSafety    = random_number(86, 98);
-        Data->P[i].Misc[MISC_HW_KICKER_B].MaxRD    = Data->P[i].Misc[MISC_HW_KICKER_B].MaxSafety - random_number(2, 10);
-        Data->P[i].Misc[MISC_HW_KICKER_B].InitCost     = random_number(15, 21);
-        Data->P[i].Misc[MISC_HW_KICKER_B].UnitCost = random_number(3, Data->P[i].Misc[MISC_HW_KICKER_B].InitCost / 2);
-        Data->P[i].Misc[MISC_HW_KICKER_B].RDCost   = 1 + random_min(2);
-
-        //C-Kicker
-        Data->P[i].Misc[MISC_HW_KICKER_C].UnitWeight   = random_number(2000, 3000);
-        Data->P[i].Misc[MISC_HW_KICKER_C].MaxSafety    = random_number(86, 98);
-        Data->P[i].Misc[MISC_HW_KICKER_C].MaxRD    = Data->P[i].Misc[MISC_HW_KICKER_C].MaxSafety - random_number(2, 10);
-        Data->P[i].Misc[MISC_HW_KICKER_C].InitCost     = random_number(35, 45);
-        Data->P[i].Misc[MISC_HW_KICKER_C].UnitCost = random_number(16, Data->P[i].Misc[MISC_HW_KICKER_C].InitCost / 2 + 4);
-        Data->P[i].Misc[MISC_HW_KICKER_C].RDCost   = random_number(3, 5);
-
-        //EVA suits (Unit weight, unit cost and RD cost are not randomized)
-        Data->P[i].Misc[MISC_HW_EVA_SUITS].UnitWeight   = 0;
-        Data->P[i].Misc[MISC_HW_EVA_SUITS].MaxSafety    = random_number(86, 98);
-        Data->P[i].Misc[MISC_HW_EVA_SUITS].MaxRD    = Data->P[i].Misc[MISC_HW_EVA_SUITS].MaxSafety - random_number(2, 10);
-        Data->P[i].Misc[MISC_HW_EVA_SUITS].InitCost     = random_number(15, 21);
-        Data->P[i].Misc[MISC_HW_EVA_SUITS].UnitCost = 0;
-        Data->P[i].Misc[MISC_HW_EVA_SUITS].RDCost   = 1;
-
-    }
+    ApplyRandomModel(*Data, ScenarioOf(*Data));
 }
 
 
@@ -247,15 +76,17 @@ void SetEquipName(char plr)
     draw_string(123, 69, "(ESCAPE TO SKIP)");
     int n;
 
-    for (n = 0; skip == 0 && n < 3; n++) {
+    // The first 3 probes, the first 7 manned programs and the first 4
+    // rockets can be renamed (the classic hardware without boosters).
+    for (n = 0; skip == 0 && n < 3 && n < (int)Data->P[plr].Probe.size(); n++) {
         skip = GetNewName(Data->P[plr].Probe[n].Name);
     }
 
-    for (n = 0; skip == 0 && n < 7; n++) {
+    for (n = 0; skip == 0 && n < 7 && n < (int)Data->P[plr].Manned.size(); n++) {
         skip = GetNewName(Data->P[plr].Manned[n].Name);
     }
 
-    for (n = 0; skip == 0 && n < 4; n++) {
+    for (n = 0; skip == 0 && n < 4 && n < (int)Data->P[plr].Rocket.size(); n++) {
         skip = GetNewName(Data->P[plr].Rocket[n].Name);
     }
 }

@@ -37,6 +37,7 @@
 #include "endgame.h"
 #include "filesystem.h"
 #include "game_main.h"
+#include "hardware.h"
 #include "hardware_catalog.h"
 #include "gamedata.h"
 #include "logging.h"
@@ -59,20 +60,29 @@ void BCDraw(int y)
     ShBox(23, y, 54, 20 + y); //ShBox(56,y,296,20+y);
 }
 
+/**
+ * Play by mail is switched off since the hardware rework (stage 4c): the
+ * mail game format changed with the dynamic hardware lists and is not
+ * maintained.  The menu entry is shown greyed out and can not be chosen;
+ * the PBEM code is kept.
+ */
+static const bool PBEM_MENU_ENABLED = false;
+
 int MainMenuChoice()
 {
     struct {
         const char* label;
         int y;
         const char* hotkeys;
+        bool enabled;
     } const menu_options[] = {
-        { "NEW GAME", 9 + 27 * MAIN_NEW_GAME, "N" },
-        { "OLD GAME", 9 + 27 * MAIN_OLD_GAME, "O" },
+        { "NEW GAME", 9 + 27 * MAIN_NEW_GAME, "N", true },
+        { "OLD GAME", 9 + 27 * MAIN_OLD_GAME, "O", true },
 #ifdef ALLOW_PBEM
-        { "PLAY BY MAIL", 9 + 27 * MAIN_PBEM_GAME, "P"},
+        { "PLAY BY MAIL", 9 + 27 * MAIN_PBEM_GAME, "P", PBEM_MENU_ENABLED },
 #endif
-        { "CREDITS", 9 + 27 * MAIN_CREDITS, "C" },
-        { "EXIT", 9 + 27 * MAIN_EXIT, "EXQ" }
+        { "CREDITS", 9 + 27 * MAIN_CREDITS, "C", true },
+        { "EXIT", 9 + 27 * MAIN_EXIT, "EXQ", true }
     };
     const int menu_option_count = sizeof(menu_options) / sizeof(menu_options[0]);
 
@@ -92,6 +102,17 @@ int MainMenuChoice()
     for (int i = 0; i < menu_option_count; i++) {
         ShBox(21, menu_options[i].y, 180, menu_options[i].y + 25);
         draw_heading(34, menu_options[i].y + 6, menu_options[i].label, 1, 0);
+
+        if (!menu_options[i].enabled) {
+            // Grey out: sunken button, label covered by a checkerboard.
+            InBox(21, menu_options[i].y, 180, menu_options[i].y + 25);
+
+            for (int py = menu_options[i].y + 2; py < menu_options[i].y + 24; py++) {
+                for (int px = 23 + (py & 1); px < 179; px += 2) {
+                    display::graphics.legacyScreen()->setPixel(px, py, 3);
+                }
+            }
+        }
     }
 
     FadeIn(2, 30, 0, 0);
@@ -103,6 +124,10 @@ int MainMenuChoice()
         if (key) {
             // Check for hotkeys
             for (int i = 0; i < menu_option_count; i++) {
+                if (!menu_options[i].enabled) {
+                    continue;
+                }
+
                 // Iterate over each hotkey
                 for (const char *hotkey = menu_options[i].hotkeys; *hotkey; hotkey++) {
                     if (*hotkey == key) {
@@ -116,7 +141,8 @@ int MainMenuChoice()
 
         if (mousebuttons) {
             for (int i = 0; i < menu_option_count; i++) {
-                if (x >= 21 && x <= 180 && y >= menu_options[i].y && y <= menu_options[i].y + 27) {
+                if (menu_options[i].enabled
+                    && x >= 21 && x <= 180 && y >= menu_options[i].y && y <= menu_options[i].y + 27) {
                     selected_option = i;
                     break;
                 }
@@ -364,8 +390,7 @@ void SmHardMe(char plr, int x, int y, char prog, char planet,
  */
 void BigHardMe(char plr, int x, int y, char hw, char unit, char sh)
 {
-    const HardwareEntry* entry =
-        GetHardwareCatalog().FindByLegacy(plr, hw, unit);
+    const HardwareEntry* entry = HardwareEntryAt(plr, hw, unit);
 
     if (entry == nullptr) {
         throw std::runtime_error("BigHardMe: hardware not in catalog");

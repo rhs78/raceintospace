@@ -16,34 +16,46 @@
 #include "game/fs.h"
 #include "game/game_main.h"
 #include "game/hardware.h"
+#include "game/scenario.h"
 #include "game/serialize.h"
 
 
 namespace
 {
 
+/** The classic program of the category letter and index (as the former ID
+ *  characters), identified by its catalog index; none if not valid. */
 Equipment MakeEquipment(char category, int index)
 {
-    Equipment eq;
-    std::memset(&eq, 0, sizeof(eq));
+    Equipment eq{};
     eq.ID[0] = category;
     eq.ID[1] = static_cast<char>('0' + index);
+
+    for (int c = 0; c < 4; c++) {
+        if (category == "PRCM"[c]) {
+            const HardwareEntry* e =
+                GetHardwareCatalog().FindByLegacy(0, c, index);
+
+            if (e != nullptr) {
+                eq.CatalogIndex = GetHardwareCatalog().IndexOf(e->id);
+            }
+        }
+    }
+
     return eq;
 }
 
 std::unique_ptr<Players> NewPlayers()
 {
     std::unique_ptr<Players> players(new Players());
-    std::memset(players.get(), 0, sizeof(Players));
     return players;
 }
 
+/** The start state of the classic scenario (basic model). */
 std::unique_ptr<Players> LoadUrast()
 {
     std::unique_ptr<Players> players = NewPlayers();
-    std::string path = locate_file("urast.json", FT_DATA);
-    BOOST_REQUIRE(!path.empty());
-    DESERIALIZE_JSON_FILE(players, path);
+    BuildStartState(*players, "CLASSIC", StartModel::Basic);
     return players;
 }
 
@@ -189,7 +201,7 @@ BOOST_AUTO_TEST_CASE(rocket_decoding)
 BOOST_AUTO_TEST_CASE(probe_or_docking_module)
 {
     Players* saved = Data;
-    std::unique_ptr<Players> players = NewPlayers();
+    std::unique_ptr<Players> players = LoadUrast();
     Data = players.get();
 
     for (int plr = 0; plr < NUM_PLAYERS; plr++) {
@@ -221,7 +233,7 @@ BOOST_AUTO_TEST_CASE(urast_loads)
 {
     std::unique_ptr<Players> players = LoadUrast();
 
-    BOOST_CHECK_EQUAL(players->Checksum, sizeof(Players));
+    BOOST_CHECK_EQUAL(players->Scenario, "CLASSIC");
     BOOST_CHECK_EQUAL(std::string(players->P[0].Name), "WEBB");
     BOOST_CHECK_EQUAL(std::string(players->P[1].Name), "KOROLYOV");
 
@@ -244,14 +256,13 @@ BOOST_AUTO_TEST_CASE(urast_loads)
     };
 
     for (int plr = 0; plr < NUM_PLAYERS; plr++) {
-        Equipment* arrays[4] = {
-            players->P[plr].Probe, players->P[plr].Rocket,
-            players->P[plr].Manned, players->P[plr].Misc
-        };
-
         for (int cat = 0; cat < 4; cat++) {
+            const std::vector<Equipment>& arr =
+                HardwareList(players->P[plr], cat);
+            BOOST_CHECK_EQUAL(int(arr.size()), HardwareCount(cat));
+
             for (int i = 0; i < HardwareCount(cat); i++) {
-                const Equipment& eq = arrays[cat][i];
+                const Equipment& eq = arr[i];
                 BOOST_CHECK_MESSAGE(
                     std::string(eq.Name) == names[plr][cat][i],
                     "player " << plr << " category " << cat << " index "
@@ -263,26 +274,12 @@ BOOST_AUTO_TEST_CASE(urast_loads)
     }
 }
 
-// The hardware history (hist.json) holds the same 8 hardware arrays
-// as prefs.cpp loads: 7 entries each, for both players.
+// The historical model (the former hist.json) is part of the scenario.
 BOOST_AUTO_TEST_CASE(hist_loads)
 {
-    std::string path = locate_file("hist.json", FT_DATA);
-    BOOST_REQUIRE(!path.empty());
-    std::ifstream is{path};
-    cereal::JSONInputArchive ar{is};
-
     std::unique_ptr<Players> players = NewPlayers();
+    BuildStartState(*players, "CLASSIC", StartModel::Historical);
     Players* Data = players.get();
-
-    ARCHIVE_VECTOR(Data->P[0].Probe, struct Equipment, 7);
-    ARCHIVE_VECTOR(Data->P[0].Rocket, struct Equipment, 7);
-    ARCHIVE_VECTOR(Data->P[0].Manned, struct Equipment, 7);
-    ARCHIVE_VECTOR(Data->P[0].Misc, struct Equipment, 7);
-    ARCHIVE_VECTOR(Data->P[1].Probe, struct Equipment, 7);
-    ARCHIVE_VECTOR(Data->P[1].Rocket, struct Equipment, 7);
-    ARCHIVE_VECTOR(Data->P[1].Manned, struct Equipment, 7);
-    ARCHIVE_VECTOR(Data->P[1].Misc, struct Equipment, 7);
 
     BOOST_CHECK_EQUAL(std::string(Data->P[0].Probe[0].Name), "EXPLORER");
     BOOST_CHECK_EQUAL(std::string(Data->P[0].Rocket[4].Name), "BOOSTERS");
@@ -292,18 +289,18 @@ BOOST_AUTO_TEST_CASE(hist_loads)
     BOOST_CHECK_EQUAL(std::string(Data->P[1].Rocket[3].Name), "UR-700");
     BOOST_CHECK_EQUAL(std::string(Data->P[1].Manned[6].Name), "LK");
     BOOST_CHECK_EQUAL(std::string(Data->P[1].Misc[4].Name), "DOCKING");
+    // historical values differ from the basic ones
+    BOOST_CHECK_EQUAL(Data->P[0].Probe[0].UnitWeight, 200);
 
     // Every used slot has an ID matching its position.
     for (int plr = 0; plr < NUM_PLAYERS; plr++) {
-        Equipment* arrays[4] = {
-            Data->P[plr].Probe, Data->P[plr].Rocket,
-            Data->P[plr].Manned, Data->P[plr].Misc
-        };
-
         for (int cat = 0; cat < 4; cat++) {
+            const std::vector<Equipment>& arr =
+                HardwareList(Data->P[plr], cat);
+
             for (int i = 0; i < HardwareCount(cat); i++) {
-                BOOST_CHECK_EQUAL(arrays[cat][i].ID[0], CATEGORY_ID[cat]);
-                BOOST_CHECK_EQUAL(arrays[cat][i].ID[1], '0' + i);
+                BOOST_CHECK_EQUAL(arr[i].ID[0], CATEGORY_ID[cat]);
+                BOOST_CHECK_EQUAL(arr[i].ID[1], '0' + i);
             }
         }
     }

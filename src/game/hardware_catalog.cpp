@@ -304,6 +304,18 @@ HardwareEntry ParseEntry(const Json::Value& v)
     e.kickersWithCapsule = OptStringList(v, "kickers_with_capsule", e.id);
     e.kickersSecondPad = OptStringList(v, "kickers_second_pad", e.id);
     e.probeKicker = OptBool(v, "probe_kicker", false);
+    e.launchMode = v.isMember("launch_mode") ? OptString(v, "launch_mode")
+                   : std::string("rocket");
+    e.consumedOnFlight = OptBool(v, "consumed_on_flight", true);
+    e.probeType = OptString(v, "probe_type");
+    e.targets = OptStringList(v, "targets", e.id);
+    e.satelliteGoal = OptString(v, "satellite_purpose");
+    e.compatibleLabs = OptStringList(v, "compatible_labs", e.id);
+    e.kickerOnPart = v.isMember("kicker_on_part")
+                     ? OptString(v, "kicker_on_part")
+                     : std::string("second_pad");
+    e.testOnly = OptBool(v, "test_only", false);
+    e.researchable = OptBool(v, "researchable", true);
 
     if (v.isMember("tech_transfer")) {
         e.techTransfer = ParseTechTransfer(v["tech_transfer"], e.id);
@@ -328,14 +340,16 @@ HardwareEntry ParseEntry(const Json::Value& v)
 
     e.helpId = RequireString(v, "help_id", e.id);
 
-    const Json::Value& legacy = Require(v, "legacy", e.id);
+    if (v.isMember("legacy")) {
+        const Json::Value& legacy = v["legacy"];
 
-    if (!legacy.isObject()) {
-        Fail(e.id, "field 'legacy' must be an object");
+        if (!legacy.isObject()) {
+            Fail(e.id, "field 'legacy' must be an object");
+        }
+
+        e.legacyCat = RequireInt(legacy, "cat", e.id);
+        e.legacyIdx = RequireInt(legacy, "idx", e.id);
     }
-
-    e.legacyCat = RequireInt(legacy, "cat", e.id);
-    e.legacyIdx = RequireInt(legacy, "idx", e.id);
 
     return e;
 }
@@ -357,11 +371,43 @@ bool RoleMatchesCategory(HardwareRole role, int cat)
     case HardwareRole::Lander:
         return cat == MANNED_HARDWARE;
 
+    case HardwareRole::Spaceplane:
+        return cat == MANNED_HARDWARE;
+
     case HardwareRole::Kicker:
     case HardwareRole::Eva:
     case HardwareRole::DockingModule:
     case HardwareRole::PhotoRecon:
+    case HardwareRole::LabModule:
+    case HardwareRole::Station:
         return cat == MISC_HARDWARE;
+    }
+
+    return false;
+}
+
+bool IsProbeRole(HardwareRole role)
+{
+    return role == HardwareRole::OrbitalProbe
+           || role == HardwareRole::LunarProbe
+           || role == HardwareRole::InterplanetaryProbe;
+}
+
+/** Roles of manned vehicles (they have a crew and an abort system). */
+bool IsMannedRole(HardwareRole role)
+{
+    return role == HardwareRole::Capsule
+           || role == HardwareRole::Minishuttle
+           || role == HardwareRole::Lander
+           || role == HardwareRole::Spaceplane;
+}
+
+bool InList(const std::string& s, std::initializer_list<const char*> list)
+{
+    for (const char* item : list) {
+        if (s == item) {
+            return true;
+        }
     }
 
     return false;
@@ -388,6 +434,9 @@ HardwareRole HardwareRoleFromString(const std::string& s)
         {"eva", HardwareRole::Eva},
         {"docking_module", HardwareRole::DockingModule},
         {"photo_recon", HardwareRole::PhotoRecon},
+        {"spaceplane", HardwareRole::Spaceplane},
+        {"lab_module", HardwareRole::LabModule},
+        {"station", HardwareRole::Station},
     };
 
     for (const auto& t : table) {
@@ -423,6 +472,12 @@ int PrestigeFirstCategory(const HardwareEntry& entry)
 }
 
 
+int HardwareEntry::categoryIndex() const
+{
+    return CategoryFromString(category);
+}
+
+
 MissionHardwareType HardwareEntry::missionType() const
 {
     switch (role) {
@@ -443,7 +498,14 @@ MissionHardwareType HardwareEntry::missionType() const
         return Mission_Capsule;
 
     case HardwareRole::Lander:
+    case HardwareRole::LabModule:
         return Mission_LM;
+
+    case HardwareRole::Spaceplane:
+        return Mission_Capsule;
+
+    case HardwareRole::Station:
+        return Mission_Probe_DM;
 
     case HardwareRole::Kicker:
         return Mission_Kicker;
@@ -521,22 +583,24 @@ void HardwareCatalog::Validate() const
             Fail(e.id, "role does not fit category '" + e.category + "'");
         }
 
-        if (e.legacyCat != cat) {
+        if (e.legacyCat >= 0 && e.legacyCat != cat) {
             Fail(e.id, "legacy.cat does not match category");
         }
 
-        if (e.legacyIdx < 0 || e.legacyIdx > 6) {
-            Fail(e.id, "legacy.idx out of range");
+        if (e.legacyCat >= 0) {
+            if (e.legacyIdx < 0 || e.legacyIdx > 6) {
+                Fail(e.id, "legacy.idx out of range");
+            }
+
+            auto key = std::make_pair(e.player,
+                                      std::make_pair(e.legacyCat, e.legacyIdx));
+
+            if (legacySeen.count(key)) {
+                Fail(e.id, "legacy slot already used by " + legacySeen[key]);
+            }
+
+            legacySeen[key] = e.id;
         }
-
-        auto key = std::make_pair(e.player,
-                                  std::make_pair(e.legacyCat, e.legacyIdx));
-
-        if (legacySeen.count(key)) {
-            Fail(e.id, "legacy slot already used by " + legacySeen[key]);
-        }
-
-        legacySeen[key] = e.id;
 
         // anim_id: category letter + one digit, e.g. "C2"
         if (e.animId.size() != 2 || e.animId[0] != CATEGORY_LETTERS[cat]
@@ -549,16 +613,13 @@ void HardwareCatalog::Validate() const
             Fail(e.id, "crew out of range 0..7");
         }
 
-        if (e.crew > 0 && e.role != HardwareRole::Capsule
-            && e.role != HardwareRole::Minishuttle
-            && e.role != HardwareRole::Lander) {
-            Fail(e.id, "only capsules, minishuttles and landers have a crew");
+        if (e.crew > 0 && !IsMannedRole(e.role)
+            && e.role != HardwareRole::Station) {
+            Fail(e.id, "only manned hardware and stations have a crew");
         }
 
         {
-            const bool manned = e.role == HardwareRole::Capsule
-                                || e.role == HardwareRole::Minishuttle
-                                || e.role == HardwareRole::Lander;
+            const bool manned = IsMannedRole(e.role);
             const bool known = e.abortSystem == "escape_tower"
                                || e.abortSystem == "ejection_seats"
                                || e.abortSystem == "none"
@@ -595,6 +656,94 @@ void HardwareCatalog::Validate() const
 
         if (e.helpId.empty() || e.helpId[0] != 'i') {
             Fail(e.id, "help_id must look like 'i<number>'");
+        }
+
+        // Schema extensions of stage 4c.
+        if (!InList(e.launchMode, {"rocket", "air_launch"})) {
+            Fail(e.id, "launch_mode must be 'rocket' or 'air_launch'");
+        }
+
+        if (e.launchMode == "air_launch"
+            && !(IsMannedRole(e.role) && e.role != HardwareRole::Lander)) {
+            Fail(e.id, "launch_mode 'air_launch' is only for capsules, "
+                 "minishuttles and spaceplanes");
+        }
+
+        if (!e.consumedOnFlight
+            && (IsProbeRole(e.role) || e.role == HardwareRole::Launcher
+                || e.role == HardwareRole::Booster
+                || e.role == HardwareRole::Kicker)) {
+            Fail(e.id, "probes, rockets and kickers are consumed on flight");
+        }
+
+        if (!e.probeType.empty() || !e.targets.empty()
+            || !e.satelliteGoal.empty()) {
+            if (!IsProbeRole(e.role)) {
+                Fail(e.id, "probe_type, targets and satellite_purpose are "
+                     "only for probes");
+            }
+        }
+
+        if (!e.probeType.empty()
+            && !InList(e.probeType, {"satellite", "impact", "flyby",
+                                     "orbiter", "lander", "rover",
+                                     "sample_return", "atmosphere"})) {
+            Fail(e.id, "unknown probe_type '" + e.probeType + "'");
+        }
+
+        if (!e.targets.empty() && e.probeType.empty()) {
+            Fail(e.id, "targets need a probe_type");
+        }
+
+        for (const std::string& t : e.targets) {
+            if (!InList(t, {"earth", "moon", "mercury", "venus", "mars",
+                            "jupiter", "saturn", "comet", "sun"})) {
+                Fail(e.id, "unknown target '" + t + "'");
+            }
+        }
+
+        if (!e.satelliteGoal.empty()) {
+            if (e.probeType != "satellite") {
+                Fail(e.id, "satellite_purpose needs probe_type 'satellite'");
+            }
+
+            if (!InList(e.satelliteGoal, {"research", "weather",
+                                            "communication",
+                                            "reconnaissance"})) {
+                Fail(e.id, "unknown satellite_purpose '" + e.satelliteGoal
+                     + "'");
+            }
+        }
+
+        if (!e.compatibleLabs.empty() && e.role != HardwareRole::Capsule
+            && e.role != HardwareRole::Spaceplane) {
+            Fail(e.id, "compatible_labs are only for capsules and "
+                 "spaceplanes");
+        }
+
+        for (const std::string& ref : e.compatibleLabs) {
+            auto it = mById.find(ref);
+
+            if (it == mById.end()) {
+                Fail(e.id, "compatible_labs: unknown id '" + ref + "'");
+            }
+
+            if (mEntries[it->second].role != HardwareRole::LabModule) {
+                Fail(e.id, "compatible_labs: '" + ref + "' is no lab_module");
+            }
+
+            if (mEntries[it->second].side != e.side) {
+                Fail(e.id, "compatible_labs: '" + ref + "' is on the "
+                     "other side");
+            }
+        }
+
+        if (!InList(e.kickerOnPart, {"all", "second_pad"})) {
+            Fail(e.id, "kicker_on_part must be 'all' or 'second_pad'");
+        }
+
+        if (e.kickerOnPart != "second_pad" && e.compatibleLanders.empty()) {
+            Fail(e.id, "kicker_on_part needs compatible_landers");
         }
 
         for (const std::string& ref : e.compatibleLanders) {
@@ -699,6 +848,23 @@ const HardwareEntry* HardwareCatalog::FindById(const std::string& id) const
 }
 
 
+int HardwareCatalog::IndexOf(const std::string& id) const
+{
+    auto it = mById.find(id);
+    return it == mById.end() ? -1 : int(it->second);
+}
+
+
+const HardwareEntry* HardwareCatalog::At(int index) const
+{
+    if (index < 0 || size_t(index) >= mEntries.size()) {
+        return nullptr;
+    }
+
+    return &mEntries[index];
+}
+
+
 const HardwareEntry* HardwareCatalog::FindByLegacy(int player, int cat,
                                                    int idx) const
 {
@@ -731,7 +897,9 @@ HardwareCatalog::FindByRole(HardwareRole role, int player) const
     std::vector<const HardwareEntry*> out;
 
     for (const HardwareEntry& e : mEntries) {
-        if (e.role == role && (player < 0 || e.player == player)) {
+        // Test-only entries are reachable through scenarios only.
+        if (!e.testOnly && e.role == role
+            && (player < 0 || e.player == player)) {
             out.push_back(&e);
         }
     }
@@ -768,38 +936,13 @@ const HardwareCatalog& GetHardwareCatalog()
 
 const HardwareEntry* CatalogEntryForEquipment(const Equipment& program)
 {
-    int cat = -1;
-
-    for (int i = 0; i < 4; i++) {
-        if (program.ID[0] == CATEGORY_LETTERS[i]) {
-            cat = i;
-        }
-    }
-
-    if (cat < 0) {
-        return nullptr;
-    }
-
-    return GetHardwareCatalog().FindByLegacyAnySide(cat,
-            int(program.ID[1] - '0'));
+    return GetHardwareCatalog().At(program.CatalogIndex);
 }
 
 
 const HardwareEntry* CatalogEntryForEquipment(const Equipment& program,
                                               int player)
 {
-    int cat = -1;
-
-    for (int i = 0; i < 4; i++) {
-        if (program.ID[0] == CATEGORY_LETTERS[i]) {
-            cat = i;
-        }
-    }
-
-    if (cat < 0) {
-        return nullptr;
-    }
-
-    return GetHardwareCatalog().FindByLegacy(player, cat,
-            int(program.ID[1] - '0'));
+    (void)player;
+    return CatalogEntryForEquipment(program);
 }

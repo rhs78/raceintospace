@@ -33,6 +33,7 @@
 #include "game/proto.h"
 #include "game/randomize.h"
 #include "game/rdplex.h"
+#include "game/scenario.h"
 #include "game/serialize.h"
 #include "game/vab.h"
 
@@ -40,13 +41,11 @@
 namespace
 {
 
+/** The start state of the classic scenario (basic model). */
 std::unique_ptr<Players> LoadUrast()
 {
     std::unique_ptr<Players> players(new Players());
-    std::memset(players.get(), 0, sizeof(Players));
-    std::string path = locate_file("urast.json", FT_DATA);
-    BOOST_REQUIRE(!path.empty());
-    DESERIALIZE_JSON_FILE(players, path);
+    BuildStartState(*players, "CLASSIC", StartModel::Basic);
     return players;
 }
 
@@ -127,19 +126,7 @@ void CheckGolden(const std::string& name, const std::string& actual)
 
 Equipment& Hw(Players& d, int plr, int cat, int idx)
 {
-    switch (cat) {
-    case PROBE_HARDWARE:
-        return d.P[plr].Probe[idx];
-
-    case ROCKET_HARDWARE:
-        return d.P[plr].Rocket[idx];
-
-    case MANNED_HARDWARE:
-        return d.P[plr].Manned[idx];
-
-    default:
-        return d.P[plr].Misc[idx];
-    }
+    return HardwareList(d.P[plr], cat).at(idx);
 }
 
 // ---------------------------------------------------------------------
@@ -252,7 +239,7 @@ struct Lcg {
 
 
 // ---------------------------------------------------------------------
-// Start state (scenario "classic" must equal the urast.json/hist.json
+// Start state (scenario "classic" must equal the urast.json (non-hardware) and the scenario
 // based start state of the original code)
 // ---------------------------------------------------------------------
 
@@ -290,7 +277,7 @@ std::string StartStateDump(Players& d)
           << "\n";
 
         for (int c = PROBE_HARDWARE; c <= MISC_HARDWARE; c++) {
-            for (int i = 0; i < HardwareCount(c); i++) {
+            for (int i = 0; i < int(HardwareList(d.P[plr], c).size()); i++) {
                 o << "plr" << plr << " c" << c << " i" << i << " ";
                 DumpEquipment(o, Hw(d, plr, c, i));
                 o << "\n";
@@ -299,27 +286,6 @@ std::string StartStateDump(Players& d)
     }
 
     return o.str();
-}
-
-void LoadHist(Players& d)
-{
-    std::ifstream os{locate_file("hist.json", FT_DATA)};
-    cereal::JSONInputArchive ar{os};
-    for (int plr = 0; plr < NUM_PLAYERS; plr++) {
-        const char* cats[4] = {"Probe", "Rocket", "Manned", "Misc"};
-
-        for (int c = 0; c < 4; c++) {
-            std::vector<Equipment> v;
-            ar(cereal::make_nvp("Data->P[" + std::to_string(plr) + "]."
-                                + cats[c], v));
-            Equipment* dst = &Hw(d, plr, c, 0);
-            BOOST_REQUIRE(v.size() >= 7);
-
-            for (int i = 0; i < 7; i++) {
-                dst[i] = v[i];
-            }
-        }
-    }
 }
 
 } // namespace
@@ -613,20 +579,21 @@ BOOST_AUTO_TEST_CASE(golden_start_state)
         << " random (srand 1, 2, 3) models\n";
 
     {
-        auto d = LoadUrast();
+        std::unique_ptr<Players> d(new Players());
+        BuildStartState(*d, "CLASSIC", StartModel::Basic);
         out << "## basic\n" << StartStateDump(*d);
     }
     {
-        auto d = LoadUrast();
-        LoadHist(*d);
+        std::unique_ptr<Players> d(new Players());
+        BuildStartState(*d, "CLASSIC", StartModel::Historical);
         out << "## historical\n" << StartStateDump(*d);
     }
 
     for (int seed = 1; seed <= 3; seed++) {
-        DataScope scope(LoadUrast());
+        std::unique_ptr<Players> d(new Players());
         std::srand(seed);
-        RandomizeEq();
-        out << "## random seed " << seed << "\n" << StartStateDump(*scope.players);
+        BuildStartState(*d, "CLASSIC", StartModel::Random);
+        out << "## random seed " << seed << "\n" << StartStateDump(*d);
     }
 
     CheckGolden("start_state.txt", out.str());

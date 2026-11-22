@@ -48,6 +48,7 @@
 #include "filesystem.h"
 #include "future.h"
 #include "game_main.h"
+#include "hardware.h"
 #include "gr.h"
 #include "ioexception.h"
 #include "legacy.h"
@@ -1032,6 +1033,25 @@ void BadFileType()
 }
 
 
+/* Displays an alert popup warning that a save file was written by an
+ * incompatible (older) version of the game.
+ */
+void BadSaveVersion()
+{
+    display::LegacySurface local{164, 77};
+    local.copyFrom(display::graphics.legacyScreen(), 39, 50, 202, 126);
+    ShBox(39, 50, 202, 126);
+    InBox(43, 67, 197, 77);
+    fill_rectangle(44, 68, 196, 76, 13);
+    display::graphics.setForegroundColor(11);
+    draw_string(58, 74, "SAVE VERSION NOT SUPPORTED");
+    delay(2000);
+    local.copyTo(display::graphics.legacyScreen(), 39, 50);
+    PauseMouse();
+    local.copyTo(display::graphics.legacyScreen(), 39, 50);
+}
+
+
 /* Displays a brief text summary of the savegame contents.
  *
  * The summary includes the names of the two space program directors,
@@ -1649,6 +1669,14 @@ void LoadGame(const char* filename)
 
             // Load Replay and Event Data
             archive(interimData);
+
+            // The hardware lists must match the catalog and scenario.
+            ValidateHardwareState(*Data);
+        } catch (const SavegameVersionError& e) {
+            // Thrown before the game state is touched.
+            LOG_WARNING("%s", e.what());
+            BadSaveVersion();
+            return;
         } catch (std::exception &e) {
             LOG_WARNING(e.what());
             BadFileType();

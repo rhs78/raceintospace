@@ -26,7 +26,6 @@ namespace
 std::unique_ptr<Players> NewPlayers(int start, int end)
 {
     std::unique_ptr<Players> p(new Players());
-    std::memset(p.get(), 0, sizeof(Players));
     p->StartYear = start;
     p->EndYear = end;
     p->Year = start;
@@ -335,12 +334,10 @@ BOOST_AUTO_TEST_CASE(news_index_mapping)
 BOOST_AUTO_TEST_CASE(urast_has_default_timeline)
 {
     std::unique_ptr<Players> p(new Players());
-    std::memset(p.get(), 0, sizeof(Players));
     std::string path = locate_file("urast.json", FT_DATA);
     BOOST_REQUIRE(!path.empty());
     DESERIALIZE_JSON_FILE(p, path);
 
-    BOOST_TEST(p->Checksum == sizeof(Players));
     BOOST_TEST(p->StartYear == 57);
     BOOST_TEST(p->EndYear == 63);
     BOOST_TEST(p->Year == 57);
@@ -350,7 +347,6 @@ BOOST_AUTO_TEST_CASE(urast_has_default_timeline)
 BOOST_AUTO_TEST_CASE(save_game_round_trip_keeps_timeline)
 {
     std::unique_ptr<Players> p(new Players());
-    std::memset(p.get(), 0, sizeof(Players));
     std::string path = locate_file("urast.json", FT_DATA);
     DESERIALIZE_JSON_FILE(p, path);
 
@@ -372,7 +368,6 @@ BOOST_AUTO_TEST_CASE(save_game_round_trip_keeps_timeline)
     }
 
     std::unique_ptr<Players> q(new Players());
-    std::memset(q.get(), 0, sizeof(Players));
     {
         cereal::JSONInputArchive iar(ss);
         iar(cereal::make_nvp("Data", *q));

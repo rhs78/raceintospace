@@ -15,5 +15,14 @@ void DelayMission(char plr, int pad);
 void FreeLaunchHardware(char plr, int pad);
 void ScrubMission(char plr, int pad);
 
+#include <string>
+
+struct Players;
+
+std::string SerializeGameState(Players& state);
+void DeserializeGameState(Players& state, const std::string& text);
+bool WriteUndoFile(const char* name);
+bool ReadUndoFile(const char* name);
+
 
 #endif // STATE_UTILS_H

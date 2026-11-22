@@ -27,6 +27,8 @@
 
 #include "start.h"
 
+#include "hardware.h"
+
 #include <cassert>
 #include <stdexcept>
 #include <string>
@@ -684,8 +686,11 @@ void Update()
     }
 
     // Reset R&D Purchasing Ability
-    memset(Data->P[0].Buy, 0x00, sizeof(Data->P[0].Buy));
-    memset(Data->P[1].Buy, 0x00, sizeof(Data->P[1].Buy));
+    for (int plr = 0; plr < NUM_PLAYERS; plr++) {
+        for (auto& row : Data->P[plr].Buy) {
+            std::fill(row.begin(), row.end(), 0);
+        }
+    }
 
     AstroTurn();   /* Process all astronauts */
 
@@ -858,28 +863,17 @@ void UpdateHardTurn(int plr)
 {
     BuzzData& p = Data->P[plr];
     
-    Equipment *e;
     for (int i = 0; i < 4; i++) {
-        if (i == 0) {
-            e = &p.Probe[0];
-        } else if (i == 1) {
-            e = &p.Rocket[0];
-        } else if (i == 2) {
-            e = &p.Manned[0];
-        } else if (i == 3) {
-            e = &p.Misc[0];
-        }
-
-        for (int j = 0; j < 7; j++) {
-            if (e[j].Delay) {
-                e[j].Delay--;
+        for (Equipment& e : HardwareList(p, i)) {
+            if (e.Delay) {
+                e.Delay--;
             }
 
-            if (e[j].Num) {
-                e[j].Seas++;
+            if (e.Num) {
+                e.Seas++;
             }
 
-            e[j].Spok = 0;
+            e.Spok = 0;
         }
     }
 }

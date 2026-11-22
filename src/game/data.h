@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 #include <array>
+#include <stdexcept>
+#include <string>
+#include <vector>
 #include <map>
 
 #include "fs.h"
@@ -295,6 +298,9 @@ struct Equipment {
     int8_t DCost;         /**< Cost to repair damage */
     int8_t MisSucc[2];       /**< Mission Successes */
     int8_t MisFail[2];       /**< Mission Failures */
+    /** Index of this program in the hardware catalog (hardware.json);
+     *  identity and side of the hardware derive from it.  -1 if unset. */
+    int16_t CatalogIndex = -1;
 
     template<class Archive>
     void serialize(Archive& ar, uint32_t const version)
@@ -329,6 +335,7 @@ struct Equipment {
         ar(CEREAL_NVP(Duration));
         ar(CEREAL_NVP(Damage));
         ar(CEREAL_NVP(DCost));
+        ar(CEREAL_NVP(CatalogIndex));
     }
 
 };
@@ -632,6 +639,25 @@ using LaunchFacility_Status = int8_t;
 #define LAUNCHPAD_DAMAGED_MARGIN      2 // value at or above this classifies pad as damaged
 #define LAUNCHPAD_DESTROYED_MARGIN   20 // value at or above this classifies pad as destroyed
 
+/** An object that stays in orbit between turns (station, lab module ...). */
+struct OrbitalObject {
+    int16_t CatalogIndex = -1;   /**< hardware catalog index of the object */
+    int8_t LaunchYear = 0;       /**< years since 1900 */
+    int8_t LaunchSeason = 0;
+    int16_t Lifetime = 0;        /**< remaining seasons, 0 = unlimited */
+    int8_t Crew = 0;             /**< crew currently aboard */
+
+    template<class Archive>
+    void serialize(Archive& ar, uint32_t const version)
+    {
+        ar(CEREAL_NVP(CatalogIndex));
+        ar(CEREAL_NVP(LaunchYear));
+        ar(CEREAL_NVP(LaunchSeason));
+        ar(CEREAL_NVP(Lifetime));
+        ar(CEREAL_NVP(Crew));
+    }
+};
+
 struct BuzzData {                   // master data list for Buzz Aldrin's
     char Header[4];                  // Sync information
     char Name[20];                   // Player Name
@@ -654,27 +680,19 @@ struct BuzzData {                   // master data list for Buzz Aldrin's
     int8_t FuturePlans;                // Special future mission
     int8_t DurationLevel;                      // Current Duration Level
     int8_t LMpts;                      // Accumulation of any LM Test points
-    Equipment Probe[7];       // 0 = Orbital
-    // 1 = Inter Planetary
-    // 2 = Lunar Probe
-    Equipment Rocket[7];      // 0 = One Stage
-    // 1 = Two Stage
-    // 2 = Three Stage
-    // 3 = Mega Stage
-    // 4 = Strap On Boosters
-    Equipment Manned[7];      // 0 = One Man Capsule
-    // 1 = Two Man Capsule
-    // 2 = Three Man Capsule
-    // 3 = Minishuttle
-    // 4 = Four Man Cap/Mod
-    // 5 = Two Man Module
-    // 6 = One Man Module
-    Equipment Misc[7];        // 0 = Kicker Level A
-    // 1 = Kicker Level B
-    // 2 = Kicker Level C
-    // 3 = EVA Suits
-    // 4 = Docking Modules
-    // 5 = Photo Recon
+    /** Hardware lists, in the order of the scenario.  In the classic
+     *  scenario the order is the original one:
+     *  Probe: 0 Orbital, 1 Interplanetary, 2 Lunar;
+     *  Rocket: 0 One Stage, 1 Two Stage, 2 Three Stage, 3 Mega Stage, 4 Boosters;
+     *  Manned: 0 One Man Capsule, 1 Two Man, 2 Three Man, 3 Minishuttle,
+     *          4 Four Man Cap/Mod, 5 Two Man Module, 6 One Man Module;
+     *  Misc: 0-2 Kicker A-C, 3 EVA Suits, 4 Docking Modules, 5 Photo Recon.
+     *  Sized by the scenario when the game starts, never resized during play
+     *  (MisEval holds pointers into the lists). */
+    std::vector<Equipment> Probe;
+    std::vector<Equipment> Rocket;
+    std::vector<Equipment> Manned;
+    std::vector<Equipment> Misc;
     char unused_ZCost; // unused
     char unused_ZFlag; // unused
     int8_t DockingModuleInOrbit;                       // Docking Module in Orbit, in seasons
@@ -691,12 +709,15 @@ struct BuzzData {                   // master data list for Buzz Aldrin's
     char unused_WTop; // unused
     char unused_VList[5]; // unused
     char unused_VTop; // unused
-    int8_t IntelHardwareTable[5][7];                // safety factor for intelligence
-    int8_t CrewCount[ASTRONAUT_POOLS + 1][MAX_CREWS_IN_PROGRAM];               // Count of num in groups
-    int8_t Crew[ASTRONAUT_POOLS + 1][MAX_CREWS_IN_PROGRAM][ASTRONAUT_FLT_CREW_MAX + 1];          // Flt Crews
-    // [5] - Program #
-    // [8] - Eight Crews Max
-    // [4] - Four Max per Crew
+    /** safety factor for intelligence: [category][unit], sized like the
+     *  hardware lists (see SizeHardwareTables()). */
+    std::vector<std::vector<int8_t>> IntelHardwareTable;
+    /** Count of num in groups: [program][crew]; one row per crewed program
+     *  plus the unused row 0. */
+    std::vector<std::array<int8_t, MAX_CREWS_IN_PROGRAM>> CrewCount;
+    /** Flt Crews: [program][crew][member], rows as CrewCount. */
+    std::vector<std::array<std::array<int8_t, ASTRONAUT_FLT_CREW_MAX + 1>,
+                           MAX_CREWS_IN_PROGRAM>> Crew;
     int8_t FemaleAstronautsAllowed;                     // FemaleAstronautsAlloweds allowed in program
     MissionType Mission[MAX_MISSIONS];   // Current Mission Info
     int8_t Block;                      // Blocked Mission Number
@@ -707,7 +728,7 @@ struct BuzzData {                   // master data list for Buzz Aldrin's
     // 1 = Cat Failure
     // 2 = Program Death
     // 3 = Program First
-    uint8_t Buy[4][7];  // Record of R&D for Turn - encoded dices & rolls
+    std::vector<std::vector<uint8_t>> Buy;  // Record of R&D for Turn - encoded dices & rolls: [category][unit]
     int16_t eCount;
     struct {
         int8_t code;
@@ -745,6 +766,9 @@ struct BuzzData {                   // master data list for Buzz Aldrin's
     int8_t unused_AIMissions[62];                      // How many missions of type done
     int8_t BadCardEventFlag[15];                // Flag for Bad Events
     int8_t Port[MAX_PORT_LEVEL];                   // Levels for SPort display
+    /** Objects that stay in orbit (stations, labs ...).  Prepared for
+     *  later stages; nothing creates or reads entries yet. */
+    std::vector<OrbitalObject> ObjectsInOrbit;
 
     template<class Archive>
     void serialize(Archive& ar, uint32_t const version)
@@ -796,6 +820,7 @@ struct BuzzData {                   // master data list for Buzz Aldrin's
         ar(CEREAL_NVP(AIStat));
         ar(CEREAL_NVP(BadCardEventFlag));
         ar(CEREAL_NVP(Port));
+        ar(CEREAL_NVP(ObjectsInOrbit));
 
         // SECURITY: Data sanitization
         ASSERT(PastMissionCount >= 0 && PastMissionCount < MAX_MISSION_COUNT);
@@ -806,7 +831,9 @@ struct BuzzData {                   // master data list for Buzz Aldrin's
             ASSERT(Port[i] >= 0 && Port[i] < MAX_PORT_REGION);
         }
 
-        for (int i = 0; i <= ASTRONAUT_POOLS; i++) {
+        ASSERT(CrewCount.size() == Crew.size());
+
+        for (size_t i = 0; i < Crew.size(); i++) {
             for (int j = 0; j < MAX_CREWS_IN_PROGRAM; j++) {
                 for (int k = 0; k <= ASTRONAUT_FLT_CREW_MAX; k++) {
                     ASSERT(Crew[i][j][k] >= 0 && Crew[i][j][k] <= MAX_POOL);
@@ -874,9 +901,15 @@ struct MisEval {
 };
 
 
+/** Thrown when loading a save game of an unsupported (older) format. */
+struct SavegameVersionError : public std::runtime_error {
+    explicit SavegameVersionError(const std::string& what)
+        : std::runtime_error(what) {}
+};
+
+
 struct Players {
     char BUZZ[4];                    /**< Save Version Marker */
-    uint32_t Checksum;               /**< Checksum of Data */
     int8_t plr[NUM_PLAYERS];        /**< Order of Turns */
     Defl Def;                 /**< Defaults */
     int8_t Year;                    /**< Game Turn */
@@ -893,12 +926,22 @@ struct Players {
     int8_t Mail;                       /* Current status of PBEM game */
     MisEval Mev[MAX_LAUNCHPADS][60]; /** < Mission eval for mail games */
     int8_t Step[MAX_LAUNCHPADS]; /** Number of mission steps for mail games */
+    /** Id of the scenario (data/gamedata/scenarios/<id>.json) whose
+     *  hardware lists the game uses, e.g. "CLASSIC". */
+    std::string Scenario;
 
     template<class Archive>
     void serialize(Archive& ar, uint32_t const version)
     {
+        // Version 3 (stage 4c): dynamic hardware lists.  Older saves have
+        // fixed arrays and cannot be converted.
+        if (version < 3) {
+            throw SavegameVersionError(
+                "save game version " + std::to_string(version)
+                + " is no longer supported");
+        }
+
         ar(CEREAL_NVP(BUZZ));
-        ar(CEREAL_NVP(Checksum));
         ar(CEREAL_NVP(plr));
         ar(CEREAL_NVP(Def));
         ar(CEREAL_NVP(Year));
@@ -919,6 +962,7 @@ struct Players {
 
         ar(CEREAL_NVP(Mev));
         ar(CEREAL_NVP(Step));
+        ar(CEREAL_NVP(Scenario));
 
         // SECURITY: Data sanitization
         ASSERT(StartYear >= MIN_START_YEAR && StartYear <= MAX_START_YEAR);
@@ -954,7 +998,7 @@ struct Players {
     bool IsLastTurn() const { return Year == EndYear && Season == 1; }
 };
 
-CEREAL_CLASS_VERSION(struct Players, 2)
+CEREAL_CLASS_VERSION(struct Players, 3)
 
 struct MisAst {  // This struct will be -1's if empty
     Astros* A;
@@ -1457,13 +1501,10 @@ struct AssetData {
 // Errors in these lines mean that the struct is the wrong shape
 #include <boost/static_assert.hpp>
 BOOST_STATIC_ASSERT(sizeof(PrestType) == 16);
-BOOST_STATIC_ASSERT(sizeof(Equipment) == 60);
 BOOST_STATIC_ASSERT(sizeof(MissionType) == 43);
 BOOST_STATIC_ASSERT(sizeof(Astros) == 65);
 BOOST_STATIC_ASSERT(sizeof(PastInfo) == 84);
-BOOST_STATIC_ASSERT(sizeof(BuzzData) == 32699);
 BOOST_STATIC_ASSERT(sizeof(MisEval) == 40);
-BOOST_STATIC_ASSERT(sizeof(Players) == 73347);
 
 #endif // RIS_DATA_H
 

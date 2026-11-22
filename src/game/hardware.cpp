@@ -17,6 +17,7 @@
 
 #include "hardware.h"
 
+#include <algorithm>
 #include <cassert>
 #include <stdexcept>
 
@@ -25,35 +26,330 @@
 #include "macros.h"
 #include "mission_util.h"
 #include "options.h"
+#include "scenario.h"
 
 
-/**
- * Number of hardware programs in use for an equipment category.
- *
- * \param equipmentIndex  an EquipmentIndex value.
- * \return  3 (Probe), 5 (Rocket), 7 (Manned) or 6 (Misc).
- * \throws std::invalid_argument  if equipmentIndex is not valid.
- */
-int HardwareCount(int equipmentIndex)
+namespace
 {
-    switch (equipmentIndex) {
-    case PROBE_HARDWARE:
-        return PROBE_HW_COUNT;
 
-    case ROCKET_HARDWARE:
-        return ROCKET_HW_COUNT;
-
-    case MANNED_HARDWARE:
-        return MANNED_HW_COUNT;
-
-    case MISC_HARDWARE:
-        return MISC_HW_COUNT;
-
-    default:
+void CheckCategory(int equipmentIndex)
+{
+    if (equipmentIndex < PROBE_HARDWARE || equipmentIndex > MISC_HARDWARE) {
         throw std::invalid_argument(
             "Error in function HardwareCount: "
             "argument is not part of the EquipmentIndex enum");
     }
+}
+
+} // namespace
+
+
+/**
+ * The hardware list of a player for an equipment category.
+ *
+ * \throws std::invalid_argument  if equipmentIndex is not valid.
+ */
+std::vector<Equipment>& HardwareList(BuzzData& player, int equipmentIndex)
+{
+    CheckCategory(equipmentIndex);
+
+    switch (equipmentIndex) {
+    case PROBE_HARDWARE:
+        return player.Probe;
+
+    case ROCKET_HARDWARE:
+        return player.Rocket;
+
+    case MANNED_HARDWARE:
+        return player.Manned;
+
+    default:
+        return player.Misc;
+    }
+}
+
+
+const std::vector<Equipment>& HardwareList(const BuzzData& player,
+                                           int equipmentIndex)
+{
+    return HardwareList(const_cast<BuzzData&>(player), equipmentIndex);
+}
+
+
+/**
+ * Number of hardware programs of a player in an equipment category,
+ * i.e. the size of the player's list.
+ *
+ * \throws std::invalid_argument  if equipmentIndex is not valid.
+ */
+int HardwareCount(int player, int equipmentIndex)
+{
+    assert(player >= 0 && player < NUM_PLAYERS);
+    return int(HardwareList(Data->P[player], equipmentIndex).size());
+}
+
+
+/**
+ * Number of hardware programs in an equipment category: the longer of the
+ * two players' lists in the game state, or, without a game state, the
+ * size from the default (CLASSIC) scenario.
+ *
+ * \throws std::invalid_argument  if equipmentIndex is not valid.
+ */
+int HardwareCount(int equipmentIndex)
+{
+    CheckCategory(equipmentIndex);
+
+    if (Data != nullptr) {
+        size_t n = 0;
+
+        for (int plr = 0; plr < NUM_PLAYERS; plr++) {
+            n = std::max(n, HardwareList(Data->P[plr], equipmentIndex).size());
+        }
+
+        if (n > 0) {
+            return int(n);
+        }
+    }
+
+    return GetScenario(DefaultScenarioId()).count(equipmentIndex);
+}
+
+
+/**
+ * Number of crewed programs of a player: capsules, minishuttles and
+ * spaceplanes of the Manned list.  They are the first entries of the list
+ * (ProgramToMannedIndex()).
+ */
+int ProgramCount(const BuzzData& player)
+{
+    int n = 0;
+
+    for (const Equipment& e : player.Manned) {
+        const HardwareEntry* entry = CatalogEntryForEquipment(e);
+
+        if (entry != nullptr
+            && (entry->role == HardwareRole::Capsule
+                || entry->role == HardwareRole::Minishuttle
+                || entry->role == HardwareRole::Spaceplane)) {
+            n++;
+        }
+    }
+
+    return n;
+}
+
+
+int ProgramCount(int player)
+{
+    assert(player >= 0 && player < NUM_PLAYERS);
+    return ProgramCount(Data->P[player]);
+}
+
+
+/**
+ * Size the tables that hang on the hardware lists (Buy,
+ * IntelHardwareTable, Crew, CrewCount) to the lists of the player.
+ * Existing contents are kept; new entries are zero.
+ */
+void SizeHardwareTables(BuzzData& player)
+{
+    player.Buy.resize(4);
+    player.IntelHardwareTable.resize(4);
+
+    for (int c = 0; c < 4; c++) {
+        const size_t n = HardwareList(player, c).size();
+        player.Buy[c].resize(n, 0);
+        player.IntelHardwareTable[c].resize(n, 0);
+    }
+
+    // One row per crewed program; row 0 is unused (program numbers start
+    // at 1).
+    const size_t rows = size_t(ProgramCount(player)) + 1;
+    std::array<int8_t, MAX_CREWS_IN_PROGRAM> zeroCount;
+    zeroCount.fill(0);
+    std::array<std::array<int8_t, ASTRONAUT_FLT_CREW_MAX + 1>,
+        MAX_CREWS_IN_PROGRAM> zeroCrew;
+
+    for (auto& c : zeroCrew) {
+        c.fill(0);
+    }
+
+    player.CrewCount.resize(rows, zeroCount);
+    player.Crew.resize(rows, zeroCrew);
+}
+
+
+/**
+ * The catalog entry of the program at a position of a player's list.
+ * Without a game state (or with empty lists) the lists of the default
+ * (CLASSIC) scenario define the positions.
+ *
+ * \return  nullptr if the position does not exist.
+ */
+const HardwareEntry* HardwareEntryAt(int player, int equipmentIndex, int unit)
+{
+    assert(player >= 0 && player < NUM_PLAYERS);
+    CheckCategory(equipmentIndex);
+
+    if (Data == nullptr
+        || HardwareList(Data->P[player], equipmentIndex).empty()) {
+        const std::vector<int>& list =
+            GetScenario(DefaultScenarioId()).list(player, equipmentIndex);
+
+        if (unit < 0 || size_t(unit) >= list.size()) {
+            return nullptr;
+        }
+
+        return GetHardwareCatalog().At(list[unit]);
+    }
+
+    const std::vector<Equipment>& list =
+        HardwareList(Data->P[player], equipmentIndex);
+
+    if (unit < 0 || size_t(unit) >= list.size()) {
+        return nullptr;
+    }
+
+    return CatalogEntryForEquipment(list[unit]);
+}
+
+
+/**
+ * Check that the hardware lists and tables of a game state are consistent
+ * with the hardware catalog and the scenario of the state (used for loaded
+ * save games).
+ *
+ * \throws std::out_of_range  if an entry is not in the catalog, is of the
+ *   wrong side or category, or a table has the wrong size.
+ * \throws std::runtime_error  if the scenario is unknown.
+ */
+void ValidateHardwareState(const Players& data)
+{
+    const HardwareCatalog& catalog = GetHardwareCatalog();
+    ScenarioOf(data);  // throws for an unknown scenario
+
+    for (int plr = 0; plr < NUM_PLAYERS; plr++) {
+        const BuzzData& p = data.P[plr];
+
+        for (int c = PROBE_HARDWARE; c <= MISC_HARDWARE; c++) {
+            const std::vector<Equipment>& list = HardwareList(p, c);
+
+            if (list.empty() || list.size() > 100) {
+                throw std::out_of_range("hardware list has an invalid size");
+            }
+
+            for (const Equipment& e : list) {
+                const HardwareEntry* entry = catalog.At(e.CatalogIndex);
+
+                if (entry == nullptr || entry->player != plr
+                    || entry->categoryIndex() != c) {
+                    throw std::out_of_range(
+                        "hardware program does not fit the catalog");
+                }
+            }
+
+            if (p.Buy.size() != 4 || p.Buy[c].size() != list.size()
+                || p.IntelHardwareTable.size() < 4
+                || p.IntelHardwareTable[c].size() < list.size()) {
+                throw std::out_of_range("hardware table has the wrong size");
+            }
+        }
+
+        const size_t rows = size_t(ProgramCount(p)) + 1;
+
+        if (p.Crew.size() != rows || p.CrewCount.size() != rows) {
+            throw std::out_of_range("crew table has the wrong size");
+        }
+    }
+}
+
+
+/**
+ * Whether the research and purchase screens offer a program: all but the
+ * ones the catalog marks as not researchable (the photo reconnaissance
+ * and, for the USA, the Kicker C that only the USSR has).
+ */
+bool IsResearchable(const Equipment& program)
+{
+    const HardwareEntry* e = CatalogEntryForEquipment(program);
+    return e != nullptr && e->researchable;
+}
+
+
+/**
+ * The first program of a category the research and purchase screens offer.
+ * 0 if the list has none.
+ */
+int FirstResearchableUnit(const BuzzData& player, int equipmentIndex)
+{
+    const std::vector<Equipment>& list = HardwareList(player, equipmentIndex);
+
+    for (size_t i = 0; i < list.size(); i++) {
+        if (IsResearchable(list[i])) {
+            return int(i);
+        }
+    }
+
+    return 0;
+}
+
+
+/**
+ * The next (step > 0) or previous (step < 0) program of a category the
+ * research and purchase screens offer, wrapping around the list.  The
+ * list is the player's real list, so programs of a scenario beyond the
+ * classic ones are reached too.
+ *
+ * \param unit  the current position in the list.
+ * \return  the new position; the same one if no other program qualifies.
+ */
+int CycleResearchableUnit(const BuzzData& player, int equipmentIndex,
+                          int unit, int step)
+{
+    const std::vector<Equipment>& list = HardwareList(player, equipmentIndex);
+    const int n = int(list.size());
+
+    if (n == 0) {
+        return 0;
+    }
+
+    const int dir = step < 0 ? -1 : 1;
+    int i = unit;
+
+    for (int k = 0; k < n; k++) {
+        i = ((i + dir) % n + n) % n;
+
+        if (IsResearchable(list[i])) {
+            return i;
+        }
+    }
+
+    return unit;
+}
+
+
+/**
+ * Position in the player's list (of the entry's category) of the program
+ * of a catalog entry, -1 if the player does not have it.
+ */
+int HardwareListIndex(int player, const HardwareEntry& entry)
+{
+    assert(player >= 0 && player < NUM_PLAYERS);
+    const int catalogIndex = GetHardwareCatalog().IndexOf(entry.id);
+
+    for (int c = 0; c < 4; c++) {
+        const std::vector<Equipment>& list =
+            HardwareList(Data->P[player], c);
+
+        for (size_t i = 0; i < list.size(); i++) {
+            if (list[i].CatalogIndex == catalogIndex) {
+                return int(i);
+            }
+        }
+    }
+
+    return -1;
 }
 
 
@@ -168,13 +464,12 @@ CapsuleEligibility(int plr, int missionCode, int futureDuration)
     ok.fill(true);
 
     const mStr plan = GetMissionPlan(missionCode);
-    const HardwareCatalog& catalog = GetHardwareCatalog();
 
     // Capsules of this side that can fly the Soyuz lunar landing.
     bool sideHasSoyuzLL = false;
 
     for (int i = 0; i < MANNED_PROGRAM_COUNT; i++) {
-        const HardwareEntry* e = catalog.FindByLegacy(plr, MANNED_HARDWARE, i);
+        const HardwareEntry* e = HardwareEntryAt(plr, MANNED_HARDWARE, i);
 
         if (e != nullptr && e->soyuzLL) {
             sideHasSoyuzLL = true;
@@ -182,7 +477,7 @@ CapsuleEligibility(int plr, int missionCode, int futureDuration)
     }
 
     for (int i = 0; i < MANNED_PROGRAM_COUNT; i++) {
-        const HardwareEntry* e = catalog.FindByLegacy(plr, MANNED_HARDWARE, i);
+        const HardwareEntry* e = HardwareEntryAt(plr, MANNED_HARDWARE, i);
 
         if (e == nullptr) {
             continue;
@@ -289,32 +584,10 @@ MissionHardwareType HardwareType(const Equipment &program)
 Equipment &HardwareProgram(int player, int type, int program)
 {
     assert(player >= 0 && player < NUM_PLAYERS);
-    assert(program >= 0 && program < 7);
     assert(type >= 0 && type < 4);
-
-    switch (type) {
-    case PROBE_HARDWARE:
-        return Data->P[player].Probe[program];
-        break;
-
-    case ROCKET_HARDWARE:
-        return Data->P[player].Rocket[program];
-        break;
-
-    case MANNED_HARDWARE:
-        return Data->P[player].Manned[program];
-        break;
-
-    case MISC_HARDWARE:
-        return Data->P[player].Misc[program];
-        break;
-
-    default:
-        throw std::invalid_argument(
-            "Error in argument to HardwareProgram: type must be part of "
-            "the EquipmentIndex enum");
-        break;
-    };
+    std::vector<Equipment>& list = HardwareList(Data->P[player], type);
+    assert(program >= 0 && size_t(program) < list.size());
+    return list.at(program);
 }
 
 
@@ -357,13 +630,22 @@ namespace
 /** Safety of the program with the given catalog id, for a player. */
 int SafetyOf(int plr, const std::string& id)
 {
-    const HardwareEntry* e = GetHardwareCatalog().FindById(id);
+    const int index = GetHardwareCatalog().IndexOf(id);
 
-    if (e == nullptr) {
+    if (index < 0) {
         throw std::invalid_argument("tech transfer: unknown program " + id);
     }
 
-    return HardwareProgram(plr, e->legacyCat, e->legacyIdx).Safety;
+    for (int c = 0; c < 4; c++) {
+        for (const Equipment& e : HardwareList(Data->P[plr], c)) {
+            if (e.CatalogIndex == index) {
+                return e.Safety;
+            }
+        }
+    }
+
+    // The scenario does not have this program: it contributes nothing.
+    return 0;
 }
 
 /** All groups of a rule hold: some program of each group is at_least. */
@@ -454,8 +736,7 @@ int GradualTransfer(int plr, const TechTransfer& tt)
 void ApplyTechTransfer(int plr, int category, int unit, TechTransferMode mode)
 {
     Equipment& program = HardwareProgram(plr, category, unit);
-    const HardwareEntry* entry =
-        GetHardwareCatalog().FindByLegacy(plr, category, unit);
+    const HardwareEntry* entry = CatalogEntryForEquipment(program);
 
     if (entry != nullptr) {
         const TechTransfer& tt = entry->techTransfer;
@@ -548,7 +829,8 @@ int ProgramCrewCapacity(int program)
         return 0;
     }
 
-    const HardwareEntry* e = GetHardwareCatalog().FindByLegacyAnySide(
-                                 MANNED_HARDWARE, ProgramToMannedIndex(program));
+    // Crew sizes are the same for both sides; take the first player's.
+    const HardwareEntry* e = HardwareEntryAt(0, MANNED_HARDWARE,
+                                             ProgramToMannedIndex(program));
     return e == nullptr ? 0 : e->crew;
 }

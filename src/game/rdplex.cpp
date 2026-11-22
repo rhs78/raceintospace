@@ -50,6 +50,7 @@
 #include "pace.h"
 #include "place.h"
 #include "sdlhelper.h"
+#include "state_utils.h"
 
 namespace
 {
@@ -313,15 +314,15 @@ void RDButTxt(int cost, int encodedRolls, char playerIndex, bool SpDModule)  //D
 
 char RD(char player_index)
 {
-    short buy[4][7];
+    // Working copy of the R&D record of the turn: [category][unit]
+    std::vector<std::vector<short>> buy;
+
+    for (const auto& row : Data->P[player_index].Buy) {
+        buy.emplace_back(row.begin(), row.end());
+    }
+
     int hardware = call ? DisplayedHardware : PROBE_HARDWARE;
     int unit = call ? DisplayedUnit : PROBE_HW_ORBITAL;
-
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 7; j++) {
-            buy[i][j] = Data->P[player_index].Buy[i][j];
-        }
-    }
 
     helpText = "i009";
     keyHelpText = "k009";
@@ -404,7 +405,7 @@ char RD(char player_index)
                 roll = 0;
                 hardware = PROBE_HARDWARE;
                 hardware_buttons.drawButtons(hardware);
-                unit = PROBE_HW_ORBITAL;
+                unit = FirstResearchableUnit(Data->P[player_index], hardware);
 
                 if (buy[hardware][unit] == 0) {
                     QueryUnit(hardware, unit, player_index);
@@ -428,7 +429,7 @@ char RD(char player_index)
                 roll = 0;
                 hardware = ROCKET_HARDWARE;
                 hardware_buttons.drawButtons(hardware);
-                unit = ROCKET_HW_ONE_STAGE;
+                unit = FirstResearchableUnit(Data->P[player_index], hardware);
 
                 if (buy[hardware][unit] == 0) {
                     QueryUnit(hardware, unit, player_index);
@@ -452,7 +453,7 @@ char RD(char player_index)
                 roll = 0;
                 hardware = MANNED_HARDWARE;
                 hardware_buttons.drawButtons(hardware);
-                unit = MANNED_HW_ONE_MAN_CAPSULE;
+                unit = FirstResearchableUnit(Data->P[player_index], hardware);
 
                 if (buy[hardware][unit] == 0) {
                     QueryUnit(hardware, unit, player_index);
@@ -476,7 +477,7 @@ char RD(char player_index)
                 roll = 0;
                 hardware = MISC_HARDWARE;
                 hardware_buttons.drawButtons(hardware);
-                unit = MISC_HW_KICKER_A;
+                unit = FirstResearchableUnit(Data->P[player_index], hardware);
 
                 if (buy[hardware][unit] == 0) {
                     QueryUnit(hardware, unit, player_index);
@@ -517,41 +518,7 @@ char RD(char player_index)
             InBox(5, 184, 74, 194);
             WaitForMouseUp();
 
-            unit--;
-
-            switch (hardware) {
-            case PROBE_HARDWARE:
-                if (unit < PROBE_HW_ORBITAL) {
-                    unit = PROBE_HW_LUNAR;
-                }
-
-                break;
-
-            case ROCKET_HARDWARE:
-                if (unit < ROCKET_HW_ONE_STAGE) {
-                    unit = ROCKET_HW_BOOSTERS;
-                }
-
-                break;
-
-            case MANNED_HARDWARE:
-                if (unit < MANNED_HW_ONE_MAN_CAPSULE) {
-                    unit = MANNED_HW_ONE_MAN_MODULE;
-                }
-
-                break;
-
-            case MISC_HARDWARE:
-                if (unit < MISC_HW_KICKER_A) {
-                    unit = MISC_HW_DOCKING_MODULE;
-                }
-
-                if (player_index == 0 && unit == MISC_HW_KICKER_C) {
-                    unit--;
-                }
-
-                break;
-            }
+            unit = CycleResearchableUnit(Data->P[player_index], hardware, unit, -1);
 
             RDButTxt(b * roll, buy[hardware][unit], player_index, (hardware == MISC_HARDWARE && unit == MISC_HW_DOCKING_MODULE));  //DM Screen, Nikakd, 10/8/10
 
@@ -573,41 +540,7 @@ char RD(char player_index)
             roll = 0;
             InBox(83, 184, 152, 194);
             WaitForMouseUp();
-            unit++;
-
-            switch (hardware) {
-            case PROBE_HARDWARE:
-                if (unit > PROBE_HW_LUNAR) {
-                    unit = PROBE_HW_ORBITAL;
-                }
-
-                break;
-
-            case ROCKET_HARDWARE:
-                if (unit > ROCKET_HW_BOOSTERS) {
-                    unit = ROCKET_HW_ONE_STAGE;
-                }
-
-                break;
-
-            case MANNED_HARDWARE:
-                if (unit > MANNED_HW_ONE_MAN_MODULE) {
-                    unit = MANNED_HW_ONE_MAN_CAPSULE;
-                }
-
-                break;
-
-            case MISC_HARDWARE:
-                if (unit > MISC_HW_DOCKING_MODULE) {
-                    unit = MISC_HW_KICKER_A;
-                }
-
-                if (player_index == 0 && unit == MISC_HW_KICKER_C) {
-                    unit++;
-                }
-
-                break;   // DM Screen, Nikakd, 10/8/10
-            }
+            unit = CycleResearchableUnit(Data->P[player_index], hardware, unit, +1);
 
             RDButTxt(b * roll, buy[hardware][unit], player_index, (hardware == MISC_HARDWARE && unit == MISC_HW_DOCKING_MODULE));  //DM Screen, Nikakd, 10/8/10
 
@@ -663,7 +596,7 @@ char RD(char player_index)
             WaitForMouseUp();
 
             for (int i = 0; i < 4; i++) {
-                for (int j = 0; j < 7; j++) {
+                for (size_t j = 0; j < Data->P[player_index].Buy[i].size(); j++) {
                     Data->P[player_index].Buy[i][j] = buy[i][j];
                 }
             }
@@ -675,7 +608,7 @@ char RD(char player_index)
             InBox(5, 73, 152, 83);
 
             for (int i = 0; i < 4; i++) {
-                for (int j = 0; j < 7; j++) {
+                for (size_t j = 0; j < Data->P[player_index].Buy[i].size(); j++) {
                     Data->P[player_index].Buy[i][j] = buy[i][j];
                 }
             }
@@ -702,7 +635,7 @@ char RD(char player_index)
             call = 0;
 
             for (int i = 0; i < 4; i++) {
-                for (int j = 0; j < 7; j++) {
+                for (size_t j = 0; j < Data->P[player_index].Buy[i].size(); j++) {
                     buy[i][j] = Data->P[player_index].Buy[i][j];
                 }
             }
@@ -768,8 +701,7 @@ void ManSel(int activeButtonIndex, int maxAvailable)
 
 void ShowHardwareDescription(int player, int hardware, int unit)
 {
-    const HardwareEntry* entry =
-        GetHardwareCatalog().FindByLegacy(player, hardware, unit);
+    const HardwareEntry* entry = HardwareEntryAt(player, hardware, unit);
 
     if (entry != nullptr) {
         Help(entry->helpId.c_str());
@@ -873,24 +805,7 @@ uint8_t RDUnit(char hardwareTypeIndex, char hardwareIndex, char nRolls, char pla
     assert(hardwareTypeIndex >= PROBE_HARDWARE);
     assert(hardwareTypeIndex <= MISC_HARDWARE);
     assert(hardwareIndex >= 0);
-
-    switch (hardwareTypeIndex) {
-    case PROBE_HARDWARE:
-        assert(hardwareIndex <= PROBE_HW_LUNAR);
-        break;
-
-    case ROCKET_HARDWARE:
-        assert(hardwareIndex <= ROCKET_HW_BOOSTERS);
-        break;
-
-    case MANNED_HARDWARE:
-        assert(hardwareIndex <= MANNED_HW_ONE_MAN_MODULE);
-        break;
-
-    case MISC_HARDWARE:
-        assert(hardwareIndex <= MISC_HW_PHOTO_RECON);
-        break;
-    }
+    assert(hardwareIndex < HardwareCount(playerIndex, hardwareTypeIndex));
 
     Equipment& eq = HardwareProgram(playerIndex,
                                     hardwareTypeIndex,
@@ -973,16 +888,13 @@ void ShowUnit(char hw, char un, char player_index)
     DrawCashOnHand(player_index);
     display::graphics.setForegroundColor(11);
 
-    if (player_index != 1 
-        || hw != ROCKET_HARDWARE 
-        || un != ROCKET_HW_BOOSTERS) {
-        draw_string(170, 80, &program.Name[0]);
-    }
-
     // The text after the program name comes from the hardware catalog.
     // A few programs (e.g. the Soviet booster stage) replace the name.
-    const HardwareEntry* entry =
-        GetHardwareCatalog().FindByLegacy(player_index, hw, un);
+    const HardwareEntry* entry = HardwareEntryAt(player_index, hw, un);
+
+    if (entry == nullptr || !entry->labelReplacesName) {
+        draw_string(170, 80, &program.Name[0]);
+    }
 
     if (entry != nullptr) {
         if (entry->labelReplacesName) {
@@ -1159,9 +1071,7 @@ char HPurc(char player_index)
     HardwareButtons hardware_buttons(30, player_index);
 
     remove_savedat("UNDO.TMP");
-    FILE* undo = sOpen("UNDO.TMP", "wb", FT_SAVE);
-    fwrite(Data, sizeof(struct Players), 1, undo);
-    fclose(undo);
+    WriteUndoFile("UNDO.TMP");
 
     helpText = "i008";
     keyHelpText = "k008";
@@ -1198,9 +1108,7 @@ char HPurc(char player_index)
             InBox(266, 164, 314, 174);
             WaitForMouseUp();
         
-            FILE* undo = sOpen("UNDO.TMP", "rb", FT_SAVE);
-            fread(Data, sizeof(struct Players), 1, undo);
-            fclose(undo);
+            ReadUndoFile("UNDO.TMP");
         
             ShowUnit(hardware, unit, player_index);
             OutBox(266, 164, 314, 174);
@@ -1211,22 +1119,22 @@ char HPurc(char player_index)
             if (((x >= 7 && x <= 75 && mousebuttons > 0) || key == 'U') && hardware != PROBE_HARDWARE) {  /* PROBES */
                 hardware = PROBE_HARDWARE;
                 hardware_buttons.drawButtons(hardware);
-                unit = PROBE_HW_ORBITAL;
+                unit = FirstResearchableUnit(Data->P[player_index], hardware);
                 ShowUnit(hardware, unit, player_index);
             } else if (((x >= 83 && x <= 156 && mousebuttons > 0) || key == 'R') && hardware != ROCKET_HARDWARE) {  /* ROCKETS */
                 hardware = ROCKET_HARDWARE;
                 hardware_buttons.drawButtons(hardware);
-                unit = ROCKET_HW_ONE_STAGE;
+                unit = FirstResearchableUnit(Data->P[player_index], hardware);
                 ShowUnit(hardware, unit, player_index);
             } else if (((x >= 164 && x <= 237 && mousebuttons > 0) || key == 'C') && hardware != MANNED_HARDWARE) {  /* CAPSULES */
                 hardware = MANNED_HARDWARE;
                 hardware_buttons.drawButtons(hardware);
-                unit = MANNED_HW_ONE_MAN_CAPSULE;
+                unit = FirstResearchableUnit(Data->P[player_index], hardware);
                 ShowUnit(hardware, unit, player_index);
             } else if (((x >= 245 && x <= 313 && mousebuttons > 0) || key == 'M') && hardware != MISC_HARDWARE) {  /* MISC */
                 hardware = MISC_HARDWARE;
                 hardware_buttons.drawButtons(hardware);
-                unit = MISC_HW_KICKER_A;
+                unit = FirstResearchableUnit(Data->P[player_index], hardware);
                 ShowUnit(hardware, unit, player_index);
             }
         } else if ((x >= 5 && y >= 184 && x <= 74 && y <= 194 && mousebuttons > 0) || key == LT_ARROW) {  /* LEFT ARROW */
@@ -1234,41 +1142,7 @@ char HPurc(char player_index)
             delay(5);
             WaitForMouseUp();
             OutBox(5, 184, 74, 194);
-            unit--;
-
-            switch (hardware) {
-            case PROBE_HARDWARE:
-                if (unit < PROBE_HW_ORBITAL) {
-                    unit = PROBE_HW_LUNAR;
-                }
-
-                break;
-
-            case ROCKET_HARDWARE:
-                if (unit < ROCKET_HW_ONE_STAGE) {
-                    unit = ROCKET_HW_BOOSTERS;
-                }
-
-                break;
-
-            case MANNED_HARDWARE:
-                if (unit < MANNED_HW_ONE_MAN_CAPSULE) {
-                    unit = MANNED_HW_ONE_MAN_MODULE;
-                }
-
-                break;
-
-            case MISC_HARDWARE:
-                if (unit < MISC_HW_KICKER_A) {
-                    unit = MISC_HW_DOCKING_MODULE;
-                }
-
-                if (player_index == 0 && unit == MISC_HW_KICKER_C) {
-                    unit--;
-                }
-
-                break;
-            }
+            unit = CycleResearchableUnit(Data->P[player_index], hardware, unit, -1);
 
             ShowUnit(hardware, unit, player_index);
         } else if ((x >= 83 && y >= 184 && x <= 152 && y <= 194 && mousebuttons > 0) || key == RT_ARROW) {  /* RIGHT ARROW */
@@ -1276,41 +1150,7 @@ char HPurc(char player_index)
             WaitForMouseUp();
             OutBox(83, 184, 152, 194);
 
-            unit++;
-
-            switch (hardware) {
-            case PROBE_HARDWARE:
-                if (unit > PROBE_HW_LUNAR) {
-                    unit = PROBE_HW_ORBITAL;
-                }
-
-                break;
-
-            case ROCKET_HARDWARE:
-                if (unit > ROCKET_HW_BOOSTERS) {
-                    unit = ROCKET_HW_ONE_STAGE;
-                }
-
-                break;
-
-            case MANNED_HARDWARE:
-                if (unit > MANNED_HW_ONE_MAN_MODULE) {
-                    unit = MANNED_HW_ONE_MAN_CAPSULE;
-                }
-
-                break;
-
-            case MISC_HARDWARE:
-                if (unit > MISC_HW_DOCKING_MODULE) {
-                    unit = MISC_HW_KICKER_A;
-                }
-
-                if (player_index == 0 && unit == MISC_HW_KICKER_C) {
-                    unit++;
-                }
-
-                break;   // DM Screen, Nikakd, 10/8/10
-            }
+            unit = CycleResearchableUnit(Data->P[player_index], hardware, unit, +1);
 
             ShowUnit(hardware, unit, player_index);
         } else if ((y >= 182 && y <= 195 && x >= 166 && x <= 314 && mousebuttons > 0) || key == 'P') {  /* PURCHASE */
@@ -1361,9 +1201,7 @@ char HPurc(char player_index)
             hardware_buttons.drawButtons(hardware);
 
             // Just Added stuff by mike
-            FILE* undo = sOpen("UNDO.TMP", "wb", FT_SAVE);
-            fwrite(Data, sizeof(struct Players), 1, undo);
-            fclose(undo);
+            WriteUndoFile("UNDO.TMP");
 
             FadeIn(2, 10, 0, 0);
             music_start(M_FILLER);

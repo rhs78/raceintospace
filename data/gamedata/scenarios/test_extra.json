@@ -1,0 +1,19 @@
+{
+  "id": "TEST_EXTRA",
+  "name": "TEST EXTRA",
+  "description": "Test scenario: the classic hardware plus one additional rocket and probe per side at the end of the lists.",
+  "hidden": true,
+  "extends": "CLASSIC",
+  "hardware_append": {
+    "US": {"probe": ["US.TEST_PROBE"], "rocket": ["US.TEST_ROCKET"]},
+    "SV": {"probe": ["SV.TEST_PROBE"], "rocket": ["SV.TEST_ROCKET"]}
+  },
+  "start_stats": {
+    "basic": {
+      "US.TEST_PROBE": {"safety": 40, "init_cost": 10, "unit_cost": 2, "unit_weight": 400, "max_pay": 0, "rd_cost": 1, "max_rd": 95, "max_safety": 98, "duration": 0},
+      "US.TEST_ROCKET": {"safety": 20, "init_cost": 30, "unit_cost": 5, "unit_weight": 0, "max_pay": 2000, "rd_cost": 2, "max_rd": 84, "max_safety": 98, "duration": 0},
+      "SV.TEST_PROBE": {"safety": 40, "init_cost": 10, "unit_cost": 2, "unit_weight": 400, "max_pay": 0, "rd_cost": 1, "max_rd": 95, "max_safety": 98, "duration": 0},
+      "SV.TEST_ROCKET": {"safety": 20, "init_cost": 30, "unit_cost": 5, "unit_weight": 0, "max_pay": 2000, "rd_cost": 2, "max_rd": 84, "max_safety": 98, "duration": 0}
+    }
+  }
+}

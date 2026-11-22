@@ -130,7 +130,8 @@ BOOST_AUTO_TEST_CASE(urast_json_still_loads)
     BOOST_REQUIRE(is.good());
     cereal::JSONInputArchive iar(is);
     iar(*data);
-    BOOST_TEST(data->Checksum == sizeof(Players));
+    BOOST_TEST(data->StartYear == 57);
+    BOOST_TEST(data->P[0].Probe.empty());  // hardware comes from the scenario
 }
 
 BOOST_AUTO_TEST_SUITE_END()

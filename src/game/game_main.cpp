@@ -58,6 +58,7 @@
 #include "newmis.h"
 #include "news.h"
 #include "options.h"
+#include "scenario.h"
 #include "pace.h"
 #include "pbm.h"
 #include "place.h"
@@ -243,11 +244,13 @@ int game_main_impl(int argc, char *argv[])
         bool launchGame = false;
         MakeRecords();
 
-        DESERIALIZE_JSON_FILE(Data, locate_file("urast.json", FT_DATA));
-
-        if (Data->Checksum != (sizeof(struct Players))) {
+        try {
+            // Initial game state: urast.json plus the hardware of the
+            // default scenario (basic model).
+            BuildStartState(*Data, DefaultScenarioId(), StartModel::Basic);
+        } catch (const std::exception& e) {
             /* XXX: too drastic */
-            LOG_CRITICAL("wrong version of data file");
+            LOG_CRITICAL("cannot build the start state: %s", e.what());
             exit(EXIT_FAILURE);
         }
 
@@ -959,17 +962,9 @@ void PauseMouse()
 
 void VerifySafety(char plr)
 {
-    // Pointers to each Equipment struct
-    Equipment* arrays[4] = {
-        Data->P[plr].Probe,
-        Data->P[plr].Rocket,
-        Data->P[plr].Manned,
-        Data->P[plr].Misc
-    };
     // Check for safety for each Equipment
     for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < HardwareCount(i); j++) {
-            Equipment& px = arrays[i][j];
+        for (Equipment& px : HardwareList(Data->P[plr], i)) {
 
             if (px.Safety > px.MaxSafety) {
                 px.Safety = px.MaxSafety;
