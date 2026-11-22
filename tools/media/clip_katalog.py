@@ -53,16 +53,17 @@ def lade_json(pfad):
 
 
 def hardware_tabelle(daten):
-    """Liefert {(Seite 'U'/'S', ID 'C2'): 'APOLLO'} aus hist.json."""
-    hist = lade_json(os.path.join(daten, "gamedata", "hist.json"))
+    """Liefert {(Seite 'U'/'S', ID 'C2'): 'APOLLO'} aus dem Hardware-Katalog."""
+    katalog = lade_json(os.path.join(daten, "gamedata", "hardware.json"))
     tab = {}
-    for schluessel, eintraege in hist.items():
-        seite = "U" if "P[0]" in schluessel else "S"
-        for e in eintraege:
-            if not e.get("Name"):
-                continue
-            kennung = chr(e["ID"]["value0"]) + chr(e["ID"]["value1"])
-            tab[(seite, kennung)] = e["Name"]
+    for eintrag in katalog.get("hardware", []):
+        # Testeintraege gehoeren nicht ins Spiel
+        if eintrag.get("test_only"):
+            continue
+        seite = "U" if eintrag.get("side") == "US" else "S"
+        kennung = eintrag.get("anim_id", "")
+        if kennung:
+            tab[(seite, kennung)] = eintrag.get("name", "")
     return tab
 
 
