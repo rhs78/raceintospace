@@ -1,7 +1,7 @@
 # Hardware-Katalog – Spezifikation (Etappe 4)
 
 Stand: 22.11.2026 · Grundlagen: `architektur.md` (Abschnitt 2.2), Analysebericht Hardware (Etappe 0),
-`recherche-mercury.md` · Status: **Entwurf zur Freigabe**
+`recherche-mercury.md` · Status: **freigegeben 22.11.2026** (alle Empfehlungen in Abschnitt 8 übernommen)
 
 ---
 
@@ -168,7 +168,7 @@ dieselben Dateien), 4f kann teilweise parallel zu 4e laufen. Prüfung und Zusamm
 
 Gesamtaufwand: groß – der umfangreichste Umbau des Projekts.
 
-## 8. Entscheidungen
+## 8. Entscheidungen (22.11.2026: jeweils Empfehlung übernommen)
 
 1. **Szenario-Konzept** „Klassisch“ / „Historisch“, unabhängig vom Startjahr wählbar – *Empfehlung: ja.*
    Alternative: Startjahr 1955/56 bedeutet automatisch historische Hardware.
