@@ -38,13 +38,13 @@
  */
 void ShowPrestigeResults(char plr)
 {
-    int turn = 2 * (Data->Year - 57) + Data->Season;
+    int turn = Data->TurnIndex();
 
     for (int i = 0; i < Data->P[plr].PastMissionCount; i++) {
         // Spring: Jan to Jun
         // Fall: Jul to Dec
 
-        int mturn = (2 * (Data->P[plr].History[i].MissionYear - 57));
+        int mturn = (2 * (Data->P[plr].History[i].MissionYear - Data->StartYear));
 
         if (Data->P[plr].History[i].Month > 5) {
             mturn++;

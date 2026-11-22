@@ -44,6 +44,7 @@ using namespace std::literals::string_view_literals;
 #include "mission_util.h"
 #include "pace.h"
 #include "records.h"
+#include "timeline.h"
 
 LOG_DEFAULT_CATEGORY(LOG_ROOT_CAT);
 
@@ -174,9 +175,7 @@ void DrawBudget(char plr, char* pStatus)
 
     int placeDate = (Data->Season == 0)? 108
                                        : 116;
-    std::string name = (Data->Season == 0)? "SPRING 19"
-                                          : "FALL 19";
-    name += std::to_string(Data->Year);
+    std::string name = FormatSeasonYear(Data->Year, Data->Season);
 
     display::graphics.setForegroundColor(1);
     draw_heading(placeDate, 5, name.c_str(), 0, -1);
@@ -200,9 +199,9 @@ void DrawBudget(char plr, char* pStatus)
         int turn_to_draw = current_turn - 4 + i;
         int season = turn_to_draw % 2;
         int year = turn_to_draw / 2;
-        draw_number(date_x_coords_1[i], 130, year);
+        draw_number(date_x_coords_1[i], 130, year % 100);
         draw_character("SF"[season]);
-        draw_number(date_x_coords_2[i], 193, year);
+        draw_number(date_x_coords_2[i], 193, year % 100);
         draw_character("SF"[season]);        
     }
 
@@ -224,11 +223,11 @@ void DrawBudget(char plr, char* pStatus)
     display::graphics.setForegroundColor(4);
     int x_coords[] = {298,271,248,222,194};
     for(int i=0; i<5; ++i) {
-        draw_number(x_coords[i], 174, Data->Year - i);
+        draw_number(x_coords[i], 174, (Data->Year - i) % 100);
     }
 
     for (int i = 0; i < 5; i++) {
-        int gameyear = std::max(0, Data->Year - 57 + i);
+        int gameyear = std::max(0, Data->YearIndex() + i);
         fill_rectangle(197 + i * 26, 164 - (    pData.BudgetHistory[gameyear] * 74) / 200,  190 + i * 26, 164, player_colors_1[plr]);
         fill_rectangle(206 + i * 26, 164 - (otherData.BudgetHistoryF[gameyear] * 74) / 200, 199 + i * 26, 164, player_colors_1[other(plr)]);
         fill_rectangle(196 + i * 26, 164 - (    pData.BudgetHistory[gameyear] * 74) / 200,  190 + i * 26, 163, player_colors_2[plr]);
@@ -375,8 +374,8 @@ void DrawPreviousMissions(char plr)
         draw_number(0, 0, hist.Prestige);
 
         draw_string(230, 49 + 16 * misnum, Months[hist.Month]);
-        draw_string(0, 0, " 19");
-        draw_number(0, 0, hist.MissionYear);
+        draw_string(0, 0, " ");
+        draw_year(0, 0, hist.MissionYear);
         i--;
         misnum++;
     }
@@ -542,14 +541,14 @@ std::string OldNewsCard(char plr, int card)
     display::graphics.setForegroundColor(11);
 
     if ((card % 2) == 1) {
-        draw_string(131, 191, "FALL 19");
+        draw_string(131, 191, "FALL ");
     } else {
-        draw_string(128, 191, "SPRING 19");
+        draw_string(128, 191, "SPRING ");
     }
 
-    draw_number(0, 0, (card >> 1) + 57);
+    draw_year(0, 0, (card >> 1) + Data->StartYear);
 
-    return interimData.tempEvents.at(card + plr * 42);
+    return interimData.tempEvents.at(card + plr * MAX_NEWS_PER_PLAYER);
 }
 
 void Viewing(char plr)
@@ -558,7 +557,7 @@ void Viewing(char plr)
     int ctop, bline = 0, oset, maxcard;
     olderMiss = 1;
     maxcard = oset = pData.eCount - 1;
-    const int turn = 2 * (Data->Year - 57) + Data->Season;
+    const int turn = Data->TurnIndex();
 
     if (maxcard < 0 || maxcard > turn) {
         LOG_ERROR("Invalid event card count %d: Must be in range (0, %d]",

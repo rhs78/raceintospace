@@ -403,7 +403,7 @@ struct LegacyPlayers {
 
         // SECURITY: Data sanitization
         ASSERT(Count >= 0 && Count < MAX_NEWS_ITEMS);
-        ASSERT(Year >= 57 && Year <= 78);
+        ASSERT(Year >= MIN_START_YEAR && Year <= 100);  // legacy files hold 1957-1978
         ASSERT(Season == 0 || Season == 1);
     }
 };

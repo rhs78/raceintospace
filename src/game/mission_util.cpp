@@ -10,16 +10,10 @@
 #include "gr.h"
 #include "ioexception.h"
 #include "logging.h"
+#include "timeline.h"
 
 
 LOG_DEFAULT_CATEGORY(LOG_ROOT_CAT);
-
-namespace
-{
-    bool MarsInRange(unsigned int year, unsigned int season);
-    bool JupiterInRange(unsigned int year, unsigned int season);
-    bool SaturnInRange(unsigned int year, unsigned int season);
-};
 
 std::vector<struct mStr> missionData;
 
@@ -324,12 +318,13 @@ void DrawMissionName(int val, int posX, int posY, int len)
  */
 bool MissionTimingOk(int mission, unsigned int year, unsigned int season)
 {
+    // The windows follow the planets' synodic periods, see timeline.cpp.
     if (mission == Mission_MarsFlyby) {
-        return MarsInRange(year, season);
+        return InLaunchWindow(MarsWindows, year, season);
     } else if (mission == Mission_JupiterFlyby) {
-        return JupiterInRange(year, season);
+        return InLaunchWindow(JupiterWindows, year, season);
     } else if (mission == Mission_SaturnFlyby) {
-        return SaturnInRange(year, season);
+        return InLaunchWindow(SaturnWindows, year, season);
     }
 
     return true;
@@ -339,38 +334,3 @@ bool MissionTimingOk(int mission, unsigned int year, unsigned int season)
 //----------------------------------------------------------------------
 // Local definitions
 //----------------------------------------------------------------------
-
-namespace  // Start of local namespace
-{
-
-/* Is Mars at the right point in its orbit where a rocket launched at
- * the given time will be able to intercept it?
- */
-bool MarsInRange(unsigned int year, unsigned int season)
-{
-    return ((year == 60 && season == 0) || (year == 62 && season == 0) ||
-            (year == 64 && season == 0) || (year == 66 && season == 0) ||
-            (year == 69 && season == 1) || (year == 71 && season == 1) ||
-            (year == 73 && season == 1));
-}
-
-
-/* Is Jupiter at the right point in its orbit where a rocket launched
- * at the given time will be able to intercept it?
- */
-bool JupiterInRange(unsigned int year, unsigned int season)
-{
-    return (year == 60 || year == 64 || year == 68 || year == 72 ||
-            year == 73 || year == 77);
-}
-
-
-/* Is Saturn at the right point in its orbit where a rocket launched
- * at the given time will be able to intercept it?
- */
-bool SaturnInRange(unsigned int year, unsigned int season)
-{
-    return (year == 61 || year == 66 || year == 72);
-}
-
-};  // End of local namespace

@@ -20,6 +20,7 @@
  */
 
 #include "future.h"
+#include "timeline.h"
 
 #include <cassert>
 
@@ -274,8 +275,7 @@ void DrawFuture(char plr, int mis, char pad, MissionNavigator& nav)
         draw_string(205, 9, "FALL");
     }
 
-    draw_string(206, 16, "19");
-    draw_number(0, 0, Data->Year);
+    draw_year(206, 16, Data->Year);
     display::graphics.setForegroundColor(1);
     draw_small_flag(plr, 4, 4);
     draw_heading(40, 5, "FUTURE MISSIONS", 0, -1);

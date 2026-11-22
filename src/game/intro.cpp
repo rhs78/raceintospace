@@ -26,6 +26,7 @@
 // This page diplays the official game credits
 
 #include "intro.h"
+#include "timeline.h"
 
 #include <vector>
 
@@ -277,11 +278,11 @@ void NextTurn(char plr)
     grMoveTo(175, 122);
 
     if (Data->Season == 0) {
-        draw_string(0, 0, "SPRING 19");
+        draw_string(0, 0, "SPRING ");
     } else {
-        draw_string(0, 0, "FALL 19");
+        draw_string(0, 0, "FALL ");
     }
-    draw_number(0, 0, Data->Year);
+    draw_year(0, 0, Data->Year);
     
     display::graphics.screen()->draw(countrySeals, 110 * plr, 0, 107, 95, 30, 85);
 

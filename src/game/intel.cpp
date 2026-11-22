@@ -317,7 +317,8 @@ void DrawIntelBackground();
  */
 unsigned int BriefingIndex()
 {
-    return Data->Year - 58;
+    // The first briefing is made in the Fall after the first year.
+    return Data->Year - (Data->StartYear + 1);
 }
 
 
@@ -330,7 +331,7 @@ unsigned int BriefingIndex()
  */
 unsigned int BriefingIndex(const char year, const char season)
 {
-    return year - 58;
+    return year - (Data->StartYear + 1);
 }
 
 
@@ -663,7 +664,7 @@ void Special(char plr, int ind)
  * rockets, manned craft, and miscellaneous hardware.
  *
  * \param plr   player index.
- * \param year  the report's index (# of years since 1958).
+ * \param year  the report's index (# of years since the first briefing, the year after the start year).
  */
 void BackIntel(char plr, char year)
 {
@@ -686,7 +687,7 @@ void BackIntel(char plr, char year)
         draw_string(0, 0, "F");
     }
 
-    if (year < Data->Year - 58) {  // TODO: Should use PastIntel[0].cur
+    if (year < static_cast<int>(BriefingIndex())) {  // TODO: Should use PastIntel[0].cur
         draw_up_arrow_highlight(137, 42);
     } else {
         draw_up_arrow(137, 42);
@@ -699,7 +700,11 @@ void BackIntel(char plr, char year)
     }
 
 
-    draw_number(0, 0, 58 + year);
+    {
+        char yearText[8];
+        snprintf(yearText, sizeof(yearText), "%02d", (Data->StartYear + 1 + year) % 100);
+        draw_string(0, 0, yearText);
+    }
     display::graphics.setForegroundColor(6);
     draw_string(17, 51, "CODE NAME: ");
     display::graphics.setForegroundColor(1);
@@ -882,7 +887,7 @@ void HarIntel(char plr, char acc)
             {4,5,7},//  '65
             {4,5,8} //  the rest
         };
-        int idx = std::min(58 - Data->Year, 7);
+        int idx = std::max(0, std::min(Data->Year - 58, 7));
         for (int i : Categories[idx]) {
             for (int j : F[i]) {
                 save[j] = 1;
@@ -901,7 +906,7 @@ void HarIntel(char plr, char acc)
             {3, 15, 3, 3, 2, 3, 3, 1, 2, 2, 2, 2, 1, 2, 3}  // 66
         };
     
-        int i = std::min(Data->Year - 58, 8);
+        int i = std::max(0, std::min(Data->Year - 58, 8));
         int seg = W[i][0];
         int k = 2;
         int limit = brandom(100);
@@ -1348,7 +1353,7 @@ void UpDateTable(char plr)
  */
 void IntelPhase(char plr, char pt)
 {
-    if (Data->Year == 57 || (Data->Year == 58 && Data->Season == 0)) {
+    if (Data->BeforeFirstIntel()) {
         return;
     }
 
@@ -1496,7 +1501,7 @@ void Bre(char plr)
 
         } else if (key == K_HOME) {
             ClearIntelReportText();
-            year = Data->Year - 58;
+            year = BriefingIndex();
             BackIntel(plr, year);
 
         } else if ((x >= 135 && y > 85 && x <= 145 && y <= 130 && mousebuttons > 0) || key == DN_ARROW) {

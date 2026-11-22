@@ -46,6 +46,7 @@
 #include "place.h"
 #include "replay.h"
 #include "start.h"
+#include "timeline.h"
 
 
 char PF[29][40] = {
@@ -60,10 +61,10 @@ char PF[29][40] = {
 };
 
 
-int Burst(char win);
+int Burst(char win, bool landing = true);
 void EndGame(char win, char pad);
 void Load_LenFlag(char win);
-void Draw_NewEnd(char win);
+void Draw_NewEnd(char win, bool landing = true);
 void FakeHistory(char plr, char Fyear);
 std::string HistFile(unsigned char bud);
 void PrintHist(std::string_view buf);
@@ -78,9 +79,11 @@ void LoserPict();
  * Illustrates the endgame fireworks during the victory celebration.
  *
  * \param win  Country index of the winning side (0 for USA, 1 for USSR).
+ * \param landing  false when there is no lunar landing to show (the
+ *                 HISTORY and MOON EVA choices are ignored).
  * \return     Menu code for the player's choice in the control loop.
  */
-int Burst(char win)
+int Burst(char win, bool landing)
 {
     helpText = "i144";
     keyHelpText = "k044";
@@ -96,13 +99,13 @@ int Burst(char win)
 
         if (key > 0 || mousebuttons > 0) {
             char R_value = 0;
-            if ((x >= 14 && y >= 182 && x <= 65 && y <= 190 && mousebuttons > 0) || key == 'H') {
+            if (landing && ((x >= 14 && y >= 182 && x <= 65 && y <= 190 && mousebuttons > 0) || key == 'H')) {
                 R_value = 1;
             } else if ((x >= 74 && y >= 182 && x <= 125 && y <= 190 && mousebuttons > 0) || key == 'S') {
                 R_value = 2;
             } else if ((x >= 134 && y >= 182 && x <= 185 && y <= 190 && mousebuttons > 0) || key == 'P') {
                 R_value = 3;
-            } else if ((x >= 194 && y >= 182 && x <= 245 && y <= 190 && mousebuttons > 0) || key == 'M') {
+            } else if (landing && ((x >= 194 && y >= 182 && x <= 245 && y <= 190 && mousebuttons > 0) || key == 'M')) {
                 R_value = 4;
             } else if ((x >= 254 && y >= 182 && x <= 305 && y <= 190 && mousebuttons > 0) || key == K_ENTER || key == 'E') {
                 R_value = 5;
@@ -193,8 +196,7 @@ void EndGame(char win, char pad)
     draw_number(0, 0, dayOnMoon);
     draw_string(0, 0, " ");
     draw_string(0, 0, Month[month]);
-    draw_string(0, 0, "19");
-    draw_number(0, 0, Data->Year);
+    draw_year(0, 0, Data->Year);
 
     // correct mission pictures
     int historyIndex = (Option == -1 && MAIL == -1) ? Data->P[win].PastMissionCount - 1
@@ -391,7 +393,7 @@ void Load_LenFlag(char win)
     display::graphics.screen()->draw(image, x, y);
 }
 
-void Draw_NewEnd(char win)
+void Draw_NewEnd(char win, bool landing)
 {
     music_start(M_VICTORY);
 
@@ -404,10 +406,18 @@ void Draw_NewEnd(char win)
 
     ShBox(0, 173, 319, 199);
     InBox(5, 178, 314, 194);
-    IOBox(12, 180, 67, 192);
+    if (landing) {
+        IOBox(12, 180, 67, 192);
+    } else {
+        InBox(12, 180, 67, 192);  // no landing history to show
+    }
     IOBox(72, 180, 127, 192);
     IOBox(132, 180, 187, 192);
-    IOBox(192, 180, 247, 192);
+    if (landing) {
+        IOBox(192, 180, 247, 192);
+    } else {
+        InBox(192, 180, 247, 192);  // no lunar EVA to show
+    }
     IOBox(252, 180, 307, 192);
 
     display::graphics.setForegroundColor(1);
@@ -422,16 +432,26 @@ void Draw_NewEnd(char win)
     FadeIn(1, 40, 128, 1);
 }
 
-void NewEnd(char win, char loc)
+/**
+ * The victory flow.
+ *
+ * \param landing  true when the game was won by the first manned lunar
+ *     landing; false when it was decided on prestige points at the end
+ *     of the game, in which case there is no landing to show (the
+ *     HISTORY and MOON EVA buttons are disabled).
+ */
+void NewEnd(char win, char loc, bool landing)
 {
     music_start(M_VICTORY);
-    EndGame(win, loc);
-    Draw_NewEnd(win);
+    if (landing) {
+        EndGame(win, loc);
+    }
+    Draw_NewEnd(win, landing);
     WaitForMouseUp();
     display::LegacySurface local(162, 92);
     local.clear(0);
 
-    int R_V = Burst(win);
+    int R_V = Burst(win, landing);
     bool Re_Draw = false;
     while (true) {
         key = 0;
@@ -448,13 +468,13 @@ void NewEnd(char win, char loc)
                 continue;
             }
             
-            if ((x >= 14 && y >= 182 && x <= 65 && y <= 190 && mousebuttons > 0) || key == 'H') {
+            if (landing && ((x >= 14 && y >= 182 && x <= 65 && y <= 190 && mousebuttons > 0) || key == 'H')) {
                 R_V = 1;
             } else if ((x >= 74 && y >= 182 && x <= 125 && y <= 190 && mousebuttons > 0) || key == 'S') {
                 R_V = 2;
             } else if ((x >= 134 && y >= 182 && x <= 185 && y <= 190 && mousebuttons > 0) || key == 'P') {
                 R_V = 3;
-            } else if ((x >= 194 && y >= 182 && x <= 245 && y <= 190 && mousebuttons > 0) || key == 'M') {
+            } else if (landing && ((x >= 194 && y >= 182 && x <= 245 && y <= 190 && mousebuttons > 0) || key == 'M')) {
                 R_V = 4;
             } else if ((x >= 254 && y >= 182 && x <= 305 && y <= 190 && mousebuttons > 0) || key == K_ENTER) {
                 R_V = 5;
@@ -470,13 +490,13 @@ void NewEnd(char win, char loc)
             FadeIn(1, 40, 128, 1);
 
             if (R_V == 0 || R_V == -1) {
-                R_V = Burst(win);
+                R_V = Burst(win, landing);
             }
 
             Re_Draw = false;
             helpText = "i144";
             keyHelpText = "k044";
-        } else if (((x >= 14 && y >= 182 && x <= 65 && y <= 190 && mousebuttons > 0) || key == 'H') || R_V == 1) {
+        } else if (landing && (((x >= 14 && y >= 182 && x <= 65 && y <= 190 && mousebuttons > 0) || key == 'H') || R_V == 1)) {
             // History box
             InBox(14, 182, 65, 190);
             WaitForMouseUp();
@@ -488,10 +508,10 @@ void NewEnd(char win, char loc)
             key = 0;
             OutBox(14, 182, 65, 190);
             EndGame(win, loc);
-            Draw_NewEnd(win);
+            Draw_NewEnd(win, landing);
             helpText = "i144";
             keyHelpText = "k044";
-            R_V = Burst(win);
+            R_V = Burst(win, landing);
         } else if (((x >= 74 && y >= 182 && x <= 125 && y <= 190 && mousebuttons > 0) || key == 'S') || R_V == 2) {
             // Stats box
             music_stop();
@@ -506,10 +526,10 @@ void NewEnd(char win, char loc)
             OutBox(74, 182, 125, 190);
             music_start(M_THEME);
             Stat(win);
-            Draw_NewEnd(win);
+            Draw_NewEnd(win, landing);
             helpText = "i144";
             keyHelpText = "k044";
-            R_V = Burst(win);
+            R_V = Burst(win, landing);
         } else if (((x >= 134 && y >= 182 && x <= 185 && y <= 190 && mousebuttons > 0) || key == 'P') || R_V == 3) {
             // Parade
             music_stop();
@@ -538,7 +558,7 @@ void NewEnd(char win, char loc)
             music_stop();
             helpText = "i144";
             keyHelpText = "k044";
-        } else if (((x >= 194 && y >= 182 && x <= 245 && y <= 190 && mousebuttons > 0) || key == 'M') || R_V == 4) {
+        } else if (landing && (((x >= 194 && y >= 182 && x <= 245 && y <= 190 && mousebuttons > 0) || key == 'M') || R_V == 4)) {
             // Moon EVA
             music_stop();
             InBox(194, 182, 245, 190);
@@ -627,14 +647,15 @@ void FakeWin(char win)
     DrawMissionName(miss, 80, 50, 24);
     display::graphics.setForegroundColor(6);
 
+    // The fictional landing takes place a few years after the game year
+    // (the game ends in 1963, long before the Moon is reached).
     int yr;
     if (Data->Year <= 65) {
         yr = 65 + brandom(5);
     } else if (Data->Year <= 70) {
         yr = 70 + brandom(3);
     } else {
-        // Years after 77 are clamped to the last year of the game.
-        yr = std::min<int>(Data->Year, 77);
+        yr = Data->Year;
     }
 
     r = brandom(100);
@@ -662,8 +683,7 @@ void FakeWin(char win)
     draw_number(0, 0, brandom(daysAMonth[monthWin]) + 1);
     draw_string(0, 0, " ");
     draw_string(0, 0, Month[monthWin]);
-    draw_string(0, 0, "19");
-    draw_number(0, 0, yr);
+    draw_year(0, 0, yr);
 
     int bud;
     if (win == 1 && prog == 5) {
@@ -892,6 +912,54 @@ void AltHistory(char plr)  // holds the winning player
     }
 
     PrintHist(HistFile(bud));
+}
+
+/**
+ * The sum of all prestige points a country has earned.
+ */
+int PrestigeTotal(int plr)
+{
+    int total = 0;
+
+    for (int i = 0; i < MAXIMUM_PRESTIGE_NUM; i++) {
+        total += Data->Prestige[i].Points[plr];
+    }
+
+    return total;
+}
+
+/**
+ * Who wins when the game ends without a lunar landing?
+ *
+ * \return 0 (USA) or 1 (USSR) for the country with more prestige
+ *     points, -1 for a tie.
+ */
+int FinalScoreWinner()
+{
+    int usa = PrestigeTotal(0);
+    int ussr = PrestigeTotal(1);
+
+    if (usa == ussr) {
+        return -1;
+    }
+
+    return (usa > ussr) ? 0 : 1;
+}
+
+/**
+ * End of the game at the end of the last year without a lunar landing.
+ * The country with more prestige points gets the victory flow, a tie
+ * is a failed objective for both.
+ */
+void FinalScoreEnd()
+{
+    int win = FinalScoreWinner();
+
+    if (win < 0) {
+        SpecialEnd();
+    } else {
+        NewEnd(win, 0, false);
+    }
 }
 
 void SpecialEnd()

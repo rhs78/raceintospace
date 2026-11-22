@@ -19,6 +19,7 @@
 // This page controls the last-minute confirmation screen just before each launch
 
 #include "newmis.h"
+#include "timeline.h"
 
 #include "display/graphics.h"
 #include "display/surface.h"
@@ -143,8 +144,8 @@ void MisOrd(char num)
         draw_string(0, 0,
                     Month[Data->P[Order[i].plr].Mission[Order[i].loc].Month]);
 
-        draw_string(0, 0, " 19");
-        draw_number(0, 0, Data->Year);
+        draw_string(0, 0, " ");
+        draw_year(0, 0, Data->Year);
     }
 
     FadeIn(2, 10, 0, 0);
@@ -189,8 +190,7 @@ void MisAnn(char plr, char pad)
     
     display::graphics.setForegroundColor(1);
     draw_string(0, 0, Month[mission.Month]);
-    draw_string(0, 0, "19");
-    draw_number(0, 0, Data->Year);
+    draw_year(0, 0, Data->Year);
     
     display::graphics.setForegroundColor(1);
     mStr plan = GetMissionPlan(mission.MissionCode);
@@ -520,11 +520,11 @@ void AI_Begin(char plr)
     display::graphics.setForegroundColor(11);
     grMoveTo(175, 122);
     if (Data->Season == 0) {
-        draw_string(0, 0, "SPRING 19");
+        draw_string(0, 0, "SPRING ");
     } else {
-        draw_string(0, 0, "FALL 19");
+        draw_string(0, 0, "FALL ");
     }
-    draw_number(0, 0, Data->Year);
+    draw_year(0, 0, Data->Year);
     
     display::graphics.screen()->draw(countrySeals, 110 * plr, 0, 107, 95, 30, 85);
     

@@ -28,6 +28,7 @@
 // Space History, Prestige Summary, and Astronaut History
 
 #include "museum.h"
+#include "timeline.h"
 
 #include "display/graphics.h"
 #include "display/surface.h"
@@ -536,8 +537,8 @@ void DPrest(char plr, char* pos, char* pos2)
 
             if (Data->Prestige[*pos2].Year != 0) {
                 draw_string(10, 91, Mon[Data->Prestige[*pos2].Month]);
-                draw_string(0, 0, " 19");
-                draw_number(0, 0, Data->Prestige[*pos2].Year);
+                draw_string(0, 0, " ");
+                draw_year(0, 0, Data->Prestige[*pos2].Year);
             }
 
         }
@@ -638,17 +639,17 @@ void DPrest(char plr, char* pos, char* pos2)
 /*  Indexing used for the mission history screen:
  *  To find the index, pos in ShowSpHist, and, *where in the subs, use
  *
- *   pos = 2*(year-57) + season
+ *   pos = 2*(year-StartYear) + season
  *
  *   to go from pos to year and season use:
  *
- *   year = (pos - season)/2 + 57
+ *   year = (pos - season)/2 + StartYear
  *
  *   season = where mod 2
  *
- *   pos is an index: 0 ==> 57,Spring
- *                    1 ==> 57,Fall
- *                    2 ==> 58,Spring, etc...
+ *   pos is an index: 0 ==> StartYear,Spring
+ *                    1 ==> StartYear,Fall
+ *                    2 ==> StartYear+1,Spring, etc...
  */
 void ShowSpHist(char plr)
 {
@@ -657,11 +658,11 @@ void ShowSpHist(char plr)
     display::graphics.screen()->clear();
 
     int pos;
-    if ((Data->Year == 57 && Data->Season == 0) ||
+    if (Data->IsFirstTurn() ||
         Data->P[plr].PastMissionCount == 0) {
-        pos = (Data->Year - 57) * 2 + Data->Season;
+        pos = Data->TurnIndex();
     } else {
-        pos = (Data->P[plr].History[Data->P[plr].PastMissionCount - 1].MissionYear - 57) * 2 +
+        pos = (Data->P[plr].History[Data->P[plr].PastMissionCount - 1].MissionYear - Data->StartYear) * 2 +
               ((Data->P[plr].History[Data->P[plr].PastMissionCount - 1].Month <= 5) ? 0 : 1);
     }
 
@@ -716,20 +717,26 @@ void Mission_Data_Buttons(char plr, int* where)
 
     int index = 0;
     int season = *where % 2;
-    int yr = (*where - season) / 2 + 57;
+    int yr = (*where - season) / 2 + Data->StartYear;
 
     // can't simply do "auto& hist = Data->P[plr].History[index];" anywhere in the function because index keep getting changed :/
-    while (yr > Data->P[plr].History[index].MissionYear) {
+    const int missionCount = Data->P[plr].PastMissionCount;
+
+    while (index < missionCount && yr > Data->P[plr].History[index].MissionYear) {
         index++;
     }
 
-    if (Data->P[plr].History[index].MissionYear > yr) {
+    if (index >= missionCount || Data->P[plr].History[index].MissionYear > yr) {
         return;
     }
 
     if (season == 1) {
-        while (Data->P[plr].History[index].Month < 6) {
+        while (index < missionCount && Data->P[plr].History[index].Month < 6) {
             index++;
+        }
+
+        if (index >= missionCount) {
+            return;
         }
 
         if (Data->P[plr].History[index].MissionYear > yr) {
@@ -752,7 +759,7 @@ void Mission_Data_Buttons(char plr, int* where)
 
         temp++;
         index++;
-    } while (Data->P[plr].History[index].MissionYear == yr);
+    } while (index < MAX_MISSION_COUNT && Data->P[plr].History[index].MissionYear == yr);
 }
 
 
@@ -762,7 +769,7 @@ void FastOne(char plr, int* where)
         return ;
     }
 
-    int last = (Data->P[plr].History[Data->P[plr].PastMissionCount - 1].MissionYear - 57) * 2 +
+    int last = (Data->P[plr].History[Data->P[plr].PastMissionCount - 1].MissionYear - Data->StartYear) * 2 +
            ((Data->P[plr].History[Data->P[plr].PastMissionCount - 1].Month <= 5) ? 0 : 1);
 
     if (*where >= last) {
@@ -801,7 +808,7 @@ void FullFast(char plr, int* where)
         return;
     }
 
-    *where = (Data->P[plr].History[Data->P[plr].PastMissionCount - 1].MissionYear - 57) * 2 +
+    *where = (Data->P[plr].History[Data->P[plr].PastMissionCount - 1].MissionYear - Data->StartYear) * 2 +
              ((Data->P[plr].History[Data->P[plr].PastMissionCount - 1].Month <= 5) ? 0 : 1);
     DrawMisHist(plr, *where);
 }
@@ -812,7 +819,7 @@ void FullFast(char plr, int* where)
  * Space History section of the Space Museum.
  *
  * \param plr   the player index.
- * \param turn  the game turn (0 for Sp 1957, 1 for July-Dec 1957, etc.)
+ * \param turn  the game turn (0 for Spring of the start year, 1 for July-Dec of the start year, etc.)
  */
 void DrawMisHist(char plr, int turn)
 {
@@ -835,11 +842,16 @@ void DrawMisHist(char plr, int turn)
         }
     }
 
-    int yr = (turn / 2) + 57;
+    int yr = (turn / 2) + Data->StartYear;
     int season = turn % 2;
     ORBox(95, 176, 224, 193, 3);  // draw the boxes under date
-    snprintf(cYr, sizeof(cYr), "%d", 1900 + yr);
-    draw_heading(103 + (yr - 57) * 4, 178, cYr, 0, -1);
+    // The year heading slides along the box with the turn, 80 pixels
+    // over the whole game (4 pixels a year in the original 21 year game).
+    {
+        std::string yearText = FormatYear(yr);
+        int slide = 80 * (yr - Data->StartYear) / std::max(1, Data->EndYear - Data->StartYear);
+        draw_heading(103 + slide, 178, yearText.c_str(), 0, -1);
+    }
 
     fill_rectangle(5, 29, 314, 169, 0);
     display::graphics.setForegroundColor(7 + 3 * plr);
@@ -868,21 +880,23 @@ void DrawMisHist(char plr, int turn)
     // Find the first mission in the mission history that begins during
     // the selected turn (index). Missions are chronologically ordered.
     // If there are none return without drawing anything.
-    while (yr > Data->P[plr].History[index].MissionYear) {
+    const int missionCount = Data->P[plr].PastMissionCount;
+
+    while (index < missionCount && yr > Data->P[plr].History[index].MissionYear) {
         index++;
     }
 
-    if (Data->P[plr].History[index].MissionYear > yr) {
+    if (index >= missionCount || Data->P[plr].History[index].MissionYear > yr) {
         return;
     }
 
     if (season == 1) {
-        while (Data->P[plr].History[index].Month < 6 &&
+        while (index < missionCount && Data->P[plr].History[index].Month < 6 &&
                yr == Data->P[plr].History[index].MissionYear) {
             index++;
         }
 
-        if (Data->P[plr].History[index].MissionYear > yr) {
+        if (index >= missionCount || Data->P[plr].History[index].MissionYear > yr) {
             return;
         }
     }

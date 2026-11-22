@@ -149,3 +149,16 @@ Etappen 6–8 (Grafik/Video) sind unabhängig von 3–5 und können parallel lau
 2. Kompatibilität alter Spielstände (BARIS-Originalformat, PBEM) erhalten oder aufgeben? Aufgeben spart in Etappen 3–4 spürbar Aufwand.
 3. Fehlerkorrekturen aus Etappe 1 als Pull Request an das Originalprojekt anbieten?
 4. Bei Spielende: Mondlandung weiterhin als Sieg, oder Punktewertung bis zum gewählten Endjahr?
+
+---
+
+## 8. Etappe 3 – Umsetzungsstand (Zeitachse)
+
+- `Players` (Version 2) enthält `StartYear` und `EndYear` (Jahre seit 1900). Hilfen: `TurnIndex()`, `YearIndex()`, `BudgetIndex()`, `TotalTurns()`, `IsFirstTurn()`, `BeforeFirstIntel()`, `IsLastTurn()`.
+- Standardwerte stehen in `data/gamedata/urast.json` (`"StartYear": 57`, `"EndYear": 63`) – **einzige Stelle für das Spielende**. Das Startjahr (1955/56/57) wird im Einstellungsbildschirm über den Knopf „START YEAR“ (Taste Y) gewählt; `MainLoop` setzt `Year = StartYear` vor `InitData()`.
+- Arrays: `MAX_GAME_YEARS 48`, `MAX_GAME_TURNS 96`; `BudgetHistory[52]` (4 Leerplätze davor), `PastIntel[48]`, `Events[192]`, `MAX_NEWS_PER_PLAYER 96`, `MAX_MISSION_COUNT 300`, `Count`/`eCount` und `PrestType.Index` sind 16 Bit. Alte Spielstände werden nicht mehr geladen (Legacy-Loader meldet „falsches Dateiformat“).
+- Ereigniskarten: `FillEventCards()` (`timeline.cpp`) behält die sechs Perioden des Originals (2, 8, 8, 12, 16, Rest) ab Spielbeginn; die letzte Periode wird auf die benötigte Kartenzahl gestreckt bzw. abgeschnitten. Sind alle erlaubten Pools erschöpft, werden sie neu gemischt.
+- Spielende: nach dem Herbst von `EndYear` ohne Mondlandung gewinnt das Land mit mehr Prestigepunkten (Summe `Prestige[i].Points`), Siegerfluss `NewEnd(win, 0, false)` ohne HISTORY/MOON EVA; Gleichstand -> `SpecialEnd()`.
+- Startfenster: `MarsWindows`/`JupiterWindows`/`SaturnWindows` (synodische Periode, Epoche, Fensterlänge). Bis einschließlich 1963 identisch mit der alten Tabelle, danach Abweichungen (siehe `test/game/timeline_test.cpp`).
+- Nachrichtentexte: `news.json` beginnt 1957; frühere Jahre nutzen den 1957-Block (`NewsYearIndex`).
+
