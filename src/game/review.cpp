@@ -358,6 +358,9 @@ void CalcPresRev()
         if (ip > 16) ip = 16;
         if (ip < 1) ip = 1;
 
+        // Sandbox mode: human players cannot be fired (16 = fired).
+        if (Data->Def.Sandbox && !AI[plr] && ip > 15) ip = 15;
+
         Data->P[plr].tempPrestige[0] = 0;
         Data->P[plr].tempPrestige[1] = 0;
         if (Data->P[plr].PresRev[0] > Data->P[abs(plr - 1)].PresRev[0]) Data->P[plr].PresRev[0] += 1; // US looks at last year SV review??

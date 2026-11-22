@@ -582,7 +582,7 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
                    )
                 ) {
                 if (IDLE[0] > 12 || IDLE[1] > 12 
-                    || Data->P[other(i)].PresRev[0] >= 16) {
+                    || (Data->P[other(i)].PresRev[0] >= 16 && !Data->Def.Sandbox)) {
                     helpText = "i136";
                     Data->P[other(i)].PresRev[0] = 0x7F;
                     helpText = "i000";
