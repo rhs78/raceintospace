@@ -44,6 +44,7 @@
 #include "game_main.h"
 #include "gr.h"
 #include "hardware.h"
+#include "hardware_catalog.h"
 #include "hardware_buttons.h"
 #include "options.h"
 #include "pace.h"
@@ -767,30 +768,12 @@ void ManSel(int activeButtonIndex, int maxAvailable)
 
 void ShowHardwareDescription(int player, int hardware, int unit)
 {
-    int helpIndex = 0;
+    const HardwareEntry* entry =
+        GetHardwareCatalog().FindByLegacy(player, hardware, unit);
 
-    switch (hardware) {
-    case PROBE_HARDWARE:
-        helpIndex = 201;
-        break;
-
-    case ROCKET_HARDWARE:
-        helpIndex = 207;
-        break;
-
-    case MANNED_HARDWARE:
-        helpIndex = 217;
-        break;
-
-    case MISC_HARDWARE:
-        helpIndex = 231;
-        break;
+    if (entry != nullptr) {
+        Help(entry->helpId.c_str());
     }
-
-    helpIndex = helpIndex + unit * 2 + player;
-    char helpEntry[5];
-    snprintf(helpEntry, sizeof(helpEntry), "i%d03", helpIndex);
-    Help(helpEntry);
 }
 
 
@@ -996,76 +979,17 @@ void ShowUnit(char hw, char un, char player_index)
         draw_string(170, 80, &program.Name[0]);
     }
 
-    switch (hw) {
-    case PROBE_HARDWARE:
-        switch (un) {
-        case PROBE_HW_ORBITAL:
-        case PROBE_HW_INTERPLANETARY:
-            draw_string(0, 0, " SATELLITE");
-            break;
+    // The text after the program name comes from the hardware catalog.
+    // A few programs (e.g. the Soviet booster stage) replace the name.
+    const HardwareEntry* entry =
+        GetHardwareCatalog().FindByLegacy(player_index, hw, un);
 
-        case PROBE_HW_LUNAR:
-            draw_string(0, 0, " PROBE");
-            break;
+    if (entry != nullptr) {
+        if (entry->labelReplacesName) {
+            draw_string(170, 80, entry->typeLabel.c_str());
+        } else if (!entry->typeLabel.empty()) {
+            draw_string(0, 0, (" " + entry->typeLabel).c_str());
         }
-
-        break;
-
-    case ROCKET_HARDWARE:
-        switch (un) {  // This used to say (un - 1) but that made the 1-stage rocket say R-7 instead of R7 ROCKET, and boosters had no name at the top
-        case ROCKET_HW_ONE_STAGE:
-        case ROCKET_HW_TWO_STAGE:
-        case ROCKET_HW_THREE_STAGE:
-        case ROCKET_HW_MEGA_STAGE:
-            draw_string(0, 0, " ROCKET");
-            break;
-
-        case ROCKET_HW_BOOSTERS:
-            if (player_index == 0) {
-                draw_string(0, 0, " STRAP-ON");
-            } else {
-                draw_string(170, 80, "BOOSTER STAGE");
-            }
-
-            break;
-        }
-
-        break;
-
-    case MANNED_HARDWARE:
-        switch (un) {
-        case MANNED_HW_ONE_MAN_CAPSULE:
-        case MANNED_HW_TWO_MAN_CAPSULE:
-        case MANNED_HW_THREE_MAN_CAPSULE:
-            draw_string(0, 0, " CAPSULE");
-            break;
-
-        case MANNED_HW_MINISHUTTLE:
-            draw_string(0, 0, " MINISHUTTLE");
-            break;
-
-        case MANNED_HW_FOUR_MAN_CAPSULE:
-            draw_string(0, 0, " SPACECRAFT");
-            break;
-
-        case MANNED_HW_TWO_MAN_MODULE:
-        case MANNED_HW_ONE_MAN_MODULE:
-            draw_string(0, 0, " MODULE");
-            break;
-        }
-
-        break;
-
-    case MISC_HARDWARE:
-        if (un <= MISC_HW_KICKER_C) {
-            draw_string(0, 0, " BOOSTER");
-        }
-
-        if (un == MISC_HW_DOCKING_MODULE) {
-            draw_string(0, 0, " MODULE");
-        }
-
-        break;
     }
 
     int Init_Cost = program.InitCost;
@@ -1530,6 +1454,28 @@ void BuyUnit(char category, char unit, char player_index)
         ShowUnit(category, unit, player_index);
         return;
     }
+
+    ApplyTechTransfer(category, unit, player_index);
+
+    ShowUnit(category, unit, player_index);
+}
+
+
+/**
+ * Apply technology transfer from related programs to a program that
+ * has just been started (purchased for the first time).
+ *
+ * Sets the program's Safety (and Base) from the current Safety of its
+ * sibling programs. Extracted unchanged from BuyUnit() so it can be
+ * tested without the UI.
+ *
+ * \param category  the EquipmentIndex (PROBE_HARDWARE, etc.)
+ * \param unit  the program index within the category.
+ * \param player_index  0 for the USA, 1 for the USSR.
+ */
+void ApplyTechTransfer(char category, char unit, char player_index)
+{
+    Equipment* unit_ptr = &HardwareProgram(player_index, category, unit);
 
     float tt = 0.0f;  // initialize variable for tech transfer
 
@@ -2114,8 +2060,6 @@ void BuyUnit(char category, char unit, char player_index)
 
     /* update safety that could have changed */
     unit_ptr->Base = unit_ptr->Safety;
-
-    ShowUnit(category, unit, player_index);
 }
 
 

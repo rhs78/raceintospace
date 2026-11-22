@@ -42,6 +42,7 @@ set(game_sources
   gr.cpp
   hardef.cpp
   hardware.cpp
+  hardware_catalog.cpp
   hardware_buttons.cpp
   intel.cpp
   intro.cpp
@@ -145,6 +146,8 @@ if(BUILD_TESTING)
     ${test_dir}/game/roster_test.cpp
     ${test_dir}/game/serialize_test.cpp
     ${test_dir}/game/hardware_test.cpp
+    ${test_dir}/game/hardware_catalog_test.cpp
+    ${test_dir}/game/golden_test.cpp
     ${test_dir}/game/crisis_test.cpp
     ${test_dir}/game/timeline_test.cpp
     )
@@ -155,6 +158,7 @@ if(BUILD_TESTING)
     BOOST_TEST_NO_LIB
     BOOST_TEST_INCLUDED
     TEST_DATADIR="${PROJECT_SOURCE_DIR}/data"
+    TEST_GOLDEN_DIR="${PROJECT_SOURCE_DIR}/test/data/golden"
   )
   target_link_libraries(game_test ${game_libraries} Boost::headers)
   add_test(

@@ -21,6 +21,7 @@
 #include "place.h"
 
 #include <cassert>
+#include <stdexcept>
 #include <string>
 
 #include <boost/format.hpp>
@@ -36,6 +37,7 @@
 #include "endgame.h"
 #include "filesystem.h"
 #include "game_main.h"
+#include "hardware_catalog.h"
 #include "gamedata.h"
 #include "logging.h"
 #include "mission_util.h"
@@ -351,50 +353,33 @@ void SmHardMe(char plr, int x, int y, char prog, char planet,
     }
 }
 
+/**
+ * Draw the large hardware image used in the research screens.
+ *
+ * The image file names come from the hardware catalog.
+ *
+ * \param sh  0 for the research image, otherwise the liftoff image.
+ * \throws runtime_error  if the hardware is not in the catalog or the
+ *   image cannot be read.
+ */
 void BigHardMe(char plr, int x, int y, char hw, char unit, char sh)
 {
-    if (sh == 0) {
-        int index = (plr * 32) + (hw * 8) + unit;
+    const HardwareEntry* entry =
+        GetHardwareCatalog().FindByLegacy(plr, hw, unit);
 
-        std::string filename((boost::format("images/rd/rdfull.but.%1%.png") % index).str());
-        boost::shared_ptr<display::PalettizedSurface> image(Filesystem::readImage(filename));
+    if (entry == nullptr) {
+        throw std::runtime_error("BigHardMe: hardware not in catalog");
+    }
+
+    if (sh == 0) {
+        boost::shared_ptr<display::PalettizedSurface> image(
+            Filesystem::readImage(entry->images.rd));
 
         image->exportPalette(32, 2 + 33);
         display::graphics.screen()->draw(image, x, y);
     } else {
-        char name[5];
-
-        if (plr == 0) {
-            name[0] = 'U';
-            name[1] = 'S';
-        } else {
-            name[0] = 'S';
-            name[1] = 'V';
-        }
-
-        switch (hw) {
-        case PROBE_HARDWARE:
-            name[2] = 'P';
-            break;
-
-        case ROCKET_HARDWARE:
-            name[2] = 'R';
-            break;
-
-        case MANNED_HARDWARE:
-            name[2] = 'C';
-            break;
-
-        case MISC_HARDWARE:
-            name[2] = 'M';
-            break;
-        }
-
-        name[3] = 0x30 + unit;      // poor man's itoa()
-        name[4] = '\x00';           // terminator
-
-        std::string filename((boost::format("images/liftoff.abz.%1%.png") % name).str());
-        boost::shared_ptr<display::PalettizedSurface> image(Filesystem::readImage(filename));
+        boost::shared_ptr<display::PalettizedSurface> image(
+            Filesystem::readImage(entry->images.liftoff));
 
         image->exportPalette(32, 2 + 63);
         display::graphics.screen()->draw(image, x, y);

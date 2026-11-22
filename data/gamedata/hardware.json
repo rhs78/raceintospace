@@ -1,0 +1,1278 @@
+{
+  "version": 1,
+  "scenario": "classic",
+  "_comment": "Descriptive catalog of the 21 original programs per side (stage 4a). Numerical stats stay in urast.json/hist.json.",
+  "hardware": [
+    {
+      "id": "US.EXPLORER",
+      "side": "US",
+      "category": "probe",
+      "role": "orbital_probe",
+      "name": "EXPLORER",
+      "type_label": "SATELLITE",
+      "crew": 0,
+      "unit_weight": 300,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P0",
+      "images": {
+        "rd": "images/rd/rdfull.but.0.png",
+        "liftoff": "images/liftoff.abz.USP0.png",
+        "vab_sprite": 9
+      },
+      "help_id": "i201",
+      "legacy": {
+        "cat": 0,
+        "idx": 0
+      }
+    },
+    {
+      "id": "US.RANGER",
+      "side": "US",
+      "category": "probe",
+      "role": "interplanetary_probe",
+      "name": "RANGER",
+      "type_label": "SATELLITE",
+      "crew": 0,
+      "unit_weight": 700,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "interplanetary",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P1",
+      "images": {
+        "rd": "images/rd/rdfull.but.1.png",
+        "liftoff": "images/liftoff.abz.USP1.png",
+        "vab_sprite": 10
+      },
+      "help_id": "i203",
+      "legacy": {
+        "cat": 0,
+        "idx": 1
+      }
+    },
+    {
+      "id": "US.SURVEYOR",
+      "side": "US",
+      "category": "probe",
+      "role": "lunar_probe",
+      "name": "SURVEYOR",
+      "type_label": "PROBE",
+      "crew": 0,
+      "unit_weight": 1200,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "translunar",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P2",
+      "images": {
+        "rd": "images/rd/rdfull.but.2.png",
+        "liftoff": "images/liftoff.abz.USP2.png",
+        "vab_sprite": 11
+      },
+      "help_id": "i205",
+      "legacy": {
+        "cat": 0,
+        "idx": 2
+      }
+    },
+    {
+      "id": "US.ATLAS",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "ATLAS",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 600,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": true,
+      "anim_id": "R0",
+      "images": {
+        "rd": "images/rd/rdfull.but.8.png",
+        "liftoff": "images/liftoff.abz.USR0.png",
+        "vab_sprite": 0,
+        "vab_sprite_boosters": 4
+      },
+      "help_id": "i207",
+      "legacy": {
+        "cat": 1,
+        "idx": 0
+      }
+    },
+    {
+      "id": "US.TITAN",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "TITAN",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 1500,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": true,
+      "anim_id": "R1",
+      "images": {
+        "rd": "images/rd/rdfull.but.9.png",
+        "liftoff": "images/liftoff.abz.USR1.png",
+        "vab_sprite": 1,
+        "vab_sprite_boosters": 5
+      },
+      "help_id": "i209",
+      "legacy": {
+        "cat": 1,
+        "idx": 1
+      }
+    },
+    {
+      "id": "US.SATURN",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "SATURN",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 3200,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": true,
+      "anim_id": "R2",
+      "images": {
+        "rd": "images/rd/rdfull.but.10.png",
+        "liftoff": "images/liftoff.abz.USR2.png",
+        "vab_sprite": 2,
+        "vab_sprite_boosters": 6
+      },
+      "help_id": "i211",
+      "legacy": {
+        "cat": 1,
+        "idx": 2
+      }
+    },
+    {
+      "id": "US.NOVA",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "NOVA",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 4800,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R3",
+      "images": {
+        "rd": "images/rd/rdfull.but.11.png",
+        "liftoff": "images/liftoff.abz.USR3.png",
+        "vab_sprite": 3
+      },
+      "help_id": "i213",
+      "legacy": {
+        "cat": 1,
+        "idx": 3
+      }
+    },
+    {
+      "id": "US.BOOSTERS",
+      "side": "US",
+      "category": "rocket",
+      "role": "booster",
+      "name": "BOOSTERS",
+      "type_label": "STRAP-ON",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 1000,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R4",
+      "images": {
+        "rd": "images/rd/rdfull.but.12.png",
+        "liftoff": "images/liftoff.abz.USR4.png"
+      },
+      "help_id": "i215",
+      "legacy": {
+        "cat": 1,
+        "idx": 4
+      }
+    },
+    {
+      "id": "US.MERCURY",
+      "side": "US",
+      "category": "manned",
+      "role": "capsule",
+      "name": "MERCURY",
+      "type_label": "CAPSULE",
+      "crew": 1,
+      "unit_weight": 500,
+      "max_payload": 0,
+      "duration_days": 5,
+      "duration_level": "C",
+      "limits": {
+        "max_future_duration_manned": 2,
+        "max_future_duration_unmanned": 2,
+        "max_plan_days_manned": 2,
+        "max_plan_days_unmanned": 1
+      },
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "prestige_first": "OnePerson",
+      "anim_id": "C0",
+      "images": {
+        "rd": "images/rd/rdfull.but.16.png",
+        "liftoff": "images/liftoff.abz.USC0.png",
+        "vab_sprite": 13,
+        "aprog": "images/aprog/aprog.0.1.png",
+        "patch_base": 0,
+        "mhist": 7
+      },
+      "help_id": "i217",
+      "legacy": {
+        "cat": 2,
+        "idx": 0
+      }
+    },
+    {
+      "id": "US.GEMINI",
+      "side": "US",
+      "category": "manned",
+      "role": "capsule",
+      "name": "GEMINI",
+      "type_label": "CAPSULE",
+      "crew": 2,
+      "unit_weight": 1200,
+      "max_payload": 0,
+      "duration_days": 14,
+      "duration_level": "F",
+      "limits": {
+        "max_future_duration_manned": 5,
+        "max_future_duration_unmanned": 5,
+        "max_plan_days_manned": 5,
+        "max_plan_days_unmanned": 5
+      },
+      "reach": "translunar",
+      "can_dock": true,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "compatible_landers": [
+        "US.CRICKET"
+      ],
+      "lander_needs_docking_module": true,
+      "compatible_kickers": [
+        "US.KICKER_A",
+        "US.KICKER_B"
+      ],
+      "prestige_first": "TwoPerson",
+      "anim_id": "C1",
+      "images": {
+        "rd": "images/rd/rdfull.but.17.png",
+        "liftoff": "images/liftoff.abz.USC1.png",
+        "vab_sprite": 14,
+        "aprog": "images/aprog/aprog.0.2.png",
+        "patch_base": 10,
+        "mhist": 8
+      },
+      "help_id": "i219",
+      "legacy": {
+        "cat": 2,
+        "idx": 1
+      }
+    },
+    {
+      "id": "US.APOLLO",
+      "side": "US",
+      "category": "manned",
+      "role": "capsule",
+      "name": "APOLLO",
+      "type_label": "CAPSULE",
+      "crew": 3,
+      "unit_weight": 1600,
+      "max_payload": 0,
+      "duration_days": 21,
+      "duration_level": null,
+      "limits": {
+        "max_future_duration_manned": null,
+        "max_future_duration_unmanned": null,
+        "max_plan_days_manned": null,
+        "max_plan_days_unmanned": null
+      },
+      "reach": "translunar",
+      "can_dock": true,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "compatible_landers": [
+        "US.EAGLE",
+        "US.CRICKET"
+      ],
+      "lander_needs_docking_module": false,
+      "compatible_kickers": [
+        "US.KICKER_A",
+        "US.KICKER_B"
+      ],
+      "prestige_first": "ThreePerson",
+      "anim_id": "C2",
+      "images": {
+        "rd": "images/rd/rdfull.but.18.png",
+        "liftoff": "images/liftoff.abz.USC2.png",
+        "vab_sprite": 15,
+        "aprog": "images/aprog/aprog.0.3.png",
+        "patch_base": 20,
+        "mhist": 9
+      },
+      "help_id": "i221",
+      "legacy": {
+        "cat": 2,
+        "idx": 2
+      }
+    },
+    {
+      "id": "US.XMS2",
+      "side": "US",
+      "category": "manned",
+      "role": "minishuttle",
+      "name": "XMS-2",
+      "type_label": "MINISHUTTLE",
+      "crew": 3,
+      "unit_weight": 1500,
+      "max_payload": 0,
+      "duration_days": 15,
+      "duration_level": "E",
+      "limits": {
+        "max_future_duration_manned": 4,
+        "max_future_duration_unmanned": 3,
+        "max_plan_days_manned": null,
+        "max_plan_days_unmanned": null
+      },
+      "reach": "translunar",
+      "can_dock": true,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "compatible_landers": [
+        "US.EAGLE",
+        "US.CRICKET"
+      ],
+      "lander_needs_docking_module": true,
+      "compatible_kickers": [
+        "US.KICKER_A",
+        "US.KICKER_B"
+      ],
+      "prestige_first": "Minishuttle",
+      "anim_id": "C3",
+      "images": {
+        "rd": "images/rd/rdfull.but.19.png",
+        "liftoff": "images/liftoff.abz.USC3.png",
+        "vab_sprite": 16,
+        "aprog": "images/aprog/aprog.0.4.png",
+        "patch_base": 30,
+        "mhist": 10
+      },
+      "help_id": "i223",
+      "legacy": {
+        "cat": 2,
+        "idx": 3
+      }
+    },
+    {
+      "id": "US.JUPITER",
+      "side": "US",
+      "category": "manned",
+      "role": "capsule",
+      "name": "JUPITER",
+      "type_label": "SPACECRAFT",
+      "crew": 4,
+      "unit_weight": 4300,
+      "max_payload": 0,
+      "duration_days": 24,
+      "duration_level": null,
+      "limits": {
+        "max_future_duration_manned": null,
+        "max_future_duration_unmanned": null,
+        "max_plan_days_manned": null,
+        "max_plan_days_unmanned": null
+      },
+      "reach": "translunar",
+      "can_dock": false,
+      "direct_ascent": true,
+      "accepts_boosters": false,
+      "prestige_first": "FourPerson",
+      "anim_id": "C4",
+      "images": {
+        "rd": "images/rd/rdfull.but.20.png",
+        "liftoff": "images/liftoff.abz.USC4.png",
+        "vab_sprite": 17,
+        "aprog": "images/aprog/aprog.0.5.png",
+        "patch_base": 40,
+        "mhist": 11
+      },
+      "help_id": "i225",
+      "legacy": {
+        "cat": 2,
+        "idx": 4
+      }
+    },
+    {
+      "id": "US.EAGLE",
+      "side": "US",
+      "category": "manned",
+      "role": "lander",
+      "name": "EAGLE",
+      "type_label": "MODULE",
+      "crew": 2,
+      "unit_weight": 1500,
+      "max_payload": 0,
+      "duration_days": 5,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "C5",
+      "images": {
+        "rd": "images/rd/rdfull.but.21.png",
+        "liftoff": "images/liftoff.abz.USC5.png",
+        "vab_sprite": 18
+      },
+      "help_id": "i227",
+      "legacy": {
+        "cat": 2,
+        "idx": 5
+      }
+    },
+    {
+      "id": "US.CRICKET",
+      "side": "US",
+      "category": "manned",
+      "role": "lander",
+      "name": "CRICKET",
+      "type_label": "MODULE",
+      "crew": 1,
+      "unit_weight": 1000,
+      "max_payload": 0,
+      "duration_days": 3,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "C6",
+      "images": {
+        "rd": "images/rd/rdfull.but.22.png",
+        "liftoff": "images/liftoff.abz.USC6.png",
+        "vab_sprite": 19
+      },
+      "help_id": "i229",
+      "legacy": {
+        "cat": 2,
+        "idx": 6
+      }
+    },
+    {
+      "id": "US.KICKER_A",
+      "side": "US",
+      "category": "misc",
+      "role": "kicker",
+      "name": "KICKER-A",
+      "type_label": "BOOSTER",
+      "crew": 0,
+      "unit_weight": 300,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M0",
+      "images": {
+        "rd": "images/rd/rdfull.but.24.png",
+        "liftoff": "images/liftoff.abz.USM0.png",
+        "vab_sprite": 20
+      },
+      "help_id": "i231",
+      "legacy": {
+        "cat": 3,
+        "idx": 0
+      }
+    },
+    {
+      "id": "US.KICKER_B",
+      "side": "US",
+      "category": "misc",
+      "role": "kicker",
+      "name": "KICKER-B",
+      "type_label": "BOOSTER",
+      "crew": 0,
+      "unit_weight": 600,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M1",
+      "images": {
+        "rd": "images/rd/rdfull.but.25.png",
+        "liftoff": "images/liftoff.abz.USM1.png",
+        "vab_sprite": 21
+      },
+      "help_id": "i233",
+      "legacy": {
+        "cat": 3,
+        "idx": 1
+      }
+    },
+    {
+      "id": "US.KICKER_C",
+      "side": "US",
+      "category": "misc",
+      "role": "kicker",
+      "name": "KICKER-C",
+      "type_label": "BOOSTER",
+      "crew": 0,
+      "unit_weight": 2500,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M2",
+      "images": {
+        "rd": "images/rd/rdfull.but.26.png",
+        "liftoff": "images/liftoff.abz.USM2.png",
+        "vab_sprite": 22
+      },
+      "help_id": "i235",
+      "legacy": {
+        "cat": 3,
+        "idx": 2
+      }
+    },
+    {
+      "id": "US.EVA_SUITS",
+      "side": "US",
+      "category": "misc",
+      "role": "eva",
+      "name": "EVA SUITS",
+      "type_label": "",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M3",
+      "images": {
+        "rd": "images/rd/rdfull.but.27.png",
+        "liftoff": "images/liftoff.abz.USM3.png"
+      },
+      "help_id": "i237",
+      "legacy": {
+        "cat": 3,
+        "idx": 3
+      }
+    },
+    {
+      "id": "US.DOCKING",
+      "side": "US",
+      "category": "misc",
+      "role": "docking_module",
+      "name": "DOCKING",
+      "type_label": "MODULE",
+      "crew": 0,
+      "unit_weight": 300,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": true,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M4",
+      "images": {
+        "rd": "images/rd/rdfull.but.28.png",
+        "liftoff": "images/liftoff.abz.USM4.png",
+        "vab_sprite": 12
+      },
+      "help_id": "i239",
+      "legacy": {
+        "cat": 3,
+        "idx": 4
+      }
+    },
+    {
+      "id": "US.PHOTO_RECON",
+      "side": "US",
+      "category": "misc",
+      "role": "photo_recon",
+      "name": "PHOTO RECON",
+      "type_label": "",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M5",
+      "images": {
+        "rd": "images/rd/rdfull.but.29.png",
+        "liftoff": "images/liftoff.abz.USM5.png"
+      },
+      "help_id": "i241",
+      "legacy": {
+        "cat": 3,
+        "idx": 5
+      }
+    },
+    {
+      "id": "SV.SPUTNIK",
+      "side": "SV",
+      "category": "probe",
+      "role": "orbital_probe",
+      "name": "SPUTNIK",
+      "type_label": "SATELLITE",
+      "crew": 0,
+      "unit_weight": 300,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P0",
+      "images": {
+        "rd": "images/rd/rdfull.but.32.png",
+        "liftoff": "images/liftoff.abz.SVP0.png",
+        "vab_sprite": 9
+      },
+      "help_id": "i202",
+      "legacy": {
+        "cat": 0,
+        "idx": 0
+      }
+    },
+    {
+      "id": "SV.COSMOS",
+      "side": "SV",
+      "category": "probe",
+      "role": "interplanetary_probe",
+      "name": "COSMOS",
+      "type_label": "SATELLITE",
+      "crew": 0,
+      "unit_weight": 700,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "interplanetary",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P1",
+      "images": {
+        "rd": "images/rd/rdfull.but.33.png",
+        "liftoff": "images/liftoff.abz.SVP1.png",
+        "vab_sprite": 10
+      },
+      "help_id": "i204",
+      "legacy": {
+        "cat": 0,
+        "idx": 1
+      }
+    },
+    {
+      "id": "SV.LUNA",
+      "side": "SV",
+      "category": "probe",
+      "role": "lunar_probe",
+      "name": "LUNA",
+      "type_label": "PROBE",
+      "crew": 0,
+      "unit_weight": 1200,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "translunar",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P2",
+      "images": {
+        "rd": "images/rd/rdfull.but.34.png",
+        "liftoff": "images/liftoff.abz.SVP2.png",
+        "vab_sprite": 11
+      },
+      "help_id": "i206",
+      "legacy": {
+        "cat": 0,
+        "idx": 2
+      }
+    },
+    {
+      "id": "SV.R7",
+      "side": "SV",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "R-7",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 600,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": true,
+      "anim_id": "R0",
+      "images": {
+        "rd": "images/rd/rdfull.but.40.png",
+        "liftoff": "images/liftoff.abz.SVR0.png",
+        "vab_sprite": 0,
+        "vab_sprite_boosters": 4
+      },
+      "help_id": "i208",
+      "legacy": {
+        "cat": 1,
+        "idx": 0
+      }
+    },
+    {
+      "id": "SV.PROTON",
+      "side": "SV",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "PROTON",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 1500,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": true,
+      "anim_id": "R1",
+      "images": {
+        "rd": "images/rd/rdfull.but.41.png",
+        "liftoff": "images/liftoff.abz.SVR1.png",
+        "vab_sprite": 1,
+        "vab_sprite_boosters": 5
+      },
+      "help_id": "i210",
+      "legacy": {
+        "cat": 1,
+        "idx": 1
+      }
+    },
+    {
+      "id": "SV.N1",
+      "side": "SV",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "N1",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 3200,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": true,
+      "anim_id": "R2",
+      "images": {
+        "rd": "images/rd/rdfull.but.42.png",
+        "liftoff": "images/liftoff.abz.SVR2.png",
+        "vab_sprite": 2,
+        "vab_sprite_boosters": 6
+      },
+      "help_id": "i212",
+      "legacy": {
+        "cat": 1,
+        "idx": 2
+      }
+    },
+    {
+      "id": "SV.UR700",
+      "side": "SV",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "UR-700",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 4800,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R3",
+      "images": {
+        "rd": "images/rd/rdfull.but.43.png",
+        "liftoff": "images/liftoff.abz.SVR3.png",
+        "vab_sprite": 3
+      },
+      "help_id": "i214",
+      "legacy": {
+        "cat": 1,
+        "idx": 3
+      }
+    },
+    {
+      "id": "SV.BOOSTERS",
+      "side": "SV",
+      "category": "rocket",
+      "role": "booster",
+      "name": "BOOSTERS",
+      "type_label": "BOOSTER STAGE",
+      "label_replaces_name": true,
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 1000,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R4",
+      "images": {
+        "rd": "images/rd/rdfull.but.44.png",
+        "liftoff": "images/liftoff.abz.SVR4.png"
+      },
+      "help_id": "i216",
+      "legacy": {
+        "cat": 1,
+        "idx": 4
+      }
+    },
+    {
+      "id": "SV.VOSTOK",
+      "side": "SV",
+      "category": "manned",
+      "role": "capsule",
+      "name": "VOSTOK",
+      "type_label": "CAPSULE",
+      "crew": 1,
+      "unit_weight": 500,
+      "max_payload": 0,
+      "duration_days": 5,
+      "duration_level": "C",
+      "limits": {
+        "max_future_duration_manned": 2,
+        "max_future_duration_unmanned": 2,
+        "max_plan_days_manned": 2,
+        "max_plan_days_unmanned": 1
+      },
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "prestige_first": "OnePerson",
+      "anim_id": "C0",
+      "images": {
+        "rd": "images/rd/rdfull.but.48.png",
+        "liftoff": "images/liftoff.abz.SVC0.png",
+        "vab_sprite": 13,
+        "aprog": "images/aprog/aprog.1.1.png",
+        "patch_base": 50,
+        "mhist": 15
+      },
+      "help_id": "i218",
+      "legacy": {
+        "cat": 2,
+        "idx": 0
+      }
+    },
+    {
+      "id": "SV.VOSKHOD",
+      "side": "SV",
+      "category": "manned",
+      "role": "capsule",
+      "name": "VOSKHOD",
+      "type_label": "CAPSULE",
+      "crew": 2,
+      "unit_weight": 1200,
+      "max_payload": 0,
+      "duration_days": 14,
+      "duration_level": "F",
+      "limits": {
+        "max_future_duration_manned": 5,
+        "max_future_duration_unmanned": 5,
+        "max_plan_days_manned": 5,
+        "max_plan_days_unmanned": 5
+      },
+      "reach": "translunar",
+      "can_dock": true,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "compatible_landers": [
+        "SV.LK"
+      ],
+      "lander_needs_docking_module": true,
+      "compatible_kickers": [
+        "SV.KICKER_A",
+        "SV.KICKER_B"
+      ],
+      "prestige_first": "TwoPerson",
+      "anim_id": "C1",
+      "images": {
+        "rd": "images/rd/rdfull.but.49.png",
+        "liftoff": "images/liftoff.abz.SVC1.png",
+        "vab_sprite": 14,
+        "aprog": "images/aprog/aprog.1.2.png",
+        "patch_base": 60,
+        "mhist": 16
+      },
+      "help_id": "i220",
+      "legacy": {
+        "cat": 2,
+        "idx": 1
+      }
+    },
+    {
+      "id": "SV.SOYUZ",
+      "side": "SV",
+      "category": "manned",
+      "role": "capsule",
+      "name": "SOYUZ",
+      "type_label": "CAPSULE",
+      "crew": 3,
+      "unit_weight": 1600,
+      "max_payload": 0,
+      "duration_days": 21,
+      "duration_level": null,
+      "limits": {
+        "max_future_duration_manned": null,
+        "max_future_duration_unmanned": null,
+        "max_plan_days_manned": null,
+        "max_plan_days_unmanned": null
+      },
+      "reach": "translunar",
+      "can_dock": true,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "compatible_landers": [
+        "SV.LKM",
+        "SV.LK"
+      ],
+      "lander_needs_docking_module": false,
+      "compatible_kickers": [
+        "SV.KICKER_A",
+        "SV.KICKER_B"
+      ],
+      "prestige_first": "ThreePerson",
+      "anim_id": "C2",
+      "images": {
+        "rd": "images/rd/rdfull.but.50.png",
+        "liftoff": "images/liftoff.abz.SVC2.png",
+        "vab_sprite": 15,
+        "aprog": "images/aprog/aprog.1.3.png",
+        "patch_base": 70,
+        "mhist": 17
+      },
+      "help_id": "i222",
+      "legacy": {
+        "cat": 2,
+        "idx": 2
+      }
+    },
+    {
+      "id": "SV.LAPOT",
+      "side": "SV",
+      "category": "manned",
+      "role": "minishuttle",
+      "name": "LAPOT",
+      "type_label": "MINISHUTTLE",
+      "crew": 3,
+      "unit_weight": 1500,
+      "max_payload": 0,
+      "duration_days": 15,
+      "duration_level": "E",
+      "limits": {
+        "max_future_duration_manned": 4,
+        "max_future_duration_unmanned": 3,
+        "max_plan_days_manned": null,
+        "max_plan_days_unmanned": null
+      },
+      "reach": "translunar",
+      "can_dock": true,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "compatible_landers": [
+        "SV.LKM",
+        "SV.LK"
+      ],
+      "lander_needs_docking_module": true,
+      "compatible_kickers": [
+        "SV.KICKER_A",
+        "SV.KICKER_B"
+      ],
+      "prestige_first": "Minishuttle",
+      "anim_id": "C3",
+      "images": {
+        "rd": "images/rd/rdfull.but.51.png",
+        "liftoff": "images/liftoff.abz.SVC3.png",
+        "vab_sprite": 16,
+        "aprog": "images/aprog/aprog.1.4.png",
+        "patch_base": 80,
+        "mhist": 18
+      },
+      "help_id": "i224",
+      "legacy": {
+        "cat": 2,
+        "idx": 3
+      }
+    },
+    {
+      "id": "SV.LK700",
+      "side": "SV",
+      "category": "manned",
+      "role": "capsule",
+      "name": "LK-700",
+      "type_label": "SPACECRAFT",
+      "crew": 4,
+      "unit_weight": 4300,
+      "max_payload": 0,
+      "duration_days": 24,
+      "duration_level": null,
+      "limits": {
+        "max_future_duration_manned": null,
+        "max_future_duration_unmanned": null,
+        "max_plan_days_manned": null,
+        "max_plan_days_unmanned": null
+      },
+      "reach": "translunar",
+      "can_dock": false,
+      "direct_ascent": true,
+      "accepts_boosters": false,
+      "prestige_first": "FourPerson",
+      "anim_id": "C4",
+      "images": {
+        "rd": "images/rd/rdfull.but.52.png",
+        "liftoff": "images/liftoff.abz.SVC4.png",
+        "vab_sprite": 17,
+        "aprog": "images/aprog/aprog.1.5.png",
+        "patch_base": 90,
+        "mhist": 19
+      },
+      "help_id": "i226",
+      "legacy": {
+        "cat": 2,
+        "idx": 4
+      }
+    },
+    {
+      "id": "SV.LKM",
+      "side": "SV",
+      "category": "manned",
+      "role": "lander",
+      "name": "LKM",
+      "type_label": "MODULE",
+      "crew": 2,
+      "unit_weight": 1500,
+      "max_payload": 0,
+      "duration_days": 5,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "C5",
+      "images": {
+        "rd": "images/rd/rdfull.but.53.png",
+        "liftoff": "images/liftoff.abz.SVC5.png",
+        "vab_sprite": 18
+      },
+      "help_id": "i228",
+      "legacy": {
+        "cat": 2,
+        "idx": 5
+      }
+    },
+    {
+      "id": "SV.LK",
+      "side": "SV",
+      "category": "manned",
+      "role": "lander",
+      "name": "LK",
+      "type_label": "MODULE",
+      "crew": 1,
+      "unit_weight": 1000,
+      "max_payload": 0,
+      "duration_days": 3,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "C6",
+      "images": {
+        "rd": "images/rd/rdfull.but.54.png",
+        "liftoff": "images/liftoff.abz.SVC6.png",
+        "vab_sprite": 19
+      },
+      "help_id": "i230",
+      "legacy": {
+        "cat": 2,
+        "idx": 6
+      }
+    },
+    {
+      "id": "SV.KICKER_A",
+      "side": "SV",
+      "category": "misc",
+      "role": "kicker",
+      "name": "KICKER-A",
+      "type_label": "BOOSTER",
+      "crew": 0,
+      "unit_weight": 300,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M0",
+      "images": {
+        "rd": "images/rd/rdfull.but.56.png",
+        "liftoff": "images/liftoff.abz.SVM0.png",
+        "vab_sprite": 20
+      },
+      "help_id": "i232",
+      "legacy": {
+        "cat": 3,
+        "idx": 0
+      }
+    },
+    {
+      "id": "SV.KICKER_B",
+      "side": "SV",
+      "category": "misc",
+      "role": "kicker",
+      "name": "KICKER-B",
+      "type_label": "BOOSTER",
+      "crew": 0,
+      "unit_weight": 600,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M1",
+      "images": {
+        "rd": "images/rd/rdfull.but.57.png",
+        "liftoff": "images/liftoff.abz.SVM1.png",
+        "vab_sprite": 21
+      },
+      "help_id": "i234",
+      "legacy": {
+        "cat": 3,
+        "idx": 1
+      }
+    },
+    {
+      "id": "SV.KICKER_C",
+      "side": "SV",
+      "category": "misc",
+      "role": "kicker",
+      "name": "KICKER-C",
+      "type_label": "BOOSTER",
+      "crew": 0,
+      "unit_weight": 2500,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M2",
+      "images": {
+        "rd": "images/rd/rdfull.but.58.png",
+        "liftoff": "images/liftoff.abz.SVM2.png",
+        "vab_sprite": 22
+      },
+      "help_id": "i236",
+      "legacy": {
+        "cat": 3,
+        "idx": 2
+      }
+    },
+    {
+      "id": "SV.EVA_SUITS",
+      "side": "SV",
+      "category": "misc",
+      "role": "eva",
+      "name": "EVA SUITS",
+      "type_label": "",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M3",
+      "images": {
+        "rd": "images/rd/rdfull.but.59.png",
+        "liftoff": "images/liftoff.abz.SVM3.png"
+      },
+      "help_id": "i238",
+      "legacy": {
+        "cat": 3,
+        "idx": 3
+      }
+    },
+    {
+      "id": "SV.DOCKING",
+      "side": "SV",
+      "category": "misc",
+      "role": "docking_module",
+      "name": "DOCKING",
+      "type_label": "MODULE",
+      "crew": 0,
+      "unit_weight": 300,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": true,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M4",
+      "images": {
+        "rd": "images/rd/rdfull.but.60.png",
+        "liftoff": "images/liftoff.abz.SVM4.png",
+        "vab_sprite": 12
+      },
+      "help_id": "i240",
+      "legacy": {
+        "cat": 3,
+        "idx": 4
+      }
+    },
+    {
+      "id": "SV.PHOTO_RECON",
+      "side": "SV",
+      "category": "misc",
+      "role": "photo_recon",
+      "name": "PHOTO RECON",
+      "type_label": "",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M5",
+      "images": {
+        "rd": "images/rd/rdfull.but.61.png",
+        "liftoff": "images/liftoff.abz.SVM5.png"
+      },
+      "help_id": "i242",
+      "legacy": {
+        "cat": 3,
+        "idx": 5
+      }
+    }
+  ]
+}

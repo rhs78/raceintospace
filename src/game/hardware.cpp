@@ -21,7 +21,9 @@
 #include <stdexcept>
 
 #include "game_main.h"
+#include "hardware_catalog.h"
 #include "macros.h"
+#include "mission_util.h"
 #include "options.h"
 
 
@@ -145,6 +147,84 @@ int MannedIndexToProgram(int mannedIndex)
 
 
 /**
+ * Which capsule/minishuttle programs may fly a mission, ignoring whether
+ * they have been purchased.
+ *
+ * This is the rule set that used to be inlined in crew.cpp's
+ * HardRequest() and SecondHard(); the two differ slightly (see the
+ * TODOs there), so the caller selects one via `choice`.
+ *
+ * \param plr  0 for the USA, 1 for the USSR.
+ * \param missionCode  the mission per MissionValues (mStr.Index).
+ * \param futureDuration  Future[pad].Duration of the planned mission.
+ * \param choice  which of the two selection screens.
+ * \return  true for each Manned[0..4] program that is suitable.
+ */
+std::array<bool, MANNED_PROGRAM_COUNT>
+CapsuleEligibility(int plr, int missionCode, int futureDuration,
+                   CapsuleChoice choice)
+{
+    std::array<bool, MANNED_PROGRAM_COUNT> ok;
+    ok.fill(true);
+
+    const bool manned = (choice == CapsuleChoice::MannedMission);
+    const mStr plan = GetMissionPlan(missionCode);
+
+    // One-man capsules cannot perform Lunar missions, Docking missions.
+    if (plan.Lun == 1 || plan.Doc == 1 || plan.mEq > 1
+        || plan.Days > (manned ? 2 : 1) || futureDuration > 2) {
+        ok[0] = false;
+    }
+
+    // Gemini/Voskhod cannot attempt Duration F
+    if (futureDuration > 5 || plan.Days > 5) {
+        ok[1] = false;
+    }
+
+    // XMS-2 / Lapot cannot attempt Duration E+
+    if (futureDuration > (manned ? 4 : 3)) {
+        ok[3] = false;
+    }
+
+    // Only Jupiter/Kvartet can attempt a Direct Ascent Lunar Landing
+    if (missionCode == Mission_DirectAscent_LL) {
+        ok[0] = ok[1] = ok[2] = ok[3] = false;
+    }
+
+    // Only a USSR Soyuz capsule may attempt a Soyuz Lunar Landing
+    if (missionCode == Mission_Soyuz_LL && plr == 1) {
+        ok[0] = ok[1] = ok[3] = ok[4] = false;
+    }
+
+    // Jupiter/Kvartet can not attempt docking missions.
+    if (plan.Doc == 1) {
+        ok[4] = false;
+    }
+
+    return ok;
+}
+
+
+namespace
+{
+
+const HardwareEntry& CatalogEntry(const Equipment& program)
+{
+    const HardwareEntry* entry = CatalogEntryForEquipment(program);
+
+    if (entry == nullptr) {
+        throw std::invalid_argument(
+            "Error in function HardwareType: "
+            "program's hardware index is not recognized.");
+    }
+
+    return *entry;
+}
+
+} // namespace
+
+
+/**
  * Check the crew capacity for a Capsule/Minishuttle or Lunar Module.
  *
  * \param program  a Manned hardware program.
@@ -152,89 +232,22 @@ int MannedIndexToProgram(int mannedIndex)
  */
 int CrewSize(const Equipment &program)
 {
-    MissionHardwareType type = HardwareType(program);
-
-    if (type != Mission_Capsule && type != Mission_LM) {
-        return 0;
-    }
-
-    int mannedIndex = int(program.ID[1] - '0');
-
-    switch (mannedIndex) {
-    case MANNED_HW_ONE_MAN_CAPSULE:
-        return 1;
-
-    case MANNED_HW_TWO_MAN_CAPSULE:
-        return 2;
-
-    case MANNED_HW_THREE_MAN_CAPSULE:
-    case MANNED_HW_MINISHUTTLE:
-        return 3;
-
-    case MANNED_HW_FOUR_MAN_CAPSULE:
-        return 4;
-
-    case MANNED_HW_TWO_MAN_MODULE:
-        return 2;
-
-    case MANNED_HW_ONE_MAN_MODULE:
-        return 1;
-
-    default:
-        return 0;
-    }
-
-    return 0;
+    // Throws std::invalid_argument for unrecognized hardware, like
+    // HardwareType().
+    const HardwareEntry& entry = CatalogEntry(program);
+    return entry.crew;
 }
 
 
 /**
- * TODO: Describe.
+ * The mission slot (capsule, kicker, ...) a hardware program fills.
  *
- * If the argument is not a recognized hardware program, the
- * result is undefined.
+ * \param program  a hardware program from the catalog.
+ * \throws std::invalid_argument  if the program is not in the catalog.
  */
 MissionHardwareType HardwareType(const Equipment &program)
 {
-    int categoryIndex = int(program.ID[1] - '0');
-
-    switch (program.ID[0]) {
-    case 'P':
-        return Mission_Probe_DM;
-
-    case 'C':
-        return (categoryIndex <= MANNED_HW_FOUR_MAN_CAPSULE)
-               ? Mission_Capsule : Mission_LM;
-
-    case 'R':
-        return (categoryIndex != ROCKET_HW_BOOSTERS)
-               ? Mission_PrimaryBooster : Mission_SecondaryBooster;
-
-    case 'M':
-        if (categoryIndex <= MISC_HW_KICKER_C) {
-            return Mission_Kicker;
-        } else if (categoryIndex == MISC_HW_EVA_SUITS) {
-            return Mission_EVA;
-        } else if (categoryIndex == MISC_HW_DOCKING_MODULE) {
-            return Mission_Probe_DM;
-        } else if (categoryIndex == MISC_HW_PHOTO_RECON) {
-            return Mission_PhotoRecon;
-        } else {
-            throw std::invalid_argument(
-                "Error in function HardwareType: "
-                "argument program is not recognized Misc hardware");
-        }
-
-    default:
-        throw std::invalid_argument(
-            "Error in function HardwareType: "
-            "program's hardware index is not recognized.");
-        break;
-    }
-
-    throw std::invalid_argument(
-        "Error in function HardwareType: "
-        "program's hardware index is not recognized.");
+    return CatalogEntry(program).missionType();
 }
 
 

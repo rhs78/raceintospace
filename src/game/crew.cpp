@@ -21,6 +21,7 @@
 #include "crew.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <string>
 
@@ -32,6 +33,7 @@
 #include "draw.h"
 #include "game_main.h"
 #include "gr.h"
+#include "hardware.h"
 #include "logging.h"
 #include "mission_util.h"
 #include "options.h"  //No Capsule Training, Nikakd, 10/8/10 - Also No requirement to assign Backup crews -Leon
@@ -735,53 +737,18 @@ int HardRequest(char plr, char mode, char mis, char pad)
     std::string oldKeyHelpText = keyHelpText;
     keyHelpText = "k201";
 
+    // Programs that are purchased and suitable for the mission.
+    const std::array<bool, MANNED_PROGRAM_COUNT> suitable =
+        CapsuleEligibility(plr, mis, Data->P[plr].Future[pad].Duration,
+                           CapsuleChoice::UnmannedMission);
+
     for (int i = 0; i < 5; i++) {
         if (Data->P[plr].Manned[i].Num >= 0) { // Is program purchased?
-            pr[i] = 1;
+            pr[i] = suitable[i] ? 1 : 0;
             t++;
         } else {
             pr[i] = 0;
         }
-    }
-
-    const mStr plan = GetMissionPlan(mis);
-
-    // Exceptions
-    // One-man capsules cannot perform Lunar missions, Docking missions.
-    // TODO: plan.Days value differs from logic in SecondHard
-    if (plan.Lun == 1 || plan.Doc == 1 || plan.mEq > 1 || plan.Days > 1 ||
-        Data->P[plr].Future[pad].Duration > 2) {
-        pr[0] = 0;
-    }
-
-    // TODO: Just compare hardware duration with mission duration?
-    // TODO: Check if plan.Days is indexed the same as
-    //       struct MissionType.Duration?
-
-    // Gemini/Voskhod cannot attempt Duration F
-    if (Data->P[plr].Future[pad].Duration > 5 || plan.Days > 5) {
-        pr[1] = 0;
-    }
-
-    // XMS-2 / Lapot cannot attempt Duration E+
-    // TODO: This differs from logic in SecondHard
-    if (Data->P[plr].Future[pad].Duration > 3) {
-        pr[3] = 0;
-    }
-
-    // Only Jupiter/Kvartet can attempt a Direct Ascent Lunar Landing
-    if (mis == Mission_DirectAscent_LL) {
-        pr[0] = pr[1] = pr[2] = pr[3] = 0;
-    }
-
-    // Only a USSR Soyuz capsule may attempt a Soyuz Lunar Landing
-    if (mis == Mission_Soyuz_LL && plr == 1) {
-        pr[0] = pr[1] = pr[3] = pr[4] = 0;
-    }
-
-    // Jupiter/Kvartet can not attempt docking missions.
-    if (plan.Doc == 1) {
-        pr[4] = 0;
     }
 
 //  if (t==0) {Help("i126"); return 0;};
@@ -910,54 +877,18 @@ int SecondHard(char plr, char mode, char mis, char pad)
         pad++;    // if second part of Joint mission
     }
 
+    // Programs that are purchased and suitable for the mission.
+    const std::array<bool, MANNED_PROGRAM_COUNT> suitable =
+        CapsuleEligibility(plr, mis, Data->P[plr].Future[pad].Duration,
+                           CapsuleChoice::MannedMission);
+
     for (int i = 0; i < 5; i++) {
         if (Data->P[plr].Manned[i].Num >= 0) {
-            prog[i] = 1;
+            prog[i] = suitable[i] ? 1 : 0;
             t++;
         } else {
             prog[i] = 0;
         }
-    }
-
-    const mStr plan = GetMissionPlan(mis);
-
-    // Exceptions
-    // One-man capsules cannot perform Lunar missions, Docking missions.
-    // TODO: plan.Days value differs from logic in HardRequest
-    if (plan.Lun == 1 || plan.Doc == 1 || plan.mEq > 1 || plan.Days > 2
-        || Data->P[plr].Future[pad].Duration > 2) {
-        prog[0] = 0;
-    }
-
-    // TODO: Just compare hardware duration with mission duration?
-    // TODO: Check if plan.Days is indexed the same as
-    //       struct MissionType.Duration?
-
-    // Gemini/Voskhod cannot attempt Duration F
-    if (Data->P[plr].Future[pad].Duration > 5 || plan.Days > 5) {
-        prog[1] = 0;
-    }
-
-    // XMS-2 / Lapot cannot attempt Duration E+
-    // TODO: This differs from logic in HardRequest, check Duration
-    // indexing
-    if (Data->P[plr].Future[pad].Duration > 4) {
-        prog[3] = 0;
-    }
-
-    // Only Jupiter/Kvartet can attempt a Direct Ascent Lunar Landing
-    if (mis == Mission_DirectAscent_LL) {
-        prog[0] = prog[1] = prog[2] = prog[3] = 0;
-    }
-
-    // Jupiter/Kvartet may not attempt docking missions.
-    if (plan.Doc == 1) {
-        prog[4] = 0;
-    }
-
-    // Only a USSR Soyuz capsule may attempt a Soyuz Lunar Landing
-    if (mis == Mission_Soyuz_LL && plr == 1) {
-        prog[0] = prog[1] = prog[3] = prog[4] = 0;
     }
 
     DrawHard(mode, pad, mis, plr);
