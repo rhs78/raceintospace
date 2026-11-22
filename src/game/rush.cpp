@@ -172,7 +172,7 @@ void Downgrade(const char plr, const int pad,
     }
 
     // If the new mission is unmanned, free up the crew...
-    if (pad_mission.Men > 0 && pad_mission.Men == 0) {
+    if (pad_mission.Men > 0 && mission.Men == 0) {
         pad_mission.Crew = 0;
         ClearMissionCrew(plr, pad, CREW_ALL);
     }
