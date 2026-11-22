@@ -197,3 +197,60 @@ Gesamtaufwand: groß – der umfangreichste Umbau des Projekts.
 4. **Blätter-UI** im Originalstil jetzt, Neugestaltung erst mit Etappe 7 – *Empfehlung: ja.*
 5. **PBEM** (E-Mail-Spiel) nach dem Umbau weiter unterstützen oder deaktivieren?
    *Empfehlung: vorerst deaktivieren*, spart Test- und Anpassungsaufwand.
+
+---
+
+## 9. Spezifikation Schritt 4c (22.11.2026)
+
+Ziel: Der Spielzustand hält Hardware in **dynamischen Listen**, der Startzustand kommt aus
+einem **Szenario**. Das klassische Szenario verhält sich identisch zum heutigen Stand
+(alle goldenen Tests grün). Das historische Szenario wird erst mit 4d–4f und Etappe 5 spielbar.
+
+### 9.1 Spielzustand
+
+- `Probe[7]`, `Rocket[7]`, `Manned[7]`, `Misc[7]` werden `std::vector<Equipment>`; die
+  Indexschreibweise im Code bleibt dadurch gültig. Reihenfolge im klassischen Szenario = heutige Reihenfolge.
+- `Equipment` erhält `CatalogIndex` (Index in `hardware.json`); Seite und Identität werden
+  nicht mehr aus `ID[1]` abgeleitet. `SafetyOf` u. a. arbeiten über den Katalogindex.
+- An die Arrays gebundene Tabellen (`Buy`, `IntelHardwareTable`, Crew-Tabellen) werden passend dynamisch.
+- `Players` ist danach kein fester Speicherblock mehr: `Checksum == sizeof(Players)`,
+  die `BOOST_STATIC_ASSERT`s auf Strukturgrößen und die Rohkopien (`fwrite/fread` von `Data`
+  für die Rückgängig-Funktion in `rdplex.cpp`) werden durch eine Formatversion bzw.
+  Serialisierung ersetzt.
+- Spielstandversion wird erhöht; alte Spielstände werden nicht geladen.
+- Vorbereitet, aber noch ohne Spielmechanik: Liste „Objekte im Orbit“ (für Stationen, Etappe 10).
+
+### 9.2 Szenarien
+
+- `data/gamedata/scenarios/classic.json`: Katalog-IDs je Seite in Reihenfolge, Start/Ende,
+  Startwerte je Modell (Basis, historisch, zufällig) aus den heutigen `urast.json`/`hist.json`.
+  Das Zufallsmodell (`randomize.cpp`) arbeitet über Rollen statt fester Indizes.
+- `scenarios/test_extra.json` (nur Tests): klassisch plus je eine zusätzliche Rakete und Sonde
+  am Listenende.
+- Auswahl im Einstellungsbildschirm (Feld wie Startjahr/Sandbox); vorerst nur „Classic“ wählbar.
+
+### 9.3 Katalog-Schema-Erweiterungen (nur Datenstruktur und Prüfung)
+
+`launch_mode` (`rocket`/`air_launch`), `consumed_on_flight`, Rollen `spaceplane`, `lab_module`,
+`station`, Sondenfelder `probe_type`, `targets`, `satellite_purpose`, `compatible_labs`
+(siehe `inhaltsplan.md`, Abschnitt 2).
+
+### 9.4 Offene Punkte aus 4b (entschieden)
+
+| Frage | Entscheidung |
+|---|---|
+| Kicker-Listen `kickers_with_capsule`, `kickers_second_pad` | bleiben bis 4d; dort aus den Missionsanforderungen abgeleitet |
+| abgeleitete Kicker-Regel in `LMAdd` | wird explizites Feld (`kicker_on_part`) |
+| `SafetyOf` über `legacy`-Index | 4c stellt auf Katalogindex um |
+| Feldnamen | bleiben |
+
+### 9.5 Weitere Punkte in 4c
+
+- Alter Fehler: Missionsanzeige hält das Fotoaufklärungs-Gerät für einen Mondlander (`mis_c.cpp`) – beheben.
+- E-Mail-Spiel (PBEM) im Menü deaktivieren (Entscheidung 5).
+
+### 9.6 Abnahme
+
+Goldene Tests unverändert grün; Speichern/Laden mit mehr als 7 Einträgen je Kategorie;
+Testszenario mit Zusatzrakete lädt, und die Zusatzrakete ist in Forschung/Kauf auswählbar
+(Montage und Flug folgen mit 4d).
