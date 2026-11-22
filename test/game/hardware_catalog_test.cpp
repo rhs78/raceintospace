@@ -996,4 +996,163 @@ BOOST_AUTO_TEST_CASE(abort_system_assignment_and_validation)
     })), std::runtime_error);
 }
 
+// 4c: schema extensions (validation only, no mechanics yet)
+BOOST_AUTO_TEST_CASE(schema_extensions_are_validated)
+{
+    // Append a copy of an entry with changes.
+    auto addCopy = [](Json::Value& d, const char* from, const char* id,
+                      const std::function<void(Json::Value&)>& change) {
+        Json::Value e;
+
+        for (const Json::Value& v : d["hardware"]) {
+            if (v["id"].asString() == from) {
+                e = v;
+            }
+        }
+
+        BOOST_REQUIRE(e.isObject());
+        e["id"] = id;
+        e.removeMember("legacy");
+        e.removeMember("tech_transfer");
+        e.removeMember("researchable");
+        change(e);
+        d["hardware"].append(e);
+    };
+    auto good = [&](const std::function<void(Json::Value&)>& change) {
+        try {
+            HardwareCatalog::FromJsonText(Mutate(change));
+        } catch (const std::exception& ex) {
+            BOOST_ERROR("rejected: " << ex.what());
+        }
+    };
+    auto bad = [&](const char* what,
+                   const std::function<void(Json::Value&)>& change) {
+        BOOST_CHECK_MESSAGE(
+            [&] {
+                try {
+                    HardwareCatalog::FromJsonText(Mutate(change));
+                } catch (const std::runtime_error&) {
+                    return true;
+                }
+                return false;
+            }(), what);
+    };
+
+    // A spaceplane with a lab, a station and typed probes are accepted.
+    good([&](Json::Value& d) {
+        addCopy(d, "US.MERCURY", "US.X15", [](Json::Value& e) {
+            e["role"] = "spaceplane";
+            e["launch_mode"] = "air_launch";
+            e["consumed_on_flight"] = false;
+            e["compatible_labs"].append("US.LAB");
+            e["compatible_landers"] = Json::Value(Json::arrayValue);
+            e["lander_needs_docking_module"] = false;
+        });
+        addCopy(d, "US.EVA_SUITS", "US.LAB", [](Json::Value& e) {
+            e["role"] = "lab_module";
+            e["consumed_on_flight"] = false;
+        });
+        addCopy(d, "US.EVA_SUITS", "US.STATION", [](Json::Value& e) {
+            e["role"] = "station";
+            e["crew"] = 3;
+            e["consumed_on_flight"] = false;
+        });
+        addCopy(d, "US.RANGER", "US.FLYBY", [](Json::Value& e) {
+            e["probe_type"] = "flyby";
+            e["targets"].append("venus");
+            e["targets"].append("mars");
+        });
+        addCopy(d, "US.EXPLORER", "US.TIROS", [](Json::Value& e) {
+            e["probe_type"] = "satellite";
+            e["satellite_purpose"] = "weather";
+            e["targets"].append("earth");
+        });
+    });
+
+    bad("launch_mode unknown", [&](Json::Value& d) {
+        d["hardware"][8]["launch_mode"] = "catapult";
+    });
+    bad("air_launch for a rocket", [&](Json::Value& d) {
+        d["hardware"][3]["launch_mode"] = "air_launch";
+    });
+    bad("rocket not consumed", [&](Json::Value& d) {
+        d["hardware"][3]["consumed_on_flight"] = false;
+    });
+    bad("probe not consumed", [&](Json::Value& d) {
+        d["hardware"][0]["consumed_on_flight"] = false;
+    });
+    bad("probe_type unknown", [&](Json::Value& d) {
+        d["hardware"][0]["probe_type"] = "teleporter";
+    });
+    bad("probe_type on a rocket", [&](Json::Value& d) {
+        d["hardware"][3]["probe_type"] = "flyby";
+    });
+    bad("targets without probe_type", [&](Json::Value& d) {
+        d["hardware"][0]["targets"].append("moon");
+    });
+    bad("unknown target", [&](Json::Value& d) {
+        d["hardware"][0]["probe_type"] = "flyby";
+        d["hardware"][0]["targets"].append("pluto");
+    });
+    bad("satellite_purpose for a flyby", [&](Json::Value& d) {
+        d["hardware"][0]["probe_type"] = "flyby";
+        d["hardware"][0]["satellite_purpose"] = "weather";
+    });
+    bad("unknown satellite_purpose", [&](Json::Value& d) {
+        d["hardware"][0]["probe_type"] = "satellite";
+        d["hardware"][0]["satellite_purpose"] = "spying";
+    });
+    bad("compatible_labs: unknown id", [&](Json::Value& d) {
+        d["hardware"][8]["compatible_labs"].append("US.NO_LAB");
+    });
+    bad("compatible_labs: not a lab", [&](Json::Value& d) {
+        d["hardware"][8]["compatible_labs"].append("US.GEMINI");
+    });
+    bad("compatible_labs on a probe", [&](Json::Value& d) {
+        d["hardware"][0]["compatible_labs"].append("US.GEMINI");
+    });
+    bad("kicker_on_part unknown", [&](Json::Value& d) {
+        d["hardware"][9]["kicker_on_part"] = "sometimes";
+    });
+    bad("kicker_on_part without landers", [&](Json::Value& d) {
+        d["hardware"][8]["kicker_on_part"] = "all";
+    });
+    bad("role does not fit category", [&](Json::Value& d) {
+        d["hardware"][0]["role"] = "station";
+    });
+    bad("station on the wrong role list", [&](Json::Value& d) {
+        d["hardware"][3]["role"] = "spaceplane";
+    });
+}
+
+// 4c: kicker_on_part replaces the rule derived from the docking module
+BOOST_AUTO_TEST_CASE(kicker_on_part_matches_former_rule)
+{
+    const HardwareCatalog& cat = GetHardwareCatalog();
+
+    for (const HardwareEntry& e : cat.entries()) {
+        if (e.compatibleLanders.empty()) {
+            BOOST_CHECK_EQUAL(e.kickerOnPart, "second_pad");
+            continue;
+        }
+
+        BOOST_CHECK_MESSAGE(
+            (e.kickerOnPart == "all") == e.landerNeedsDockingModule,
+            e.id << " kicker_on_part");
+    }
+}
+
+// 4c: the rd screens skip the photo recon and the Kicker C of the USA
+BOOST_AUTO_TEST_CASE(researchable_flag)
+{
+    const HardwareCatalog& cat = GetHardwareCatalog();
+
+    for (const HardwareEntry& e : cat.entries()) {
+        const bool expected = !(e.role == HardwareRole::PhotoRecon
+                                || e.id == "US.KICKER_C");
+        BOOST_CHECK_MESSAGE(e.researchable == expected,
+                            e.id << " researchable");
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()

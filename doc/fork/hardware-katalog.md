@@ -161,6 +161,45 @@ bis Missionsdauerstufe 2 des Plans, XMS-2/Lapot bis Dauerstufe 4). Missionsbezog
 Agenten-Aufteilung: 4a und die Tests zuerst (ein Agent), danach 4b–4e nacheinander (sie berühren
 dieselben Dateien), 4f kann teilweise parallel zu 4e laufen. Prüfung und Zusammenführung jeweils durch mich.
 
+### Stand Schritt 4c (umgesetzt)
+
+**Spielzustand:** `BuzzData::Probe/Rocket/Manned/Misc` sind `std::vector<Equipment>` (Indexschreibweise
+und klassische Reihenfolge unverändert). `Equipment::CatalogIndex` verweist in `hardware.json`;
+Seite und Identität (`CatalogEntryForEquipment`, `SafetyOf`, Technologietransfer, `HardwareType`,
+`CrewSize`) werden darüber aufgelöst, nicht mehr über `ID[1]`. `Buy`, `IntelHardwareTable`, `Crew` und
+`CrewCount` werden mit `SizeHardwareTables()` passend zu den Listen dimensioniert (Crew-Zeilen:
+Anzahl der Kapsel-/Minishuttle-Programme + 1). `HardwareCount(plr, kategorie)` liefert die Listenlänge.
+`Players` hat keine Prüfsumme und keine Größen-Assertions mehr; Spielstandversion 3, ältere Stände
+werden mit der Meldung „SAVE VERSION NOT SUPPORTED“ abgelehnt (der laufende Spielstand bleibt
+unverändert). Die Rückgängig-Funktion in `rdplex.cpp` serialisiert den Zustand als JSON
+(`WriteUndoFile`/`ReadUndoFile` in `state_utils.cpp`). `BuzzData::ObjectsInOrbit` (Liste von
+`OrbitalObject`) ist angelegt und wird gespeichert, aber noch nicht verwendet.
+
+**Szenarien:** `data/gamedata/scenarios/classic.json` (Katalog-IDs je Seite und Kategorie in Reihenfolge,
+Start-/Endjahr, Startwerte `basic` und `historical` je Programm, Zufallsmodell als Regeln nach Rolle und
+Ordnungszahl). `test_extra.json` (versteckt, `extends: CLASSIC`) hängt je eine Testrakete und Testsonde
+(`*.TEST_ROCKET`, `*.TEST_PROBE`, im Katalog mit `test_only`) an die Listenenden. Der Startzustand entsteht
+aus `urast.json` (nur noch Nicht-Hardware) plus Szenario (`BuildStartState`, `scenario.cpp`); `hist.json`
+entfällt. Das Zufallsmodell (`RandomizeEq`) wertet die Regeln des Szenarios aus und erzeugt für denselben
+Zufallsstartwert dieselben Werte wie vorher. Im Einstellungsbildschirm zeigt die vierte Schaltfläche der
+mittleren Spalte jetzt drei Zeilen: Startjahr, Sandbox, Szenario (Taste `C`; es ist nur CLASSIC wählbar).
+
+**Katalog-Erweiterungen (nur Prüfung):** `launch_mode`, `consumed_on_flight`, Rollen `spaceplane`/`lab_module`/
+`station`, `probe_type`, `targets`, `satellite_purpose`, `compatible_labs`; `legacy` ist optional (neue
+Programme haben keine Originalposition). `kicker_on_part` (`all` oder `second_pad`) ersetzt die in `LMAdd`
+aus `lander_needs_docking_module` abgeleitete Kickerregel (Verhalten gleich). `researchable: false` markiert
+die Programme, die Forschung/Kauf nicht anbieten (Fotoaufklärung, US-Kicker C); die Pfeiltasten dort
+blättern über die tatsächlichen Listen (`CycleResearchableUnit`).
+
+**Sonstiges:** Fehler in `mis_c.cpp` behoben (Fotoaufklärung wurde als Mondlander angezeigt). Das
+E-Mail-Spiel ist im Hauptmenü ausgegraut (`PBEM_MENU_ENABLED` in `place.cpp`, Code bleibt).
+
+**Noch positionsabhängig (für 4d/4e):** Missionen (`MissionType.Hard[]`, Raketenkodierung, `4` = Andockmodul),
+VAB-Auswahl und Fahrzeugwahl, `CapsuleEligibility`/`crew.cpp` (Programme 0–4), Astronauten-/Crew-Zuordnung
+(`Crew[program]`, `ASTRONAUT_POOLS`), Intel-Auswahl (`HarIntel`: 7 Plätze je Kategorie), KI (`aipur.cpp`,
+`aimast.cpp`, `aimis.cpp`), Prestige-Tabellen (`PrestigeTable[kategorie][einheit]`), Museum/Rekorde und alle
+Stellen mit `MISC_HW_*`, `ROCKET_HW_*` usw. als feste Positionen.
+
 ## 6. Tests
 
 - **Goldene Tests:** Für das Szenario „Klassisch“ liefern alle bisherigen Funktionen

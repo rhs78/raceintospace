@@ -217,9 +217,6 @@ void DrawStartYear(PreferencesMode where)
     display::graphics.setForegroundColor(4);
     grMoveTo(147, 89);
     grLineTo(218, 89);
-    display::graphics.setForegroundColor(5);
-    draw_string(150, 97, "SCENARIO");
-
     std::string scenario = DefaultScenarioId();
 
     try {
@@ -228,8 +225,19 @@ void DrawStartYear(PreferencesMode where)
         // Show the default name if the scenario cannot be loaded.
     }
 
+    // The box is 70 pixels wide: label and name, or, for a long name, the
+    // name alone.
+    const bool withLabel = TextDisplayLength("SCEN") + 6
+                           + TextDisplayLength(scenario.c_str()) <= 70;
+
+    if (withLabel) {
+        display::graphics.setForegroundColor(5);
+        draw_string(150, 97, "SCEN");
+    }
+
     display::graphics.setForegroundColor(where == PREFS_INGAME ? 6 : 11);
-    draw_string(215, 97, scenario.c_str(), ALIGN_RIGHT);
+    draw_string(withLabel ? 217 : 150, 97, scenario.c_str(),
+                withLabel ? ALIGN_RIGHT : ALIGN_LEFT);
 }
 
 

@@ -8,7 +8,7 @@
  * side (catalog ids in order), the default start and end year and the start
  * values of each program for the three start models (basic, historical,
  * random).  The initial game state is built from a scenario and the hardware
- * catalog.  See data/gamedata/scenarios/*.json and doc/fork/hardware-katalog.md.
+ * catalog.  See the files in data/gamedata/scenarios and doc/fork/hardware-katalog.md.
  */
 
 #include <map>
