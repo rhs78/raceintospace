@@ -31,6 +31,7 @@
 #include "game/mission_util.h"
 #include "game/options.h"
 #include "game/proto.h"
+#include "game/randomize.h"
 #include "game/rdplex.h"
 #include "game/serialize.h"
 #include "game/vab.h"
@@ -248,6 +249,78 @@ struct Lcg {
         return state >> 8;
     }
 };
+
+
+// ---------------------------------------------------------------------
+// Start state (scenario "classic" must equal the urast.json/hist.json
+// based start state of the original code)
+// ---------------------------------------------------------------------
+
+void DumpEquipment(std::ostream& o, const Equipment& e)
+{
+    o << "'" << e.Name << "' ID" << int(e.ID[0]) << "," << int(e.ID[1])
+      << " saf" << e.Safety << " ms" << e.MisSaf << " msf" << e.MSF
+      << " base" << int(e.Base) << " ic" << e.InitCost
+      << " uc" << int(e.UnitCost) << " uw" << e.UnitWeight
+      << " mp" << e.MaxPay << " rdc" << int(e.RDCost)
+      << " code" << int(e.Code) << " num" << int(e.Num)
+      << " spok" << int(e.Spok) << " seas" << int(e.Seas)
+      << " used" << int(e.Used) << " steps" << e.Steps
+      << " fail" << e.Failures << " mrd" << int(e.MaxRD)
+      << " msaf" << int(e.MaxSafety) << " smods" << int(e.SMods)
+      << " sc" << int(e.SaveCard) << " delay" << int(e.Delay)
+      << " dur" << int(e.Duration) << " dmg" << int(e.Damage)
+      << " dc" << int(e.DCost) << " succ" << int(e.MisSucc[0])
+      << "," << int(e.MisSucc[1]) << " mf" << int(e.MisFail[0])
+      << "," << int(e.MisFail[1]);
+}
+
+std::string StartStateDump(Players& d)
+{
+    std::ostringstream o;
+    o << "year " << int(d.Year) << " season " << int(d.Season)
+      << " start " << int(d.StartYear) << " end " << int(d.EndYear) << "\n";
+
+    for (int plr = 0; plr < NUM_PLAYERS; plr++) {
+        const BuzzData& p = d.P[plr];
+        o << "plr" << plr << " name '" << p.Name << "' cash " << p.Cash
+          << " budget " << p.Budget << " astrodelay " << int(p.AstroDelay)
+          << " pads " << int(p.LaunchFacility[0]) << ","
+          << int(p.LaunchFacility[1]) << "," << int(p.LaunchFacility[2])
+          << "\n";
+
+        for (int c = PROBE_HARDWARE; c <= MISC_HARDWARE; c++) {
+            for (int i = 0; i < HardwareCount(c); i++) {
+                o << "plr" << plr << " c" << c << " i" << i << " ";
+                DumpEquipment(o, Hw(d, plr, c, i));
+                o << "\n";
+            }
+        }
+    }
+
+    return o.str();
+}
+
+void LoadHist(Players& d)
+{
+    std::ifstream os{locate_file("hist.json", FT_DATA)};
+    cereal::JSONInputArchive ar{os};
+    for (int plr = 0; plr < NUM_PLAYERS; plr++) {
+        const char* cats[4] = {"Probe", "Rocket", "Manned", "Misc"};
+
+        for (int c = 0; c < 4; c++) {
+            std::vector<Equipment> v;
+            ar(cereal::make_nvp("Data->P[" + std::to_string(plr) + "]."
+                                + cats[c], v));
+            Equipment* dst = &Hw(d, plr, c, 0);
+            BOOST_REQUIRE(v.size() >= 7);
+
+            for (int i = 0; i < 7; i++) {
+                dst[i] = v[i];
+            }
+        }
+    }
+}
 
 } // namespace
 
@@ -531,6 +604,32 @@ BOOST_AUTO_TEST_CASE(golden_ai_tech_transfer)
     }
 
     CheckGolden("ai_tech_transfer.txt", out.str());
+}
+
+BOOST_AUTO_TEST_CASE(golden_start_state)
+{
+    std::ostringstream out;
+    out << "# start state of the classic scenario: basic, historical and"
+        << " random (srand 1, 2, 3) models\n";
+
+    {
+        auto d = LoadUrast();
+        out << "## basic\n" << StartStateDump(*d);
+    }
+    {
+        auto d = LoadUrast();
+        LoadHist(*d);
+        out << "## historical\n" << StartStateDump(*d);
+    }
+
+    for (int seed = 1; seed <= 3; seed++) {
+        DataScope scope(LoadUrast());
+        std::srand(seed);
+        RandomizeEq();
+        out << "## random seed " << seed << "\n" << StartStateDump(*scope.players);
+    }
+
+    CheckGolden("start_state.txt", out.str());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,0 +1,231 @@
+# start state of the classic scenario: basic, historical and random (srand 1, 2, 3) models
+## basic
+year 57 season 0 start 57 end 63
+plr0 name 'WEBB' cash 0 budget 60 astrodelay 2 pads 1,-1,-1
+plr0 c0 i0 'EXPLORER' ID80,48 saf40 ms0 msf0 base40 ic6 uc1 uw300 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c0 i1 'RANGER' ID80,49 saf40 ms0 msf0 base40 ic24 uc4 uw700 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c0 i2 'SURVEYOR' ID80,50 saf40 ms0 msf0 base40 ic30 uc6 uw1200 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf88 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i0 'ATLAS' ID82,48 saf10 ms0 msf0 base10 ic24 uc3 uw0 mp600 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i1 'TITAN' ID82,49 saf10 ms0 msf0 base10 ic60 uc12 uw0 mp1500 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i2 'SATURN' ID82,50 saf5 ms0 msf0 base5 ic84 uc18 uw0 mp3200 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i3 'NOVA' ID82,51 saf5 ms0 msf0 base5 ic150 uc30 uw0 mp4800 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i4 'BOOSTERS' ID82,52 saf10 ms0 msf0 base10 ic12 uc3 uw0 mp1000 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i0 'MERCURY' ID67,48 saf5 ms0 msf0 base5 ic18 uc2 uw500 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd76 msaf90 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i1 'GEMINI' ID67,49 saf5 ms0 msf0 base5 ic24 uc6 uw1200 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd81 msaf94 smods0 sc0 delay0 dur14 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i2 'APOLLO' ID67,50 saf5 ms0 msf0 base5 ic36 uc12 uw1600 mp0 rdc5 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf94 smods0 sc0 delay0 dur21 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i3 'XMS-2' ID67,51 saf5 ms0 msf0 base5 ic60 uc30 uw1500 mp0 rdc7 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf94 smods0 sc0 delay0 dur15 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i4 'JUPITER' ID67,52 saf5 ms0 msf0 base5 ic60 uc30 uw4300 mp0 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf94 smods0 sc0 delay0 dur24 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i5 'EAGLE' ID67,53 saf10 ms0 msf0 base10 ic30 uc8 uw1500 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf94 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i6 'CRICKET' ID67,54 saf10 ms0 msf0 base10 ic42 uc8 uw1000 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf94 smods0 sc0 delay0 dur3 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i0 'KICKER-A' ID77,48 saf10 ms0 msf0 base10 ic12 uc3 uw300 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd94 msaf97 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i1 'KICKER-B' ID77,49 saf10 ms0 msf0 base10 ic18 uc6 uw600 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd94 msaf96 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i2 'KICKER-C' ID77,50 saf5 ms0 msf0 base5 ic40 uc20 uw2500 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf95 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i3 'EVA SUITS' ID77,51 saf30 ms0 msf0 base30 ic18 uc0 uw0 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i4 'DOCKING' ID77,52 saf40 ms0 msf0 base40 ic18 uc2 uw300 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i5 'PHOTO RECON' ID77,53 saf55 ms0 msf0 base55 ic0 uc0 uw0 mp0 rdc0 code0 num0 spok0 seas0 used0 steps0 fail0 mrd0 msaf99 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 name 'KOROLYOV' cash 0 budget 60 astrodelay 2 pads 1,-1,-1
+plr1 c0 i0 'SPUTNIK' ID80,48 saf40 ms0 msf0 base40 ic6 uc1 uw300 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c0 i1 'COSMOS' ID80,49 saf40 ms0 msf0 base40 ic24 uc4 uw700 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c0 i2 'LUNA' ID80,50 saf40 ms0 msf0 base40 ic30 uc6 uw1200 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf88 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i0 'R-7' ID82,48 saf10 ms0 msf0 base10 ic24 uc3 uw0 mp600 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i1 'PROTON' ID82,49 saf10 ms0 msf0 base10 ic60 uc12 uw0 mp1500 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i2 'N1' ID82,50 saf5 ms0 msf0 base5 ic84 uc18 uw0 mp3200 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i3 'UR-700' ID82,51 saf5 ms0 msf0 base5 ic150 uc30 uw0 mp4800 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i4 'BOOSTERS' ID82,52 saf10 ms0 msf0 base10 ic12 uc3 uw0 mp1000 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i0 'VOSTOK' ID67,48 saf5 ms0 msf0 base5 ic18 uc2 uw500 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd76 msaf90 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i1 'VOSKHOD' ID67,49 saf5 ms0 msf0 base5 ic24 uc6 uw1200 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd81 msaf94 smods0 sc0 delay0 dur14 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i2 'SOYUZ' ID67,50 saf5 ms0 msf0 base5 ic36 uc12 uw1600 mp0 rdc5 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf94 smods0 sc0 delay0 dur21 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i3 'LAPOT' ID67,51 saf5 ms0 msf0 base5 ic60 uc30 uw1500 mp0 rdc7 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf94 smods0 sc0 delay0 dur15 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i4 'LK-700' ID67,52 saf5 ms0 msf0 base5 ic60 uc30 uw4300 mp0 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf94 smods0 sc0 delay0 dur24 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i5 'LKM' ID67,53 saf10 ms0 msf0 base10 ic30 uc8 uw1500 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf94 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i6 'LK' ID67,54 saf10 ms0 msf0 base10 ic42 uc8 uw1000 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf94 smods0 sc0 delay0 dur3 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i0 'KICKER-A' ID77,48 saf10 ms0 msf0 base10 ic12 uc3 uw300 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd94 msaf97 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i1 'KICKER-B' ID77,49 saf10 ms0 msf0 base10 ic18 uc6 uw600 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd94 msaf96 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i2 'KICKER-C' ID77,50 saf5 ms0 msf0 base5 ic40 uc20 uw2500 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf95 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i3 'EVA SUITS' ID77,51 saf30 ms0 msf0 base30 ic18 uc0 uw0 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i4 'DOCKING' ID77,52 saf40 ms0 msf0 base40 ic18 uc2 uw300 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i5 'PHOTO RECON' ID77,53 saf55 ms0 msf0 base55 ic0 uc0 uw0 mp0 rdc0 code0 num0 spok0 seas0 used0 steps0 fail0 mrd0 msaf99 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+## historical
+year 57 season 0 start 57 end 63
+plr0 name 'WEBB' cash 0 budget 60 astrodelay 2 pads 1,-1,-1
+plr0 c0 i0 'EXPLORER' ID80,48 saf40 ms0 msf0 base40 ic6 uc1 uw200 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c0 i1 'RANGER' ID80,49 saf40 ms0 msf0 base40 ic24 uc5 uw700 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c0 i2 'SURVEYOR' ID80,50 saf40 ms0 msf0 base40 ic30 uc7 uw1200 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf88 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i0 'ATLAS' ID82,48 saf10 ms0 msf0 base10 ic26 uc3 uw0 mp500 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i1 'TITAN' ID82,49 saf10 ms0 msf0 base10 ic60 uc12 uw0 mp1200 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i2 'SATURN' ID82,50 saf5 ms0 msf0 base5 ic90 uc18 uw0 mp3500 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i3 'NOVA' ID82,51 saf5 ms0 msf0 base5 ic150 uc30 uw0 mp4800 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd94 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i4 'BOOSTERS' ID82,52 saf10 ms0 msf0 base10 ic18 uc4 uw0 mp800 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i0 'MERCURY' ID67,48 saf5 ms0 msf0 base5 ic20 uc3 uw500 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd78 msaf92 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i1 'GEMINI' ID67,49 saf5 ms0 msf0 base5 ic30 uc7 uw1200 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd83 msaf94 smods0 sc0 delay0 dur14 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i2 'APOLLO' ID67,50 saf5 ms0 msf0 base5 ic40 uc14 uw1700 mp0 rdc5 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf94 smods0 sc0 delay0 dur21 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i3 'XMS-2' ID67,51 saf5 ms0 msf0 base5 ic55 uc30 uw1400 mp0 rdc7 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf94 smods0 sc0 delay0 dur15 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i4 'JUPITER' ID67,52 saf5 ms0 msf0 base5 ic65 uc30 uw4600 mp0 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf94 smods0 sc0 delay0 dur24 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i5 'EAGLE' ID67,53 saf10 ms0 msf0 base10 ic30 uc8 uw1500 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf94 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i6 'CRICKET' ID67,54 saf10 ms0 msf0 base10 ic42 uc9 uw1100 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf94 smods0 sc0 delay0 dur3 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i0 'KICKER-A' ID77,48 saf10 ms0 msf0 base10 ic12 uc3 uw300 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd92 msaf97 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i1 'KICKER-B' ID77,49 saf10 ms0 msf0 base10 ic18 uc6 uw700 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd94 msaf97 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i2 'KICKER-C' ID77,50 saf5 ms0 msf0 base5 ic0 uc0 uw0 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf0 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i3 'EVA SUITS' ID77,51 saf30 ms0 msf0 base30 ic18 uc0 uw0 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i4 'DOCKING' ID77,52 saf40 ms0 msf0 base40 ic18 uc3 uw300 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i5 'PHOTO RECON' ID77,53 saf55 ms0 msf0 base55 ic0 uc0 uw0 mp0 rdc0 code0 num0 spok0 seas0 used0 steps0 fail0 mrd0 msaf99 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 name 'KOROLYOV' cash 0 budget 60 astrodelay 2 pads 1,-1,-1
+plr1 c0 i0 'SPUTNIK' ID80,48 saf40 ms0 msf0 base40 ic6 uc1 uw400 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c0 i1 'COSMOS' ID80,49 saf40 ms0 msf0 base40 ic20 uc3 uw1000 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd88 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c0 i2 'LUNA' ID80,50 saf40 ms0 msf0 base40 ic26 uc6 uw1500 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf88 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i0 'R-7' ID82,48 saf10 ms0 msf0 base10 ic20 uc3 uw0 mp800 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i1 'PROTON' ID82,49 saf10 ms0 msf0 base10 ic60 uc12 uw0 mp1900 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i2 'N1' ID82,50 saf5 ms0 msf0 base5 ic84 uc18 uw0 mp3900 rdc7 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd93 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i3 'UR-700' ID82,51 saf5 ms0 msf0 base5 ic150 uc30 uw0 mp5500 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd94 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i4 'BOOSTERS' ID82,52 saf10 ms0 msf0 base10 ic15 uc4 uw0 mp1200 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i0 'VOSTOK' ID67,48 saf5 ms0 msf0 base5 ic18 uc3 uw700 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd76 msaf92 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i1 'VOSKHOD' ID67,49 saf5 ms0 msf0 base5 ic24 uc6 uw1400 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd80 msaf92 smods0 sc0 delay0 dur14 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i2 'SOYUZ' ID67,50 saf5 ms0 msf0 base5 ic36 uc12 uw1900 mp0 rdc5 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf94 smods0 sc0 delay0 dur21 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i3 'LAPOT' ID67,51 saf5 ms0 msf0 base5 ic65 uc30 uw1800 mp0 rdc7 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf94 smods0 sc0 delay0 dur15 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i4 'LK-700' ID67,52 saf5 ms0 msf0 base5 ic60 uc30 uw5300 mp0 rdc9 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf94 smods0 sc0 delay0 dur24 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i5 'LKM' ID67,53 saf10 ms0 msf0 base10 ic35 uc8 uw1700 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf94 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i6 'LK' ID67,54 saf10 ms0 msf0 base10 ic48 uc9 uw1500 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf93 smods0 sc0 delay0 dur3 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i0 'KICKER-A' ID77,48 saf10 ms0 msf0 base10 ic12 uc3 uw500 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf95 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i1 'KICKER-B' ID77,49 saf10 ms0 msf0 base10 ic18 uc6 uw700 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf95 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i2 'KICKER-C' ID77,50 saf5 ms0 msf0 base5 ic40 uc20 uw3000 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i3 'EVA SUITS' ID77,51 saf30 ms0 msf0 base30 ic18 uc0 uw0 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i4 'DOCKING' ID77,52 saf40 ms0 msf0 base40 ic15 uc2 uw300 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i5 'PHOTO RECON' ID77,53 saf55 ms0 msf0 base55 ic0 uc0 uw0 mp0 rdc0 code0 num0 spok0 seas0 used0 steps0 fail0 mrd0 msaf99 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+## random seed 1
+year 57 season 0 start 57 end 63
+plr0 name 'WEBB' cash 0 budget 60 astrodelay 2 pads 1,-1,-1
+plr0 c0 i0 'EXPLORER' ID80,48 saf40 ms0 msf0 base40 ic6 uc1 uw347 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf96 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c0 i1 'RANGER' ID80,49 saf40 ms0 msf0 base40 ic22 uc2 uw723 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c0 i2 'SURVEYOR' ID80,50 saf40 ms0 msf0 base40 ic34 uc5 uw1134 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd79 msaf86 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i0 'ATLAS' ID82,48 saf10 ms0 msf0 base10 ic21 uc3 uw0 mp740 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i1 'TITAN' ID82,49 saf10 ms0 msf0 base10 ic52 uc8 uw0 mp1624 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i2 'SATURN' ID82,50 saf5 ms0 msf0 base5 ic77 uc14 uw0 mp3512 rdc7 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd93 msaf95 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i3 'NOVA' ID82,51 saf5 ms0 msf0 base5 ic143 uc26 uw0 mp6700 rdc7 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i4 'BOOSTERS' ID82,52 saf10 ms0 msf0 base10 ic12 uc4 uw0 mp1184 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf91 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i0 'MERCURY' ID67,48 saf5 ms0 msf0 base5 ic20 uc5 uw547 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf93 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i1 'GEMINI' ID67,49 saf5 ms0 msf0 base5 ic18 uc4 uw1169 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf91 smods0 sc0 delay0 dur14 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i2 'APOLLO' ID67,50 saf5 ms0 msf0 base5 ic38 uc11 uw1645 mp0 rdc5 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf90 smods0 sc0 delay0 dur21 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i3 'XMS-2' ID67,51 saf5 ms0 msf0 base5 ic58 uc32 uw1535 mp0 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf92 smods0 sc0 delay0 dur15 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i4 'JUPITER' ID67,52 saf5 ms0 msf0 base5 ic68 uc37 uw4444 mp0 rdc9 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf92 smods0 sc0 delay0 dur24 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i5 'EAGLE' ID67,53 saf10 ms0 msf0 base10 ic31 uc9 uw1679 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd80 msaf90 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i6 'CRICKET' ID67,54 saf10 ms0 msf0 base10 ic41 uc7 uw1018 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf90 smods0 sc0 delay0 dur3 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i0 'KICKER-A' ID77,48 saf10 ms0 msf0 base10 ic15 uc4 uw278 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf97 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i1 'KICKER-B' ID77,49 saf10 ms0 msf0 base10 ic18 uc6 uw556 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i2 'KICKER-C' ID77,50 saf5 ms0 msf0 base5 ic38 uc19 uw2354 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd83 msaf91 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i3 'EVA SUITS' ID77,51 saf30 ms0 msf0 base30 ic17 uc0 uw0 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd88 msaf95 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i4 'DOCKING' ID77,52 saf40 ms0 msf0 base40 ic18 uc2 uw300 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i5 'PHOTO RECON' ID77,53 saf55 ms0 msf0 base55 ic0 uc0 uw0 mp0 rdc0 code0 num0 spok0 seas0 used0 steps0 fail0 mrd0 msaf99 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 name 'KOROLYOV' cash 0 budget 60 astrodelay 2 pads 1,-1,-1
+plr1 c0 i0 'SPUTNIK' ID80,48 saf40 ms0 msf0 base40 ic5 uc1 uw289 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c0 i1 'COSMOS' ID80,49 saf40 ms0 msf0 base40 ic26 uc4 uw711 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c0 i2 'LUNA' ID80,50 saf40 ms0 msf0 base40 ic31 uc6 uw1333 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf91 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i0 'R-7' ID82,48 saf10 ms0 msf0 base10 ic27 uc3 uw0 mp616 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i1 'PROTON' ID82,49 saf10 ms0 msf0 base10 ic69 uc9 uw0 mp1399 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd93 msaf96 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i2 'N1' ID82,50 saf5 ms0 msf0 base5 ic84 uc18 uw0 mp3004 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i3 'UR-700' ID82,51 saf5 ms0 msf0 base5 ic136 uc29 uw0 mp6392 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i4 'BOOSTERS' ID82,52 saf10 ms0 msf0 base10 ic11 uc3 uw0 mp1016 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd80 msaf86 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i0 'VOSTOK' ID67,48 saf5 ms0 msf0 base5 ic15 uc2 uw517 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf92 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i1 'VOSKHOD' ID67,49 saf5 ms0 msf0 base5 ic25 uc8 uw1393 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf95 smods0 sc0 delay0 dur14 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i2 'SOYUZ' ID67,50 saf5 ms0 msf0 base5 ic37 uc9 uw1828 mp0 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf94 smods0 sc0 delay0 dur21 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i3 'LAPOT' ID67,51 saf5 ms0 msf0 base5 ic59 uc30 uw1724 mp0 rdc9 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf91 smods0 sc0 delay0 dur15 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i4 'LK-700' ID67,52 saf5 ms0 msf0 base5 ic63 uc36 uw4112 mp0 rdc10 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf89 smods0 sc0 delay0 dur24 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i5 'LKM' ID67,53 saf10 ms0 msf0 base10 ic25 uc5 uw1449 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf92 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i6 'LK' ID67,54 saf10 ms0 msf0 base10 ic45 uc6 uw884 mp0 rdc5 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf94 smods0 sc0 delay0 dur3 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i0 'KICKER-A' ID77,48 saf10 ms0 msf0 base10 ic10 uc5 uw304 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf95 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i1 'KICKER-B' ID77,49 saf10 ms0 msf0 base10 ic17 uc5 uw608 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf91 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i2 'KICKER-C' ID77,50 saf5 ms0 msf0 base5 ic43 uc21 uw2522 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd83 msaf91 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i3 'EVA SUITS' ID77,51 saf30 ms0 msf0 base30 ic18 uc0 uw0 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i4 'DOCKING' ID77,52 saf40 ms0 msf0 base40 ic18 uc2 uw300 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i5 'PHOTO RECON' ID77,53 saf55 ms0 msf0 base55 ic0 uc0 uw0 mp0 rdc0 code0 num0 spok0 seas0 used0 steps0 fail0 mrd0 msaf99 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+## random seed 2
+year 57 season 0 start 57 end 63
+plr0 name 'WEBB' cash 0 budget 60 astrodelay 2 pads 1,-1,-1
+plr0 c0 i0 'EXPLORER' ID80,48 saf40 ms0 msf0 base40 ic6 uc1 uw402 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd81 msaf86 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c0 i1 'RANGER' ID80,49 saf40 ms0 msf0 base40 ic25 uc4 uw868 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c0 i2 'SURVEYOR' ID80,50 saf40 ms0 msf0 base40 ic37 uc7 uw1401 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd77 msaf86 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i0 'ATLAS' ID82,48 saf10 ms0 msf0 base10 ic25 uc3 uw0 mp611 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd80 msaf86 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i1 'TITAN' ID82,49 saf10 ms0 msf0 base10 ic71 uc13 uw0 mp1582 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd92 msaf97 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i2 'SATURN' ID82,50 saf5 ms0 msf0 base5 ic82 uc19 uw0 mp3438 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf91 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i3 'NOVA' ID82,51 saf5 ms0 msf0 base5 ic137 uc29 uw0 mp6684 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd82 msaf89 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i4 'BOOSTERS' ID82,52 saf10 ms0 msf0 base10 ic14 uc2 uw0 mp856 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd82 msaf87 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i0 'MERCURY' ID67,48 saf5 ms0 msf0 base5 ic20 uc5 uw502 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf88 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i1 'GEMINI' ID67,49 saf5 ms0 msf0 base5 ic26 uc6 uw1298 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf94 smods0 sc0 delay0 dur14 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i2 'APOLLO' ID67,50 saf5 ms0 msf0 base5 ic33 uc13 uw1726 mp0 rdc5 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd88 msaf92 smods0 sc0 delay0 dur21 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i3 'XMS-2' ID67,51 saf5 ms0 msf0 base5 ic69 uc35 uw1552 mp0 rdc7 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd81 msaf91 smods0 sc0 delay0 dur15 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i4 'JUPITER' ID67,52 saf5 ms0 msf0 base5 ic53 uc27 uw4823 mp0 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf94 smods0 sc0 delay0 dur24 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i5 'EAGLE' ID67,53 saf10 ms0 msf0 base10 ic30 uc8 uw1588 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf92 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i6 'CRICKET' ID67,54 saf10 ms0 msf0 base10 ic41 uc8 uw898 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf93 smods0 sc0 delay0 dur3 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i0 'KICKER-A' ID77,48 saf10 ms0 msf0 base10 ic13 uc1 uw288 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf96 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i1 'KICKER-B' ID77,49 saf10 ms0 msf0 base10 ic18 uc4 uw576 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd82 msaf90 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i2 'KICKER-C' ID77,50 saf5 ms0 msf0 base5 ic42 uc18 uw2233 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i3 'EVA SUITS' ID77,51 saf30 ms0 msf0 base30 ic20 uc0 uw0 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i4 'DOCKING' ID77,52 saf40 ms0 msf0 base40 ic18 uc2 uw300 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i5 'PHOTO RECON' ID77,53 saf55 ms0 msf0 base55 ic0 uc0 uw0 mp0 rdc0 code0 num0 spok0 seas0 used0 steps0 fail0 mrd0 msaf99 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 name 'KOROLYOV' cash 0 budget 60 astrodelay 2 pads 1,-1,-1
+plr1 c0 i0 'SPUTNIK' ID80,48 saf40 ms0 msf0 base40 ic6 uc1 uw361 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c0 i1 'COSMOS' ID80,49 saf40 ms0 msf0 base40 ic27 uc5 uw774 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf90 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c0 i2 'LUNA' ID80,50 saf40 ms0 msf0 base40 ic24 uc5 uw1362 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf96 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i0 'R-7' ID82,48 saf10 ms0 msf0 base10 ic24 uc3 uw0 mp664 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i1 'PROTON' ID82,49 saf10 ms0 msf0 base10 ic70 uc9 uw0 mp1614 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf95 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i2 'N1' ID82,50 saf5 ms0 msf0 base5 ic94 uc19 uw0 mp3469 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd92 msaf95 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i3 'UR-700' ID82,51 saf5 ms0 msf0 base5 ic152 uc32 uw0 mp7775 rdc9 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd80 msaf87 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i4 'BOOSTERS' ID82,52 saf10 ms0 msf0 base10 ic14 uc6 uw0 mp1043 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd88 msaf91 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i0 'VOSTOK' ID67,48 saf5 ms0 msf0 base5 ic13 uc1 uw533 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd83 msaf93 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i1 'VOSKHOD' ID67,49 saf5 ms0 msf0 base5 ic24 uc5 uw1104 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf94 smods0 sc0 delay0 dur14 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i2 'SOYUZ' ID67,50 saf5 ms0 msf0 base5 ic41 uc11 uw1482 mp0 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf93 smods0 sc0 delay0 dur21 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i3 'LAPOT' ID67,51 saf5 ms0 msf0 base5 ic67 uc37 uw1426 mp0 rdc9 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd94 msaf98 smods0 sc0 delay0 dur15 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i4 'LK-700' ID67,52 saf5 ms0 msf0 base5 ic55 uc28 uw4161 mp0 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf96 smods0 sc0 delay0 dur24 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i5 'LKM' ID67,53 saf10 ms0 msf0 base10 ic34 uc9 uw1517 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd88 msaf94 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i6 'LK' ID67,54 saf10 ms0 msf0 base10 ic42 uc8 uw1139 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf95 smods0 sc0 delay0 dur3 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i0 'KICKER-A' ID77,48 saf10 ms0 msf0 base10 ic14 uc1 uw279 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd88 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i1 'KICKER-B' ID77,49 saf10 ms0 msf0 base10 ic19 uc5 uw558 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd92 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i2 'KICKER-C' ID77,50 saf5 ms0 msf0 base5 ic40 uc20 uw2545 mp0 rdc5 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i3 'EVA SUITS' ID77,51 saf30 ms0 msf0 base30 ic16 uc0 uw0 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf96 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i4 'DOCKING' ID77,52 saf40 ms0 msf0 base40 ic18 uc2 uw300 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i5 'PHOTO RECON' ID77,53 saf55 ms0 msf0 base55 ic0 uc0 uw0 mp0 rdc0 code0 num0 spok0 seas0 used0 steps0 fail0 mrd0 msaf99 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+## random seed 3
+year 57 season 0 start 57 end 63
+plr0 name 'WEBB' cash 0 budget 60 astrodelay 2 pads 1,-1,-1
+plr0 c0 i0 'EXPLORER' ID80,48 saf40 ms0 msf0 base40 ic7 uc1 uw257 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd88 msaf91 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c0 i1 'RANGER' ID80,49 saf40 ms0 msf0 base40 ic21 uc2 uw617 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd94 msaf97 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c0 i2 'SURVEYOR' ID80,50 saf40 ms0 msf0 base40 ic36 uc4 uw1119 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i0 'ATLAS' ID82,48 saf10 ms0 msf0 base10 ic28 uc3 uw0 mp644 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf94 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i1 'TITAN' ID82,49 saf10 ms0 msf0 base10 ic70 uc16 uw0 mp1626 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i2 'SATURN' ID82,50 saf5 ms0 msf0 base5 ic91 uc19 uw0 mp3504 rdc5 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i3 'NOVA' ID82,51 saf5 ms0 msf0 base5 ic143 uc26 uw0 mp6360 rdc7 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd95 msaf98 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c1 i4 'BOOSTERS' ID82,52 saf10 ms0 msf0 base10 ic13 uc5 uw0 mp942 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd83 msaf87 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i0 'MERCURY' ID67,48 saf5 ms0 msf0 base5 ic17 uc2 uw509 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf88 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i1 'GEMINI' ID67,49 saf5 ms0 msf0 base5 ic20 uc4 uw1082 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf91 smods0 sc0 delay0 dur14 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i2 'APOLLO' ID67,50 saf5 ms0 msf0 base5 ic36 uc11 uw1419 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf89 smods0 sc0 delay0 dur21 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i3 'XMS-2' ID67,51 saf5 ms0 msf0 base5 ic54 uc35 uw1412 mp0 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf94 smods0 sc0 delay0 dur15 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i4 'JUPITER' ID67,52 saf5 ms0 msf0 base5 ic59 uc32 uw3958 mp0 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd88 msaf93 smods0 sc0 delay0 dur24 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i5 'EAGLE' ID67,53 saf10 ms0 msf0 base10 ic33 uc9 uw1491 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf94 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr0 c2 i6 'CRICKET' ID67,54 saf10 ms0 msf0 base10 ic37 uc9 uw962 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf95 smods0 sc0 delay0 dur3 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i0 'KICKER-A' ID77,48 saf10 ms0 msf0 base10 ic11 uc1 uw348 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf89 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i1 'KICKER-B' ID77,49 saf10 ms0 msf0 base10 ic16 uc8 uw696 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i2 'KICKER-C' ID77,50 saf5 ms0 msf0 base5 ic45 uc17 uw2038 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd93 msaf97 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i3 'EVA SUITS' ID77,51 saf30 ms0 msf0 base30 ic19 uc0 uw0 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf91 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i4 'DOCKING' ID77,52 saf40 ms0 msf0 base40 ic18 uc2 uw300 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr0 c3 i5 'PHOTO RECON' ID77,53 saf55 ms0 msf0 base55 ic0 uc0 uw0 mp0 rdc0 code0 num0 spok0 seas0 used0 steps0 fail0 mrd0 msaf99 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 name 'KOROLYOV' cash 0 budget 60 astrodelay 2 pads 1,-1,-1
+plr1 c0 i0 'SPUTNIK' ID80,48 saf40 ms0 msf0 base40 ic6 uc1 uw421 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c0 i1 'COSMOS' ID80,49 saf40 ms0 msf0 base40 ic28 uc7 uw811 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd88 msaf96 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c0 i2 'LUNA' ID80,50 saf40 ms0 msf0 base40 ic37 uc7 uw1284 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i0 'R-7' ID82,48 saf10 ms0 msf0 base10 ic18 uc3 uw0 mp557 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i1 'PROTON' ID82,49 saf10 ms0 msf0 base10 ic56 uc14 uw0 mp1495 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd82 msaf89 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i2 'N1' ID82,50 saf5 ms0 msf0 base5 ic77 uc19 uw0 mp3211 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf97 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i3 'UR-700' ID82,51 saf5 ms0 msf0 base5 ic156 uc32 uw0 mp9177 rdc9 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd79 msaf86 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c1 i4 'BOOSTERS' ID82,52 saf10 ms0 msf0 base10 ic13 uc1 uw0 mp1085 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd91 msaf95 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i0 'VOSTOK' ID67,48 saf5 ms0 msf0 base5 ic14 uc3 uw543 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf94 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i1 'VOSKHOD' ID67,49 saf5 ms0 msf0 base5 ic23 uc6 uw1262 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd84 msaf93 smods0 sc0 delay0 dur14 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i2 'SOYUZ' ID67,50 saf5 ms0 msf0 base5 ic39 uc12 uw1584 mp0 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf96 smods0 sc0 delay0 dur21 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i3 'LAPOT' ID67,51 saf5 ms0 msf0 base5 ic64 uc40 uw1562 mp0 rdc8 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf88 smods0 sc0 delay0 dur15 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i4 'LK-700' ID67,52 saf5 ms0 msf0 base5 ic55 uc24 uw4638 mp0 rdc6 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd86 msaf90 smods0 sc0 delay0 dur24 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i5 'LKM' ID67,53 saf10 ms0 msf0 base10 ic29 uc9 uw1646 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf92 smods0 sc0 delay0 dur5 dmg0 dc0 succ0,0 mf0,0
+plr1 c2 i6 'LK' ID67,54 saf10 ms0 msf0 base10 ic47 uc9 uw1082 mp0 rdc4 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd85 msaf90 smods0 sc0 delay0 dur3 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i0 'KICKER-A' ID77,48 saf10 ms0 msf0 base10 ic13 uc1 uw317 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd90 msaf92 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i1 'KICKER-B' ID77,49 saf10 ms0 msf0 base10 ic18 uc3 uw634 mp0 rdc2 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd87 msaf90 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i2 'KICKER-C' ID77,50 saf5 ms0 msf0 base5 ic39 uc20 uw2696 mp0 rdc3 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd83 msaf91 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i3 'EVA SUITS' ID77,51 saf30 ms0 msf0 base30 ic15 uc0 uw0 mp0 rdc1 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd89 msaf97 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i4 'DOCKING' ID77,52 saf40 ms0 msf0 base40 ic18 uc2 uw300 mp0 rdc0 code0 num-1 spok0 seas0 used0 steps0 fail0 mrd0 msaf93 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
+plr1 c3 i5 'PHOTO RECON' ID77,53 saf55 ms0 msf0 base55 ic0 uc0 uw0 mp0 rdc0 code0 num0 spok0 seas0 used0 steps0 fail0 mrd0 msaf99 smods0 sc0 delay0 dur0 dmg0 dc0 succ0,0 mf0,0
