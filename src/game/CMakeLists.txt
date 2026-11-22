@@ -152,6 +152,7 @@ if(BUILD_TESTING)
     ${test_dir}/game/crisis_test.cpp
     ${test_dir}/game/timeline_test.cpp
     ${test_dir}/game/scenario_test.cpp
+    ${test_dir}/game/news_events_test.cpp
     )
 
   add_executable(game_test ${test_dir}/test_main.cpp ${test_sources} ${game_sources})

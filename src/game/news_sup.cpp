@@ -29,6 +29,8 @@
 
 #include "news_sup.h"
 
+#include <vector>
+
 #include "Buzz_inc.h"
 #include "game_main.h"
 #include "hardware.h"
@@ -37,6 +39,28 @@
 #include "pace.h"
 
 LOG_DEFAULT_CATEGORY(LOG_ROOT_CAT)
+
+namespace
+{
+/**
+ * Hardware program by its flat legacy position (7 slots per category:
+ * 0-6 probes, 7-13 rockets, 14-20 manned, 21-27 misc).
+ *
+ * The original code walked the four Equipment[7] arrays as one block of
+ * 28 entries. Since the hardware lists are dynamic (stage 4c), a slot
+ * beyond the end of its list returns nullptr.
+ */
+Equipment* FlatHardware(int plr, int flat)
+{
+    if (flat < 0 || flat >= 28) {
+        return nullptr;
+    }
+
+    std::vector<Equipment>& list = HardwareList(Data->P[plr], flat / 7);
+    size_t idx = size_t(flat % 7);
+    return (idx < list.size()) ? &list[idx] : nullptr;
+}
+}  // namespace
 
 /**
  *
@@ -54,9 +78,12 @@ int Steal(int plr, int prog, int type)
     for (int hwType = 0; hwType < 4; hwType++) {
         for (int i = 0; i < 7; i++) {
             int eqIndex = i + 7 * hwType;
-            Equipment& equip = HardwareProgram(plr, hwMap[hwType], i);
+            Equipment* pEquip = FlatHardware(plr, 7 * hwMap[hwType] + i);
+            Equipment* pRival = FlatHardware(other(plr), 7 * hwMap[hwType] + i);
+            if (pEquip == nullptr || pRival == nullptr) continue;
+            Equipment& equip = *pEquip;
             if (equip.Num < 0) continue;
-            Equipment& rival = HardwareProgram(other(plr), hwMap[hwType], i);
+            Equipment& rival = *pRival;
             if (rival.Num < 0) continue;
             
             if (type == 1) {
@@ -142,7 +169,13 @@ int NMod(int plr, int prog, int type, int per)
     /* drvee: this loop was going to 25, not 28 */
     for (int i = 0; i < (int)ARRAY_LENGTH(Eptr); i++) {
         /** \bug Mismatch between data.h(250) and this code here */
-        Eptr[i] = &Data->P[plr].Probe[i];
+        Eptr[i] = FlatHardware(plr, i);
+
+        if (Eptr[i] == nullptr) {
+            save[i] = 0;
+            continue;
+        }
+
         save[i] = ((Eptr[i]->Safety + per * type) <= (Eptr[i]->MaxSafety) && Eptr[i]->Num >= 0) ? Eptr[i]->Safety + per * type : 0;
 
         if (Eptr[i]->Num < 0) {
@@ -197,8 +230,8 @@ int DamMod(int plr, int prog, int dam, int cost)
 
     // what does 25 mean here?
     for (int i = 0; i < 25; i++) {
-        Eptr[i] = &Data->P[plr].Probe[i];
-        save[i] = ((Eptr[i]->Safety > Eptr[i]->Base) && Eptr[i]->Num >= 0) ? Eptr[i]->Safety : 0;
+        Eptr[i] = FlatHardware(plr, i);
+        save[i] = (Eptr[i] && (Eptr[i]->Safety > Eptr[i]->Base) && Eptr[i]->Num >= 0) ? Eptr[i]->Safety : 0;
     }
 
     for (int i = 0; i < 25; i++) {
@@ -250,9 +283,9 @@ int RDMods(int plr, int prog, int type, int val)
 
     // what does 25 mean here?
     for (int i = 0; i < 25; i++) {
-        Eptr[i] = &Data->P[plr].Probe[i];
-        save[i] = ((Eptr[i]->Safety > Eptr[i]->Base) 
-                   && Eptr[i]->Num >= 0) ? Eptr[i]->Safety 
+        Eptr[i] = FlatHardware(plr, i);
+        save[i] = (Eptr[i] && (Eptr[i]->Safety > Eptr[i]->Base)
+                   && Eptr[i]->Num >= 0) ? Eptr[i]->Safety
                                          : 0;
     }
 
@@ -325,21 +358,11 @@ int SaveMods(char plr, char prog)
     }
 
     int save[28]{};
-    for (int i = 0; i < 7; i++) {
-        if (Data->P[plr].Probe[i].Num >= 0) {
+    for (int i = 0; i < 28; i++) {
+        const Equipment* e = FlatHardware(plr, i);
+
+        if (e != nullptr && e->Num >= 0) {
             save[i] = 1;
-        }
-
-        if (Data->P[plr].Rocket[i].Num >= 0) {
-            save[i + 7] = 1;
-        }
-
-        if (Data->P[plr].Manned[i].Num >= 0) {
-            save[i + 14] = 1;
-        }
-
-        if (Data->P[plr].Misc[i].Num >= 0) {
-            save[i + 21] = 1;
         }
     }
 
