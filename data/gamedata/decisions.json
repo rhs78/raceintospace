@@ -43,6 +43,13 @@
     }
   },
 
+  "abort_systems": {
+    "escape_tower":   { "launch_base": 70, "injury_chance": 0,  "label": "ESCAPE TOWER" },
+    "ejection_seats": { "launch_base": 50, "injury_chance": 25, "label": "EJECTION SEATS" },
+    "none":           { "available_at_launch": false, "label": "NO ESCAPE SYSTEM" },
+    "ascent_stage":   { "landing_base": 55, "label": "ASCENT STAGE" }
+  },
+
   "generic": {
     "life": {
       "title": "EMERGENCY: CREW IN DANGER",

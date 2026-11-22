@@ -277,6 +277,7 @@ HardwareEntry ParseEntry(const Json::Value& v)
     e.typeLabel = RequireString(v, "type_label", e.id);
     e.labelReplacesName = OptBool(v, "label_replaces_name", false);
     e.crew = RequireInt(v, "crew", e.id);
+    e.abortSystem = OptString(v, "abort_system");
     e.unitWeight = RequireInt(v, "unit_weight", e.id);
     e.maxPayload = RequireInt(v, "max_payload", e.id);
     e.durationDays = OptIntOrNone(v, "duration_days");
@@ -554,6 +555,35 @@ void HardwareCatalog::Validate() const
             Fail(e.id, "only capsules, minishuttles and landers have a crew");
         }
 
+        {
+            const bool manned = e.role == HardwareRole::Capsule
+                                || e.role == HardwareRole::Minishuttle
+                                || e.role == HardwareRole::Lander;
+            const bool known = e.abortSystem == "escape_tower"
+                               || e.abortSystem == "ejection_seats"
+                               || e.abortSystem == "none"
+                               || e.abortSystem == "ascent_stage";
+
+            if (!manned && !e.abortSystem.empty()) {
+                Fail(e.id, "only manned hardware has an abort_system");
+            }
+
+            if (manned && !known) {
+                Fail(e.id, "abort_system must be escape_tower, "
+                     "ejection_seats, none or ascent_stage");
+            }
+
+            if (e.role == HardwareRole::Lander
+                && e.abortSystem != "ascent_stage") {
+                Fail(e.id, "landers must use abort_system 'ascent_stage'");
+            }
+
+            if (manned && e.role != HardwareRole::Lander
+                && e.abortSystem == "ascent_stage") {
+                Fail(e.id, "capsules must not use abort_system 'ascent_stage'");
+            }
+        }
+
         if (e.durationLevel != 0
             && (e.durationLevel < 'A' || e.durationLevel > 'F')) {
             Fail(e.id, "duration_level must be A..F");
@@ -751,5 +781,25 @@ const HardwareEntry* CatalogEntryForEquipment(const Equipment& program)
     }
 
     return GetHardwareCatalog().FindByLegacyAnySide(cat,
+            int(program.ID[1] - '0'));
+}
+
+
+const HardwareEntry* CatalogEntryForEquipment(const Equipment& program,
+                                              int player)
+{
+    int cat = -1;
+
+    for (int i = 0; i < 4; i++) {
+        if (program.ID[0] == CATEGORY_LETTERS[i]) {
+            cat = i;
+        }
+    }
+
+    if (cat < 0) {
+        return nullptr;
+    }
+
+    return GetHardwareCatalog().FindByLegacy(player, cat,
             int(program.ID[1] - '0'));
 }

@@ -96,6 +96,8 @@ struct HardwareEntry {
     std::string typeLabel;      /**< text shown after the name ("ROCKET") */
     bool labelReplacesName = false;
     int crew = 0;
+    /** escape_tower, ejection_seats, none, ascent_stage; "" for unmanned. */
+    std::string abortSystem;
     int unitWeight = 0;
     int maxPayload = 0;
     int durationDays = 0;
@@ -173,6 +175,10 @@ const HardwareCatalog& GetHardwareCatalog();
  * meaningful for side-independent data. Returns nullptr if not found.
  */
 const HardwareEntry* CatalogEntryForEquipment(const Equipment& program);
+
+/** Like above, but for the given side (player 0/1): for side-specific data. */
+const HardwareEntry* CatalogEntryForEquipment(const Equipment& program,
+                                              int player);
 
 HardwareRole HardwareRoleFromString(const std::string& s);
 

@@ -31,6 +31,10 @@
 
 LOG_DEFAULT_CATEGORY(mission)
 
+// from mis_m.cpp
+#define F_INJ 1
+void F_IRCrew(char mode, Astros* Guy);
+
 // from mis_c.cpp
 void InRFBox(int a, int b, int c, int d, int col);
 
@@ -46,6 +50,12 @@ DecisionData DefaultDecisionData()
         {'G', 60}, {'H', 70}, {'I', 65}, {'J', 40}, {'K', 20}, {'L', 35},
         {'M', 65}, {'N', 45}, {'O', 45}, {'P', 70}, {'Q', 55}, {'R', 45},
         {'S', 40}, {'T', 15}, {'U', 70}
+    };
+    d.abortSystems = {
+        {"escape_tower", {70, -1, 0, true, "ESCAPE TOWER"}},
+        {"ejection_seats", {50, -1, 25, true, "EJECTION SEATS"}},
+        {"none", {-1, -1, 0, false, "NO ESCAPE SYSTEM"}},
+        {"ascent_stage", {-1, 55, 0, true, "ASCENT STAGE"}}
     };
     d.genericLife = {
         "EMERGENCY: CREW IN DANGER",
@@ -184,6 +194,26 @@ bool ParseDecisionData(const std::string& json, DecisionData& out,
                     d.abortBase[name[0]] = steps[name].asInt();
                 }
             }
+        }
+    }
+
+    const Json::Value& jsys = doc["abort_systems"];
+
+    if (jsys.isObject()) {
+        for (const auto& name : jsys.getMemberNames()) {
+            const Json::Value& s = jsys[name];
+
+            if (!s.isObject()) {
+                continue;
+            }
+
+            AbortSystemParams& a = d.abortSystems[name];
+            ReadInt(s, "launch_base", a.launchBase);
+            ReadInt(s, "landing_base", a.landingBase);
+            ReadInt(s, "injury_chance", a.injuryChance);
+            ReadBool(s, "available_at_launch", a.availableAtLaunch);
+            ReadString(s, "label", a.label);
+            a.injuryChance = std::max(0, std::min(100, a.injuryChance));
         }
     }
 
@@ -342,6 +372,89 @@ int AbortChance(const DecisionData& d, int loc, int hardwareSafety,
 }
 
 
+const AbortSystemParams* AbortSystemFor(const DecisionData& d, int loc,
+                                        const std::string& system)
+{
+    if (system.empty()) {
+        return nullptr;
+    }
+
+    const bool launch = (loc == 0 && system != "ascent_stage");
+    const bool landing = (loc == 18 && system == "ascent_stage");
+
+    if (!launch && !landing) {
+        return nullptr;
+    }
+
+    auto it = d.abortSystems.find(system);
+    return (it != d.abortSystems.end()) ? &it->second : nullptr;
+}
+
+
+bool AbortAvailable(const DecisionData& d, int loc, const std::string& system)
+{
+    const AbortSystemParams* a = AbortSystemFor(d, loc, system);
+    return a == nullptr || a->availableAtLaunch || loc != 0;
+}
+
+
+int AbortBase(const DecisionData& d, int loc, const std::string& system)
+{
+    const AbortSystemParams* a = AbortSystemFor(d, loc, system);
+
+    if (a != nullptr) {
+        const int base = (loc == 0) ? a->launchBase : a->landingBase;
+
+        if (base >= 0) {
+            return base;
+        }
+    }
+
+    return AbortBase(d, loc);
+}
+
+
+int AbortChance(const DecisionData& d, int loc, const std::string& system,
+                int hardwareSafety, int crewBonus)
+{
+    const DecisionParams& p = d.params;
+    int chance = AbortBase(d, loc, system)
+                 + std::max(0, hardwareSafety) / p.abortSafetyDivisor
+                 + crewBonus;
+    return Clamp(chance, p.abortMin, p.abortMax);
+}
+
+
+std::string AbortLabel(const DecisionData& d, int loc,
+                       const std::string& system)
+{
+    const AbortSystemParams* a = AbortSystemFor(d, loc, system);
+
+    if (a == nullptr || a->label.empty()) {
+        return "ABORT MISSION";
+    }
+
+    return "ABORT: " + a->label;
+}
+
+
+std::vector<bool> RollAbortInjuries(int crew, int injuryChance,
+                                    const std::function<int()>& roll100)
+{
+    std::vector<bool> injured(std::max(0, crew), false);
+
+    if (injuryChance <= 0) {
+        return injured;
+    }
+
+    for (size_t i = 0; i < injured.size(); ++i) {
+        injured[i] = (roll100() <= injuryChance);
+    }
+
+    return injured;
+}
+
+
 int GroundCost(const DecisionParams& p, CrisisClass c)
 {
     return (c == CrisisClass::LifeThreat) ? p.groundCostLife
@@ -432,22 +545,27 @@ AlarmOption AlarmHint(const DecisionParams& p, bool problem, int crewBonus,
 
 
 CrisisChoice AiCrisisChoice(const DecisionParams& p, CrisisClass c,
-                            int cash, bool groundUsed)
+                            int cash, bool groundUsed, bool abortAvailable)
 {
     if (c == CrisisClass::LifeThreat) {
         if (!groundUsed && cash >= GroundCost(p, c)) {
             return CrisisChoice::GroundTeam;
         }
 
-        return CrisisChoice::Abort;
+        return abortAvailable ? CrisisChoice::Abort : CrisisChoice::Accept;
     }
 
     return CrisisChoice::Accept;
 }
 
 
-AlarmOption AiAlarmChoice(const DecisionParams& p, int safety)
+AlarmOption AiAlarmChoice(const DecisionParams& p, int safety,
+                          bool abortAvailable)
 {
+    if (!abortAvailable) {
+        return AlarmOption::Go;
+    }
+
     return (safety >= p.aiAlarmGoSafety) ? AlarmOption::Go
                                          : AlarmOption::Abort;
 }
@@ -812,8 +930,14 @@ CrisisOutcome OfferCrisis(const CrisisRequest& req)
     auto& pData = Data->P[(int)req.plr];
 
     const int crewBonus = step.asf;
-    const int abortChance = AbortChance(data, step.loc, req.hardwareSafety,
-                                        crewBonus);
+    const bool abortAvailable = AbortAvailable(data, step.loc,
+                                               req.abortSystem);
+    const int abortChance = AbortChance(data, step.loc, req.abortSystem,
+                                        req.hardwareSafety, crewBonus);
+    const std::string abortLabel = AbortLabel(data, step.loc,
+                                              req.abortSystem);
+    const AbortSystemParams* abortSys = AbortSystemFor(data, step.loc,
+                                                       req.abortSystem);
     const int groundCost = GroundCost(p, req.cls);
     const int groundBonus = GroundBonus(p, crewBonus, req.hardwareCurrent,
                                         req.hardwareBase);
@@ -828,13 +952,55 @@ CrisisOutcome OfferCrisis(const CrisisRequest& req)
     auto execute = [&](CrisisChoice c) -> std::string {
         switch (c) {
         case CrisisChoice::Abort:
+            if (!abortAvailable) {
+                outcome = CrisisOutcome::Accepted;
+                return "";
+            }
+
             if (Roll100() <= abortChance) {
                 outcome = CrisisOutcome::AbortOk;
-                return "ABORT SUCCESSFUL. THE CREW RETURNS SAFELY, BUT THE "
-                       "MISSION OBJECTIVES ARE NOT MET.";
+                std::string text = "ABORT SUCCESSFUL";
+
+                if (abortSys != nullptr && !abortSys->label.empty()) {
+                    text += " WITH THE " + abortSys->label;
+                }
+
+                text += ". THE CREW RETURNS SAFELY, BUT THE MISSION "
+                        "OBJECTIVES ARE NOT MET.";
+
+                if (abortSys != nullptr && abortSys->injuryChance > 0) {
+                    const int pad = step.pad;
+                    std::vector<bool> hurt = RollAbortInjuries(
+                                                 MANNED[pad],
+                                                 abortSys->injuryChance,
+                                                 Roll100);
+                    int count = 0;
+
+                    for (size_t k = 0; k < hurt.size() && k < 4; ++k) {
+                        if (hurt[k] && MA[pad][k].A != nullptr) {
+                            F_IRCrew(F_INJ, MA[pad][k].A);
+                            ++count;
+                        }
+                    }
+
+                    if (count > 0) {
+                        text += " " + std::to_string(count)
+                                + ((count == 1) ? " CREW MEMBER WAS"
+                                   : " CREW MEMBERS WERE")
+                                + " INJURED DURING THE EJECTION.";
+                    }
+                }
+
+                return text;
             }
 
             outcome = CrisisOutcome::AbortFailed;
+
+            if (abortSys != nullptr && !abortSys->label.empty()) {
+                return "THE ABORT WITH THE " + abortSys->label
+                       + " FAILED. THE ORIGINAL FAILURE TAKES ITS COURSE.";
+            }
+
             return "THE ABORT FAILED. THE ORIGINAL FAILURE TAKES ITS COURSE.";
 
         case CrisisChoice::GroundTeam:
@@ -867,7 +1033,8 @@ CrisisOutcome OfferCrisis(const CrisisRequest& req)
     };
 
     if (AI[(int)req.plr]) {
-        execute(AiCrisisChoice(p, req.cls, pData.Cash, state.groundUsed));
+        execute(AiCrisisChoice(p, req.cls, pData.Cash, state.groundUsed,
+                               abortAvailable));
         return outcome;
     }
 
@@ -888,9 +1055,11 @@ CrisisOutcome OfferCrisis(const CrisisRequest& req)
     std::vector<UiOption> opts;
     std::vector<CrisisChoice> map;
 
-    opts.push_back({"ABORT MISSION", 'A',
-                    std::string("CHANCE: ")
-                    + OutlookName(OutlookOf(p, abortChance)), true});
+    opts.push_back({abortLabel, 'A',
+                    abortAvailable
+                    ? std::string("CHANCE: ")
+                    + OutlookName(OutlookOf(p, abortChance))
+                    : std::string("NOT POSSIBLE"), abortAvailable});
     map.push_back(CrisisChoice::Abort);
 
     {
@@ -930,13 +1099,14 @@ CrisisOutcome OfferCrisis(const CrisisRequest& req)
 
 
 AlarmOption OfferAlarm(char plr, const MisEval& step, int dice, int safety,
-                       bool problem)
+                       bool problem, const std::string& abortSystem)
 {
     const DecisionData& data = GetDecisionData();
     const DecisionParams& p = data.params;
+    const bool abortAvailable = AbortAvailable(data, step.loc, abortSystem);
 
     if (AI[(int)plr]) {
-        return AiAlarmChoice(p, safety);
+        return AiAlarmChoice(p, safety, abortAvailable);
     }
 
     AlarmOption hint = AlarmHint(p, problem, step.asf, Roll100());
@@ -945,7 +1115,12 @@ AlarmOption OfferAlarm(char plr, const MisEval& step, int dice, int safety,
 
     std::vector<UiOption> opts;
     opts.push_back({"GO", 'G', "THE ROLL STANDS", true});
-    opts.push_back({"ABORT", 'A', "SAFE END, MISSION FAILS", true});
+    opts.push_back({AbortLabel(data, step.loc, abortSystem) == "ABORT MISSION"
+                    ? std::string("ABORT")
+                    : AbortLabel(data, step.loc, abortSystem),
+                    'A',
+                    abortAvailable ? "SAFE END, MISSION FAILS"
+                    : "NOT POSSIBLE", abortAvailable});
 
     std::string footer = (hint == AlarmOption::Go)
                          ? "FLIGHT DIRECTOR: GO RECOMMENDED"

@@ -315,4 +315,86 @@ BOOST_AUTO_TEST_CASE(stepinfo_codes_are_partial_failures)
     BOOST_TEST(CRISIS_RESCUED_LIFE_MARK > 10000);
 }
 
+BOOST_AUTO_TEST_CASE(abort_systems_launch_and_landing)
+{
+    const DecisionData d = DefaultDecisionData();
+
+    BOOST_TEST(AbortBase(d, 0, "escape_tower") == 70);
+    BOOST_TEST(AbortBase(d, 0, "ejection_seats") == 50);
+    BOOST_TEST(AbortBase(d, 0, "") == AbortBase(d, 0));
+    BOOST_TEST(AbortChance(d, 0, "escape_tower", 40, 2)
+               == 70 + 40 / d.params.abortSafetyDivisor + 2);
+    BOOST_TEST(AbortChance(d, 0, "ejection_seats", 40, 2)
+               == 50 + 40 / d.params.abortSafetyDivisor + 2);
+    BOOST_TEST(AbortChance(d, 0, "escape_tower", 99, 20) == d.params.abortMax);
+
+    // other steps keep their base
+    BOOST_TEST(AbortBase(d, 3, "escape_tower") == AbortBase(d, 3));
+    BOOST_TEST(AbortBase(d, 18, "escape_tower") == AbortBase(d, 18));
+    BOOST_TEST(AbortChance(d, 5, "ejection_seats", 40, 0) == AbortChance(d, 5, 40, 0));
+
+    BOOST_TEST(AbortBase(d, 18, "ascent_stage") == 55);
+    BOOST_TEST(AbortBase(d, 0, "ascent_stage") == AbortBase(d, 0));
+
+    // Voskhod: no escape at launch
+    BOOST_TEST(!AbortAvailable(d, 0, "none"));
+    BOOST_TEST(AbortAvailable(d, 3, "none"));
+    BOOST_TEST(AbortAvailable(d, 0, "escape_tower"));
+    BOOST_TEST(AbortAvailable(d, 0, ""));
+    BOOST_TEST(AbortLabel(d, 0, "escape_tower") == "ABORT: ESCAPE TOWER");
+    BOOST_TEST(AbortLabel(d, 0, "ejection_seats") == "ABORT: EJECTION SEATS");
+    BOOST_TEST(AbortLabel(d, 0, "none") == "ABORT: NO ESCAPE SYSTEM");
+    BOOST_TEST(AbortLabel(d, 18, "ascent_stage") == "ABORT: ASCENT STAGE");
+    BOOST_TEST(AbortLabel(d, 3, "escape_tower") == "ABORT MISSION");
+    BOOST_TEST(AbortLabel(d, 0, "") == "ABORT MISSION");
+}
+
+BOOST_AUTO_TEST_CASE(abort_systems_from_json)
+{
+    DecisionData d;
+    const char* json = R"({"abort_systems": {
+        "escape_tower": {"launch_base": 80, "label": "TOWER"},
+        "ejection_seats": {"injury_chance": 40}}})";
+    BOOST_REQUIRE(ParseDecisionData(json, d));
+    BOOST_TEST(AbortBase(d, 0, "escape_tower") == 80);
+    BOOST_TEST(AbortLabel(d, 0, "escape_tower") == "ABORT: TOWER");
+    BOOST_TEST(d.abortSystems.at("ejection_seats").injuryChance == 40);
+    BOOST_TEST(AbortBase(d, 0, "ejection_seats") == 50);
+    BOOST_TEST(!AbortAvailable(d, 0, "none"));
+}
+
+BOOST_AUTO_TEST_CASE(abort_injury_roll)
+{
+    int calls = 0;
+    int next = 0;
+    auto fixed = [&]() { ++calls; return next; };
+
+    BOOST_TEST(RollAbortInjuries(3, 0, fixed) == std::vector<bool>(3, false));
+    BOOST_TEST(calls == 0);
+
+    next = 25;
+    BOOST_TEST(RollAbortInjuries(2, 25, fixed) == std::vector<bool>(2, true));
+    next = 26;
+    BOOST_TEST(RollAbortInjuries(2, 25, fixed) == std::vector<bool>(2, false));
+    BOOST_TEST(RollAbortInjuries(0, 25, fixed).empty());
+
+    const int rolls[] = {10, 90, 25, 100};
+    int i = 0;
+    auto seq = [&]() { return rolls[i++]; };
+    std::vector<bool> expect = {true, false, true, false};
+    BOOST_TEST(RollAbortInjuries(4, 25, seq) == expect);
+    BOOST_TEST(i == 4);
+}
+
+BOOST_AUTO_TEST_CASE(ai_policy_without_abort)
+{
+    const DecisionParams p;
+    BOOST_TEST((AiCrisisChoice(p, CrisisClass::LifeThreat, 5, false, true) == CrisisChoice::Abort));
+    BOOST_TEST((AiCrisisChoice(p, CrisisClass::LifeThreat, 50, false, false) == CrisisChoice::GroundTeam));
+    BOOST_TEST((AiCrisisChoice(p, CrisisClass::LifeThreat, 5, false, false) == CrisisChoice::Accept));
+    BOOST_TEST((AiCrisisChoice(p, CrisisClass::LifeThreat, 50, true, false) == CrisisChoice::Accept));
+    BOOST_TEST((AiAlarmChoice(p, 10, true) == AlarmOption::Abort));
+    BOOST_TEST((AiAlarmChoice(p, 10, false) == AlarmOption::Go));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
