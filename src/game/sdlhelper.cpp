@@ -43,6 +43,7 @@
 LOG_DEFAULT_CATEGORY(sdl)
 
 #define KEYBUF_SIZE 256
+#define AUTOPLAY_CALLS_PER_KEY 8
 static int keybuf[KEYBUF_SIZE];
 static int keybuf_in_idx, keybuf_out_idx;
 
@@ -431,6 +432,31 @@ void av_step()
 }
 
 /**
+ * Autoplay: stands in for the user in every wait loop.
+ *
+ * Called from the blocking waits (av_block) and the polling input function
+ * (GetMouse_fast).  Every few calls it presses ENTER, the neutral key
+ * ("continue"/"OK") of nearly every screen; the first calls pass unchanged,
+ * so screens still run a few frames of their own code (animations, redraws)
+ * before they are dismissed.
+ */
+void av_autoplay_tick()
+{
+    static int calls = 0;
+
+    if (++calls < AUTOPLAY_CALLS_PER_KEY) {
+        return;
+    }
+
+    calls = 0;
+
+    if (keybuf_in_idx == keybuf_out_idx) {
+        keybuf[keybuf_in_idx] = K_ENTER;
+        keybuf_in_idx = (keybuf_in_idx + 1) % KEYBUF_SIZE;
+    }
+}
+
+/**
  * Block until an SDL event comes in.
  *
  * We have a 30ms timer going, so that is the
@@ -441,15 +467,8 @@ void av_block()
     SDL_Event ev;
 
     if (options.autoplay) {
-        // Autoplay: never wait.  Whatever the caller is waiting for (key,
-        // mouse button, a timeout) is answered with a neutral ENTER key
-        // press; callers that wait for a time span (idle_loop_secs) return
-        // at once, see pace.cpp.
-        if (keybuf_in_idx == keybuf_out_idx) {
-            keybuf[keybuf_in_idx] = K_ENTER;
-            keybuf_in_idx = (keybuf_in_idx + 1) % KEYBUF_SIZE;
-        }
-
+        // Autoplay: never wait, see av_autoplay_tick().
+        av_autoplay_tick();
         return;
     }
 

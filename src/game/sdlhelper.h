@@ -26,6 +26,7 @@ void av_silence(int channel);
 void MuteChannel(int channel, bool mute);
 char AnimSoundCheck();
 void av_block();
+void av_autoplay_tick();
 void UpdateAudio();
 void av_set_fading(int type, int from, int to, int steps, int preserve);
 void av_sync();

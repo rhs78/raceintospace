@@ -420,6 +420,13 @@ int CheckIfMissionGo(char plr, char launchIdx)
         if (pMission.Hard[idx] < 0) {
             continue;
         }
+
+        // Autoplay fix: the primary booster is stored as rocket index + 1,
+        // so 0 means "no rocket assigned"; DecodeRocketIndex(0) == -1 read
+        // Rocket[-1].
+        if (idx == Mission_PrimaryBooster && pMission.Hard[idx] == 0) {
+            continue;
+        }
         
         Equipment* E;
         switch (idx) {
@@ -671,7 +678,17 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
                 AI_Begin(plr[i] - 2); // Turns off Mouse for AI
                 GetMouse();
                 VerifySafety(plr[i] - 2);
-                AIEvent(plr[i] - 2);
+                if (options.autoplay) {
+                    // Autoplay: also run the human news path (event text,
+                    // news display) for the AI.  News() resolves the event
+                    // like AIEvent() does and bumps eCount.
+                    News(plr[i] - 2);
+                    AutoplayLog("event: %s card %d", plr[i] - 2 ? "USSR" : "USA",
+                                (int) Data->Events[Data->Count]);
+                } else {
+                    AIEvent(plr[i] - 2);
+                }
+
                 VerifySafety(plr[i] - 2);
                 AIMaster(plr[i] - 2);
                 AI_Done(); // Fade Out AI Thinking Screen and Restores Mouse
@@ -911,6 +928,10 @@ void GetMouse_fast()
 
     av_sync();
     av_step();
+
+    if (options.autoplay) {
+        av_autoplay_tick();  // answer the screen with ENTER now and then
+    }
 
     if (grGetMouseButtons()) {
         mousebuttons = 1;

@@ -7,9 +7,9 @@
 # test_extra scenario.  Prints a summary table; exit code 1 if any run
 # failed.
 #
-#   tools/autoplay.sh                 # ASan build, 20 seeds (sampled), ~10 min
+#   tools/autoplay.sh                 # ASan build, 40 seeds x 9 combinations + long games, ~6 min
 #   tools/autoplay.sh --no-asan       # plain Debug build in build/
-#   tools/autoplay.sh --seeds 40 --full   # every combination for every seed
+#   tools/autoplay.sh --seeds 100 --sampled   # one combination per seed
 #   tools/autoplay.sh --no-build --binary build/debug/raceintospace   # existing binary
 #
 # Options:
@@ -17,9 +17,11 @@
 #   --no-build           do not build, use the existing binary
 #   --binary PATH        binary to run (default: build-asan/src/game/raceintospace
 #                        or build/src/game/raceintospace)
-#   --seeds N            seeds 1..N (default 20)
-#   --full               full matrix per seed (N x 3 years x 3 models x 2 sandbox)
-#                        instead of one sampled combination per seed
+#   --seeds N            seeds FROM..N (default 40)
+#   --from S             first seed (default 1)
+#   --full               (default) every combination per seed: 3 start years x
+#                        3 models = 9 runs per seed (sandbox alternates by seed)
+#   --sampled            only one combination per seed (cycling through all 18)
 #   --jobs J             parallel runs (default: number of CPUs)
 #   --timeout S          seconds per run before it counts as HANG (default 300)
 #   --results DIR        result directory (default autoplay-results/<timestamp>)
@@ -34,8 +36,10 @@ cd "$ROOT" || exit 2
 ASAN=1
 BUILD=1
 BINARY=""
-SEEDS=20
-FULL=0
+SEEDS=40
+FROM=1
+FULL=1
+LONGYEARS=20
 SMOKE=0
 JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)"
 TIMEOUT=300
@@ -48,12 +52,14 @@ while [ $# -gt 0 ]; do
         --no-build) BUILD=0 ;;
         --binary) BINARY="$2"; shift ;;
         --seeds) SEEDS="$2"; shift ;;
+        --from) FROM="$2"; shift ;;
         --full) FULL=1 ;;
+        --sampled) FULL=0 ;;
         --jobs) JOBS="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
         --results) RESULTS="$2"; shift ;;
         --smoke) SMOKE=1; ASAN=0 ;;
-        -h|--help) sed -n '2,31p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,36p' "$0"; exit 0 ;;
         *) echo "unknown option $1" >&2; exit 2 ;;
     esac
     shift
@@ -102,32 +108,49 @@ MODELS=(basic historical random)
 LIST="$RESULTS/runs.txt"
 : > "$LIST"
 
-add_run() { # seed year model sandbox scenario
+add_run() { # seed year model sandbox scenario [years]
+    local yrs="${6:-0}"
     local name="s$1-y$2-$3-sb$4-$5"
     local args="--seed $1 --start-year $2 --model $3 --scenario $5"
     [ "$4" = 1 ] && args="$args --sandbox"
+    if [ "$yrs" != 0 ]; then
+        name="$name-L$yrs"
+        args="$args --years $yrs"
+    fi
     echo "$name|$args" >> "$LIST"
+}
+
+# $1 = seed: pick one of the 18 combinations (cycling with the seed)
+sample_run() { # seed scenario [years]
+    local s="$1"
+    add_run "$s" "${YEARS[$((s % 3))]}" "${MODELS[$(((s / 3) % 3))]}" \
+        "$(((s / 9) % 2))" "$2" "${3:-0}"
 }
 
 if [ "$SMOKE" = 1 ]; then
     for s in 1 2; do add_run "$s" 57 basic 0 classic; done
 else
-    for s in $(seq 1 "$SEEDS"); do
+    for s in $(seq "$FROM" "$SEEDS"); do
         if [ "$FULL" = 1 ]; then
             for y in "${YEARS[@]}"; do
                 for m in "${MODELS[@]}"; do
-                    for sb in 0 1; do add_run "$s" "$y" "$m" "$sb" classic; done
+                    # Sandbox only changes the game for human players, so with
+                    # two AI players it is just alternated with the seed.
+                    add_run "$s" "$y" "$m" "$((s % 2))" classic
                 done
             done
         else
-            # one combination per seed, cycling through all 18 combinations
-            add_run "$s" "${YEARS[$((s % 3))]}" "${MODELS[$(((s / 3) % 3))]}" \
-                "$(((s / 9) % 2))" classic
+            sample_run "$s" classic
         fi
+        # a long game: runs on after 1963 (up to 20 years), usually until
+        # the first lunar landing (covers the landing end screens and the
+        # later missions/events the 1963 end never reaches)
+        sample_run "$((s + 1))" classic "$LONGYEARS"
     done
     # the extended-hardware scenario
     for s in 1 2 3 4; do
-        add_run "$s" "${YEARS[$((s % 3))]}" "${MODELS[$((s % 3))]}" "$((s % 2))" test_extra
+        sample_run "$s" test_extra
+        sample_run "$s" test_extra "$LONGYEARS"
     done
 fi
 

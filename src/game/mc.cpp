@@ -165,6 +165,10 @@ int Launch(char plr, char mis)
     if (MissionCrewCantFly(plr, mis)) { // found mission no crews
         LOG_DEBUG("Crew is not good, mission scrubbed");
         ScrubMission(plr, mis);
+        // Autoplay fix: mcode still held the code of the scrubbed mission,
+        // so the launch went on with the cleared mission (Hard[] all 0, i.e.
+        // Rocket[-1]).  -20 means "scrubbed".
+        return -20;
     }
 
     if (mcode == Mission_None) {
