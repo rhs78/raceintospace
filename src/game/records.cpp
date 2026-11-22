@@ -19,6 +19,7 @@
 // This file handles the Mission Records screen
 
 #include "records.h"
+#include "hardware.h"
 
 #include <algorithm>
 
@@ -1134,7 +1135,7 @@ void UpdateRecords(char Ty)
                     Rec_Change = -1;
                     if (Ty != 1) break;
                     
-                    for (int craft = 0; craft < 5; craft++) {
+                    for (int craft = 0; craft < MANNED_PROGRAM_COUNT; craft++) {
                         temp = 0;
                         Rec_Change = -1;
 

@@ -209,7 +209,7 @@ void MissionSteps(char plr, int mcode, int step, int pad,
     case 'Y':
     case 'f': case 'g':
         if (MH[pad][Mission_Kicker] &&
-            MH[pad][Mission_Kicker]->ID[1] == 0x32) {
+            IsProbeKicker(*MH[pad][Mission_Kicker])) {
             Mev[step].Class = Mission_Kicker;  // Kicker-C
         } else {
             Mev[step].Class = Mission_Capsule;
@@ -229,7 +229,7 @@ void MissionSteps(char plr, int mcode, int step, int pad,
     // Unmanned Programs
     case 'C':
         if (MH[pad][Mission_Kicker] &&
-            MH[pad][Mission_Kicker]->ID[1] == 0x32) {
+            IsProbeKicker(*MH[pad][Mission_Kicker])) {
             Mev[step].Class = Mission_Kicker;  // Kicker-C
         } else if (MH[pad][Mission_LM] && MH[pad][Mission_LM] != nullptr) {
             Mev[step].Class = Mission_LM;
@@ -274,7 +274,7 @@ void MissionSteps(char plr, int mcode, int step, int pad,
 
     case 'Q': case 'R': case 'S': case 'T':
         if (MH[pad][Mission_Kicker] &&
-            MH[pad][Mission_Kicker]->ID[1] == 0x32) {
+            IsProbeKicker(*MH[pad][Mission_Kicker])) {
             Mev[step].Class = Mission_Kicker;  // Kicker-C
         } else if (MH[pad][Mission_LM] != nullptr) {
             Mev[step].Class = Mission_LM;  // LM
@@ -310,7 +310,7 @@ void MissionSteps(char plr, int mcode, int step, int pad,
 
     case 'C':
         if (MH[pad][Mission_Probe_DM] &&
-            MH[pad][Mission_Probe_DM]->ID[1] == 0x30) {
+            HasRole(*MH[pad][Mission_Probe_DM], HardwareRole::OrbitalProbe)) {
             Mev[step].Prest = 0;
         } else {
             Mev[step].Prest = -100;
@@ -356,7 +356,7 @@ void MissionSteps(char plr, int mcode, int step, int pad,
 
     case 'S':
         if (MH[pad][Mission_Probe_DM] &&
-            MH[pad][Mission_Probe_DM]->ID[1] == 0x32) {
+            HasRole(*MH[pad][Mission_Probe_DM], HardwareRole::LunarProbe)) {
             Mev[step].PComp = WhichPart(plr, Mev[step].Prest = -7);
         }
 
@@ -542,10 +542,10 @@ void MissionSteps(char plr, int mcode, int step, int pad,
 
         if (Mev[step].Class == Mission_EVA) {
             if (MH[0][Mission_Kicker] &&
-                MH[0][Mission_Kicker]->ID[1] == 0x32) {
+                IsProbeKicker(*MH[0][Mission_Kicker])) {
                 strcat(Mev[step].Name, "M2");    // Kicker-C
             } else if (MH[pad][Mission_Capsule] &&
-                       MH[pad][Mission_Capsule]->ID[1] == 0x34) {
+                       IsDirectAscentCapsule(*MH[pad][Mission_Capsule])) {
                 strcat(Mev[step].Name, "C4");    // FourMan
             } else {  // standard LMs
                 if (mcode == 'P') {
@@ -627,17 +627,16 @@ void MissionSteps(char plr, int mcode, int step, int pad,
     // Special Cases for the Failure Mode Charts
     if ((Mev[step].loc == 0) &&  // MS Failure Launch
         MH[pad][Mission_Capsule] &&
-        strncmp(Data->P[plr].Manned[MANNED_HW_MINISHUTTLE].Name,
-                MH[pad][Mission_Capsule]->Name, 5) == 0) {
+        HasRole(*MH[pad][Mission_Capsule], HardwareRole::Minishuttle)) {
         Mev[step].FName[1] = '1';
     } else if (Mev[step].loc == 4 &&  // MS Failure Landing
                MH[pad][Mev[step].Class] &&
-               strncmp(Data->P[plr].Manned[MANNED_HW_MINISHUTTLE].Name, MH[pad][Mev[step].Class]->Name, 5) == 0) {
+               HasRole(*MH[pad][Mev[step].Class], HardwareRole::Minishuttle)) {
         Mev[step].FName[1] = '3';
     } else if (plr == 1 && Mev[step].loc == 4) {
         if ((Mev[step].loc == 4) &&  // Soviet Capsules: Vostok
             MH[pad][Mev[step].Class] &&
-            strncmp(Data->P[plr].Manned[MANNED_HW_ONE_MAN_CAPSULE].Name, MH[pad][Mev[step].Class]->Name, 5) == 0) {
+            IsOneManCapsule(*MH[pad][Mev[step].Class])) {
             Mev[step].FName[1] = '1';
         } else {
             Mev[step].FName[1] = '2';    // Other Capsules
@@ -815,7 +814,7 @@ void MissionSetup(char plr, char mis)
                 if (eq != nullptr) {
                     eq->MisSaf = eq->Safety + eq->SMods + eq->Damage;
 
-                    if (eq->ID[1] >= 0x35 && i == Mission_LM &&
+                    if (i == Mission_LM && HasRole(*eq, HardwareRole::Lander) &&
                         Data->P[plr].Mission[mis].MissionCode >= 53) {
                         switch (Data->P[plr].LMpts) {
                         case 0:
@@ -863,7 +862,7 @@ void MissionSetDown(char plr, char mis)
 
 			MH[j][i]->SMods = MH[j][i]->Damage = MH[j][i]->DCost = 0;
 
-			if (strncmp(MH[j][i]->Name, (i == Mission_Probe_DM) ? "DOC" : "PHO", 3) != 0 && MH[j][i]->MisSucc[j] > 0) {
+			if (!HasRole(*MH[j][i], (i == Mission_Probe_DM) ? HardwareRole::DockingModule : HardwareRole::PhotoRecon) && MH[j][i]->MisSucc[j] > 0) {
 				MH[j][i]->Safety = MIN(MH[j][i]->Safety + 1, MH[j][i]->MaxSafety);
 
 				if (options.cheat_addMaxS) {
@@ -875,15 +874,15 @@ void MissionSetDown(char plr, char mis)
 				}
 			}
 
-			if (strncmp(MH[j][i]->Name, "DOC", 3) == 0 && (MH[j][i]->MisFail[j] + MH[j][i]->MisSucc[j]) == 0) {
+			if (HasRole(*MH[j][i], HardwareRole::DockingModule) && (MH[j][i]->MisFail[j] + MH[j][i]->MisSucc[j]) == 0) {
 				MH[j][i]->MisFail[j] = 1;
 			}
 
-			if ((MH[j][i]->MisFail[j] + MH[j][i]->MisSucc[j]) == 0 && (strncmp(MH[j][i]->ID, "M3", 2) != 0)) {
+			if ((MH[j][i]->MisFail[j] + MH[j][i]->MisSucc[j]) == 0 && !HasRole(*MH[j][i], HardwareRole::Eva)) {
 				MH[j][i]->MisFail[j]++;
 			}
 
-			if ((MH[j][i]->MisFail[j] + MH[j][i]->MisSucc[j]) == 0 && MH[j][i]->ID[0] == 'P') {
+			if ((MH[j][i]->MisFail[j] + MH[j][i]->MisSucc[j]) == 0 && IsProbe(*MH[j][i])) {
 				MH[j][i]->MisFail[j]++;
 			}
 

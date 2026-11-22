@@ -4,6 +4,7 @@
 #include <array>
 
 #include "data.h"
+#include "hardware_catalog.h"
 
 /**
  * Number of hardware programs in use per category (the arrays in
@@ -32,15 +33,25 @@ Equipment &ProbeOrDockingModule(int player, int hardValue);
 int ProgramToMannedIndex(int program);
 int MannedIndexToProgram(int mannedIndex);
 
-/** Which crew.cpp selection screen the capsule rules are evaluated for. */
-enum class CapsuleChoice {
-    UnmannedMission,  ///< HardRequest(): capsule for a future unmanned mission
-    MannedMission     ///< SecondHard(): capsule for a future manned mission
+std::array<bool, MANNED_PROGRAM_COUNT>
+CapsuleEligibility(int plr, int missionCode, int futureDuration);
+
+/** Which technology transfer variant of the catalog to apply. */
+enum class TechTransferMode {
+    Gradual,   ///< the player's formula (rdplex.cpp BuyUnit)
+    Threshold  ///< the AI's threshold rules (aipur.cpp GenPur)
 };
 
-std::array<bool, MANNED_PROGRAM_COUNT>
-CapsuleEligibility(int plr, int missionCode, int futureDuration,
-                   CapsuleChoice choice);
+void ApplyTechTransfer(int plr, int category, int unit,
+                       TechTransferMode mode);
+
+const HardwareEntry* HardwareInfo(const Equipment& program);
+bool HasRole(const Equipment& program, HardwareRole role);
+bool IsProbe(const Equipment& program);
+bool IsProbeKicker(const Equipment& program);
+bool IsDirectAscentCapsule(const Equipment& program);
+bool IsOneManCapsule(const Equipment& program);
+int ProgramCrewCapacity(int program);
 
 int CrewSize(const Equipment& program);
 Equipment &HardwareProgram(int player, int type, int program);

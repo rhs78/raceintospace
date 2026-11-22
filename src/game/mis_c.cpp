@@ -26,6 +26,7 @@
 // This file handles missions in progress, particularly mission failures and their results
 
 #include "mis_c.h"
+#include "hardware.h"
 #include "timeline.h"
 
 #include <array>
@@ -905,17 +906,20 @@ char FailureMode(char plr, int prelim, const char* text)
             GuyDisp(x_coords[i/2], y_coords[i%2], MA[Mev[STEP].pad][i].A);
         }
     } else {
-        if (((e->ID[1] == 0x35 || e->ID[1] == 0x36) && STEP > 5)) {  // if LEMS
+        // if LEMS (the original ID check, characters '5' and '6',
+        // also matched the photo reconnaissance program)
+        if (((HasRole(*e, HardwareRole::Lander)
+              || HasRole(*e, HardwareRole::PhotoRecon)) && STEP > 5)) {
             GuyDisp(49, 138, MA[1][LM[1]].A);
 
             if (EVA[1] != LM[1]) {
                 GuyDisp(49, 146, MA[1][EVA[1]].A);
             }
-        } else if (strncmp(e->ID, "M2", 2) == 0) {
+        } else if (IsProbeKicker(*e)) {
             GuyDisp(49, 138, MA[other(Mev[STEP].pad)][0].A);
             GuyDisp(49, 146, MA[other(Mev[STEP].pad)][1].A);
             GuyDisp(182, 138, MA[other(Mev[STEP].pad)][2].A);
-        } else if (strncmp(e->ID, "M3", 2) == 0) {  // EVA
+        } else if (HasRole(*e, HardwareRole::Eva)) {  // EVA
             GuyDisp(49, 138, MA[1][EVA[1]].A);
         } else {
             display::graphics.setForegroundColor(1);
@@ -1055,18 +1059,14 @@ void FirstManOnMoon(char plr, char isAI, char misNum,
     if (misNum == Mission_Soyuz_LL && plr == 1) {
         nautsOnMoon = 3;
     }
-    //Direct Ascent
-    if (strcmp(e->Name, Data->P[plr].Manned[MANNED_HW_FOUR_MAN_CAPSULE].Name) == 0) {
-        nautsOnMoon = 4;
+    // Direct ascent capsule and the landers put their whole crew on the Moon
+    const HardwareEntry* info = HardwareInfo(*e);
+
+    if (info != nullptr
+        && (info->directAscent || info->role == HardwareRole::Lander)) {
+        nautsOnMoon = info->crew;
     }
-    //2 men LL
-    else if (strcmp(e->Name, Data->P[plr].Manned[MANNED_HW_TWO_MAN_MODULE].Name) == 0) {
-        nautsOnMoon = 2;
-    }
-    //1 man LL
-    else if (strcmp(e->Name, Data->P[plr].Manned[MANNED_HW_ONE_MAN_MODULE].Name) == 0) {
-        nautsOnMoon = 1;
-    }
+
     //else error??
 
     if (nautsOnMoon == 1) {

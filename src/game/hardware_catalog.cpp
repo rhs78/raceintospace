@@ -123,6 +123,141 @@ int CategoryFromString(const std::string& s)
     return -1;
 }
 
+double OptDouble(const Json::Value& v, const char* key, double def)
+{
+    return (v.isMember(key) && v[key].isNumeric()) ? v[key].asDouble() : def;
+}
+
+TechTransferRule ParseRule(const Json::Value& v, const std::string& id)
+{
+    if (!v.isObject() || !v.isMember("when") || !v["when"].isArray()
+        || !v.isMember("safety") || !v["safety"].isInt()) {
+        Fail(id, "tech_transfer rule needs 'when' (array) and 'safety'");
+    }
+
+    TechTransferRule rule;
+    rule.safety = v["safety"].asInt();
+    rule.atLeast = v.isMember("at_least") && v["at_least"].isInt()
+                   ? v["at_least"].asInt() : 75;
+
+    for (const Json::Value& group : v["when"]) {
+        if (!group.isArray() || group.empty()) {
+            Fail(id, "tech_transfer 'when' must hold non-empty id arrays");
+        }
+
+        std::vector<std::string> ids;
+
+        for (const Json::Value& item : group) {
+            if (!item.isString()) {
+                Fail(id, "tech_transfer 'when' must contain id strings");
+            }
+
+            ids.push_back(item.asString());
+        }
+
+        rule.when.push_back(ids);
+    }
+
+    if (rule.when.empty()) {
+        Fail(id, "tech_transfer rule has an empty 'when'");
+    }
+
+    return rule;
+}
+
+std::vector<TechTransferRule> ParseRules(const Json::Value& v,
+                                         const char* key,
+                                         const std::string& id)
+{
+    std::vector<TechTransferRule> out;
+
+    if (!v.isMember(key)) {
+        return out;
+    }
+
+    if (!v[key].isArray()) {
+        Fail(id, std::string("tech_transfer '") + key + "' must be an array");
+    }
+
+    for (const Json::Value& item : v[key]) {
+        out.push_back(ParseRule(item, id));
+    }
+
+    return out;
+}
+
+TechTransfer ParseTechTransfer(const Json::Value& v, const std::string& id)
+{
+    if (!v.isObject()) {
+        Fail(id, "field 'tech_transfer' must be an object");
+    }
+
+    TechTransfer tt;
+    tt.threshold = ParseRules(v, "threshold", id);
+
+    if (!v.isMember("gradual")) {
+        return tt;
+    }
+
+    const Json::Value& g = v["gradual"];
+
+    if (!g.isObject() || !g.isMember("base") || !g["base"].isInt()) {
+        Fail(id, "tech_transfer 'gradual' needs an integer 'base'");
+    }
+
+    tt.hasGradual = true;
+    tt.base = g["base"].asInt();
+    tt.overrides = ParseRules(g, "overrides", id);
+
+    if (g.isMember("steps")) {
+        if (!g["steps"].isArray()) {
+            Fail(id, "tech_transfer 'steps' must be an array");
+        }
+
+        for (const Json::Value& sv : g["steps"]) {
+            TechTransferStep step;
+            const std::string op = OptString(sv, "op");
+
+            if (op == "set") {
+                step.op = TechTransferStep::Op::Set;
+            } else if (op == "max") {
+                step.op = TechTransferStep::Op::Max;
+            } else if (op == "cap") {
+                step.op = TechTransferStep::Op::Cap;
+            } else {
+                Fail(id, "tech_transfer step: unknown op '" + op + "'");
+            }
+
+            if (step.op == TechTransferStep::Op::Cap) {
+                if (!sv.isMember("max") || !sv["max"].isNumeric()) {
+                    Fail(id, "tech_transfer cap step needs 'max'");
+                }
+
+                step.capMax = float(sv["max"].asDouble());
+                step.capTo = float(OptDouble(sv, "to", step.capMax));
+            } else {
+                step.from = RequireString(sv, "from", id);
+                step.greaterThan = OptString(sv, "greater_than");
+                step.above = RequireInt(sv, "above", id);
+                step.offset = RequireInt(sv, "offset", id);
+                step.divisor = OptDouble(sv, "divisor", 0.0);
+
+                if (step.divisor <= 0.0) {
+                    Fail(id, "tech_transfer step needs a positive 'divisor'");
+                }
+
+                step.compareDivisor = OptDouble(sv, "compare_divisor", 0.0);
+                step.compareDouble = OptString(sv, "compare_precision")
+                                     == "double";
+            }
+
+            tt.steps.push_back(step);
+        }
+    }
+
+    return tt;
+}
+
 HardwareEntry ParseEntry(const Json::Value& v)
 {
     if (!v.isObject()) {
@@ -152,17 +287,10 @@ HardwareEntry ParseEntry(const Json::Value& v)
         e.durationLevel = level[0];
     }
 
-    if (v.isMember("limits") && v["limits"].isObject()) {
-        const Json::Value& l = v["limits"];
-        e.hasLimits = true;
-        e.limits.maxFutureDurationManned =
-            OptIntOrNone(l, "max_future_duration_manned");
-        e.limits.maxFutureDurationUnmanned =
-            OptIntOrNone(l, "max_future_duration_unmanned");
-        e.limits.maxPlanDaysManned = OptIntOrNone(l, "max_plan_days_manned");
-        e.limits.maxPlanDaysUnmanned =
-            OptIntOrNone(l, "max_plan_days_unmanned");
-    }
+    e.maxFutureDuration = OptIntOrNone(v, "max_future_duration");
+    e.maxPlanDays = OptIntOrNone(v, "max_plan_days");
+    e.maxMinEquipment = OptIntOrNone(v, "max_min_equipment");
+    e.soyuzLL = OptBool(v, "soyuz_ll", false);
 
     e.reach = OptString(v, "reach");
     e.canDock = OptBool(v, "can_dock", false);
@@ -172,6 +300,14 @@ HardwareEntry ParseEntry(const Json::Value& v)
                                          false);
     e.compatibleLanders = OptStringList(v, "compatible_landers", e.id);
     e.compatibleKickers = OptStringList(v, "compatible_kickers", e.id);
+    e.kickersWithCapsule = OptStringList(v, "kickers_with_capsule", e.id);
+    e.kickersSecondPad = OptStringList(v, "kickers_second_pad", e.id);
+    e.probeKicker = OptBool(v, "probe_kicker", false);
+
+    if (v.isMember("tech_transfer")) {
+        e.techTransfer = ParseTechTransfer(v["tech_transfer"], e.id);
+    }
+
     e.prestigeFirst = OptString(v, "prestige_first");
     e.animId = RequireString(v, "anim_id", e.id);
 
@@ -260,6 +396,29 @@ HardwareRole HardwareRoleFromString(const std::string& s)
     }
 
     throw std::runtime_error("hardware catalog: unknown role '" + s + "'");
+}
+
+
+int PrestigeFirstCategory(const HardwareEntry& entry)
+{
+    static const struct {
+        const char* name;
+        int category;
+    } table[] = {
+        {"OnePerson", Prestige_OnePerson},
+        {"TwoPerson", Prestige_TwoPerson},
+        {"ThreePerson", Prestige_ThreePerson},
+        {"Minishuttle", Prestige_Minishuttle},
+        {"FourPerson", Prestige_FourPerson},
+    };
+
+    for (const auto& t : table) {
+        if (entry.prestigeFirst == t.name) {
+            return t.category;
+        }
+    }
+
+    return -1;
 }
 
 
@@ -400,6 +559,10 @@ void HardwareCatalog::Validate() const
             Fail(e.id, "duration_level must be A..F");
         }
 
+        if (!e.prestigeFirst.empty() && PrestigeFirstCategory(e) < 0) {
+            Fail(e.id, "unknown prestige_first '" + e.prestigeFirst + "'");
+        }
+
         if (e.helpId.empty() || e.helpId[0] != 'i') {
             Fail(e.id, "help_id must look like 'i<number>'");
         }
@@ -437,6 +600,64 @@ void HardwareCatalog::Validate() const
                      "other side");
             }
         }
+
+        // Cross references of the new rule fields.
+        auto checkRef = [&](const std::string& ref, const char* what,
+                            int cat = -1) {
+            auto it = mById.find(ref);
+
+            if (it == mById.end()) {
+                Fail(e.id, std::string(what) + ": unknown id '" + ref + "'");
+            }
+
+            if (mEntries[it->second].side != e.side) {
+                Fail(e.id, std::string(what) + ": '" + ref
+                     + "' is on the other side");
+            }
+
+            if (cat >= 0 && mEntries[it->second].legacyCat != cat) {
+                Fail(e.id, std::string(what) + ": '" + ref
+                     + "' is of the wrong category");
+            }
+        };
+
+        for (const std::string& ref : e.kickersWithCapsule) {
+            checkRef(ref, "kickers_with_capsule", MISC_HARDWARE);
+
+            if (mEntries[mById.at(ref)].role != HardwareRole::Kicker) {
+                Fail(e.id, "kickers_with_capsule: '" + ref + "' is no kicker");
+            }
+        }
+
+        for (const std::string& ref : e.kickersSecondPad) {
+            checkRef(ref, "kickers_second_pad", MISC_HARDWARE);
+
+            if (mEntries[mById.at(ref)].role != HardwareRole::Kicker) {
+                Fail(e.id, "kickers_second_pad: '" + ref + "' is no kicker");
+            }
+        }
+
+        for (const TechTransferStep& st : e.techTransfer.steps) {
+            if (st.op != TechTransferStep::Op::Cap) {
+                checkRef(st.from, "tech_transfer");
+
+                if (!st.greaterThan.empty()) {
+                    checkRef(st.greaterThan, "tech_transfer");
+                }
+            }
+        }
+
+        auto checkRules = [&](const std::vector<TechTransferRule>& rules) {
+            for (const TechTransferRule& r : rules) {
+                for (const auto& group : r.when) {
+                    for (const std::string& ref : group) {
+                        checkRef(ref, "tech_transfer");
+                    }
+                }
+            }
+        };
+        checkRules(e.techTransfer.overrides);
+        checkRules(e.techTransfer.threshold);
     }
 }
 

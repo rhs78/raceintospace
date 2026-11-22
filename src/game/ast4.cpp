@@ -55,7 +55,6 @@ enum ProgramStatus
     PROGRAM_HAS_ENOUGH_SPACEMEN,
     PROGRAM_IS_UNDERCREWED
 };
-const int crew_capacity_per_program[6] = {0,1,2,3,3,4}; // unassigned, 1-, 2-, 3-crew, shuttle, 4-crew
 
 void AstLevel(char plr, char prog, char crew, char ast);
 void DrawProgs(char plr, char prog);
@@ -340,7 +339,7 @@ ProgramStatus CheckProgram(char plr, char prog)
         }
     }
     // if there is enough to create at least 1 full crew, proceed
-    if (assigned_spacemen >= crew_capacity_per_program[prog]) {
+    if (assigned_spacemen >= ProgramCrewCapacity(prog)) {
         return PROGRAM_HAS_ENOUGH_SPACEMEN;
     }
     
@@ -563,7 +562,7 @@ void Programs(char plr, char prog)
         M[i] = -1;
     }
 
-    int crew_capacity = crew_capacity_per_program[prog];
+    int crew_capacity = ProgramCrewCapacity(prog);
 
     music_start(M_PRGMTRG);
     DrawProgs(plr, prog);

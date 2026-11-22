@@ -27,6 +27,8 @@
 
 #include "Buzz_inc.h"
 #include "game_main.h"
+#include "hardware.h"
+#include "hardware_catalog.h"
 #include "logging.h"
 #include "mc.h"
 #include "mis_c.h"
@@ -48,6 +50,7 @@ char PosGoal(char* PVal);
 char NegGoal(char* PVal);
 char SupGoal(char* PVal);
 char PosGoal_Check(char* PVal);
+int SetCapsuleFirstGoal(char plr, int program);
 
 
 /**
@@ -308,6 +311,29 @@ char HeroCheck(int which)
         return 0;
     }
 }
+
+/**
+ * Set the prestige goal for the first flight of a manned program, using
+ * the prestige_first category of its catalog entry.
+ *
+ * \param plr  the player index in Data
+ * \param program  the program number (Manned index + 1) of the capsule.
+ * \return  the prestige awarded, 0 if the program has no such category.
+ */
+int SetCapsuleFirstGoal(char plr, int program)
+{
+    const HardwareEntry* entry = GetHardwareCatalog().FindByLegacy(
+                                     plr, MANNED_HARDWARE,
+                                     ProgramToMannedIndex(program));
+
+    if (entry == nullptr) {
+        return 0;
+    }
+
+    const int category = PrestigeFirstCategory(*entry);
+    return category < 0 ? 0 : Set_Goal(plr, category, 0);
+}
+
 
 /** Sets Goal Values and Sums into Data Structure
  * control should be always called with a value of 0
@@ -883,7 +909,7 @@ int AllotPrest(char plr, char mis)
          && Data->P[plr].Mission[mis].Hard[Mission_Capsule] != -1) {  // Hardware on first part
 
         LOG_DEBUG("CapsuleFirst check succeded for the first rocket");
-        total += Set_Goal(plr, 12 + Data->P[plr].Mission[mis].Prog, 0);
+        total += SetCapsuleFirstGoal(plr, Data->P[plr].Mission[mis].Prog);
         LOG_DEBUG("total is now %i", total);
     }
 
@@ -893,7 +919,7 @@ int AllotPrest(char plr, char mis)
          && Data->P[plr].Mission[mis + 1].part == 1) {
 
         LOG_DEBUG("CapsuleFirst check succeded for the second rocket");
-        total += Set_Goal(plr, 12 + Data->P[plr].Mission[mis + 1].Prog, 0);
+        total += SetCapsuleFirstGoal(plr, Data->P[plr].Mission[mis + 1].Prog);
         LOG_DEBUG("total is now %i", total);
     }
 

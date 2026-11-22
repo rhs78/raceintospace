@@ -140,6 +140,24 @@ Jeder Schritt endet mit grünem Build, allen Tests und einem spielbaren Stand.
 | 4e | **Programme und Crews dynamisch, Blätter-UI** in Forschung, Kauf, VAB, Kapselwahl, Astronautenkomplex | L |
 | 4f | **KI rollenbasiert, Szenario-Auswahl, Ersatzgrafiken**; Abschlusstest mit fiktivem Zusatzeintrag | M |
 
+### Stand Schritt 4b (umgesetzt)
+
+Regeln stehen jetzt im Katalog (`data/gamedata/hardware.json`), der Code liest sie:
+
+| Feld | Bedeutung | ersetzt |
+|---|---|---|
+| `tech_transfer.gradual` | `base` + Liste `steps` (`set`/`max`/`cap`, je mit `from`, `above`, `offset`, `divisor`, optional `greater_than`, `compare_divisor`, `compare_precision`) + `overrides` (Regeln `{when, safety}`) | Formeln in `rdplex.cpp` (`ApplyTechTransfer`) |
+| `tech_transfer.threshold` | KI: Regeln `{when: [[ids]...], at_least (75), safety}`, letzte zutreffende gewinnt | Kopie in `aipur.cpp` (`GenPur`) |
+| `max_future_duration`, `max_plan_days`, `max_min_equipment`, `soyuz_ll` (+ `reach`, `can_dock`, `direct_ascent`) | Missionseignung von Kapseln | `CapsuleEligibility` / `crew.cpp` |
+| `compatible_landers`, `lander_needs_docking_module`, `compatible_kickers`, `kickers_with_capsule` (VAB-Code 0x81), `kickers_second_pad` (0x89), `probe_kicker` | Kapsel-Lander-Kicker-Paarung | `vab.cpp` (`BuildVAB`, `LMAdd`) |
+| `prestige_first` | Prestigekategorie des Erstflugs | `Set_Goal(12 + Prog)` in `prest.cpp` |
+
+Eine Funktion `ApplyTechTransfer(plr, category, unit, mode)` (`hardware.cpp`) wertet `tech_transfer` aus
+(Modus `Gradual` für Spieler, `Threshold` für die KI). Beschlossene Verhaltensänderung: die beiden
+Kapsel-Auswahlbildschirme (unbemannt/bemannt) verwenden dieselbe, großzügigere Regel (Einmann-Kapsel
+bis Missionsdauerstufe 2 des Plans, XMS-2/Lapot bis Dauerstufe 4). Missionsbezogene Sonderfälle
+(Mission 52 und EOR-Mondlandung: nur Kicker B) bleiben im Code.
+
 Agenten-Aufteilung: 4a und die Tests zuerst (ein Agent), danach 4b–4e nacheinander (sie berühren
 dieselben Dateien), 4f kann teilweise parallel zu 4e laufen. Prüfung und Zusammenführung jeweils durch mich.
 
