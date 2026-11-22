@@ -461,6 +461,43 @@ BOOST_AUTO_TEST_CASE(catalog_validation_rejects_bad_input)
         }
     })), std::runtime_error);
 
+    // 4b rule data: references and structure
+    BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(Mutate([](Json::Value& d) {
+        for (Json::Value& e : d["hardware"]) {
+            if (e["id"] == "US.TITAN") {
+                e["tech_transfer"]["gradual"]["steps"][0]["from"] = "US.NOPE";
+            }
+        }
+    })), std::runtime_error);
+    BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(Mutate([](Json::Value& d) {
+        for (Json::Value& e : d["hardware"]) {
+            if (e["id"] == "US.TITAN") {
+                e["tech_transfer"]["threshold"][0]["when"][0][0] = "SV.R7";
+            }
+        }
+    })), std::runtime_error);
+    BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(Mutate([](Json::Value& d) {
+        for (Json::Value& e : d["hardware"]) {
+            if (e["id"] == "US.TITAN") {
+                e["tech_transfer"]["gradual"]["steps"][0]["op"] = "mul";
+            }
+        }
+    })), std::runtime_error);
+    BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(Mutate([](Json::Value& d) {
+        for (Json::Value& e : d["hardware"]) {
+            if (e["id"] == "US.MERCURY") {
+                e["prestige_first"] = "NoSuchCategory";
+            }
+        }
+    })), std::runtime_error);
+    BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(Mutate([](Json::Value& d) {
+        for (Json::Value& e : d["hardware"]) {
+            if (e["id"] == "US.GEMINI") {
+                e["kickers_with_capsule"][0] = "US.ATLAS";  // not a kicker
+            }
+        }
+    })), std::runtime_error);
+
     // two entries on one legacy slot
     BOOST_CHECK_THROW(HardwareCatalog::FromJsonText(Mutate([](Json::Value& d) {
         d["hardware"][1]["legacy"]["idx"] = 0;
@@ -624,11 +661,17 @@ BOOST_AUTO_TEST_CASE(golden_prestige_first)
             const HardwareEntry* e = cat.FindByLegacy(player, MANNED_HARDWARE, i);
             BOOST_CHECK_EQUAL(e->prestigeFirst, names[i]);
             BOOST_CHECK_EQUAL(legacy[i], 12 + MannedIndexToProgram(i));
+            // The catalog drives the category (was: Set_Goal(12 + Prog))
+            BOOST_CHECK_EQUAL(PrestigeFirstCategory(*e),
+                              12 + MannedIndexToProgram(i));
         }
 
         for (int i = 5; i < 7; i++) {
             BOOST_CHECK(cat.FindByLegacy(player, MANNED_HARDWARE, i)
                         ->prestigeFirst.empty());
+            BOOST_CHECK_EQUAL(PrestigeFirstCategory(
+                                  *cat.FindByLegacy(player, MANNED_HARDWARE, i)),
+                              -1);
         }
     }
 }
@@ -665,19 +708,12 @@ BOOST_AUTO_TEST_CASE(golden_capability_flags)
 
         for (int i = 0; i < MANNED_PROGRAM_COUNT; i++) {
             const HardwareEntry* e = cat.FindByLegacy(player, MANNED_HARDWARE, i);
-            BOOST_REQUIRE(e->hasLimits);
 
             for (int dur = 0; dur <= 6; dur++) {
-                auto manned = CapsuleEligibility(player, plainMission, dur,
-                                                 CapsuleChoice::MannedMission);
-                auto unmanned = CapsuleEligibility(player, plainMission, dur,
-                                                   CapsuleChoice::UnmannedMission);
-                int mm = e->limits.maxFutureDurationManned;
-                int mu = e->limits.maxFutureDurationUnmanned;
-                BOOST_CHECK_MESSAGE(manned[i] == (mm < 0 || dur <= mm),
-                                    e->id << " manned duration " << dur);
-                BOOST_CHECK_MESSAGE(unmanned[i] == (mu < 0 || dur <= mu),
-                                    e->id << " unmanned duration " << dur);
+                auto ok = CapsuleEligibility(player, plainMission, dur);
+                int mf = e->maxFutureDuration;
+                BOOST_CHECK_MESSAGE(ok[i] == (mf < 0 || dur <= mf),
+                                    e->id << " duration " << dur);
             }
         }
 
@@ -709,6 +745,102 @@ BOOST_AUTO_TEST_CASE(golden_capability_flags)
             BOOST_CHECK_EQUAL(
                 cat.FindByLegacy(player, MANNED_HARDWARE, i)->directAscent,
                 i == MANNED_HW_FOUR_MAN_CAPSULE);
+        }
+    }
+}
+
+// 4b: the rule fields reproduce the former hard-coded rules
+BOOST_AUTO_TEST_CASE(rule_fields_match_former_rules)
+{
+    const HardwareCatalog& cat = GetHardwareCatalog();
+
+    for (int player = 0; player < NUM_PLAYERS; player++) {
+        auto manned = [&](int i) {
+            return cat.FindByLegacy(player, MANNED_HARDWARE, i);
+        };
+
+        // Eligibility fields (crew.cpp HardRequest/SecondHard)
+        BOOST_CHECK_EQUAL(manned(MANNED_HW_ONE_MAN_CAPSULE)->maxMinEquipment, 1);
+        BOOST_CHECK_EQUAL(manned(MANNED_HW_ONE_MAN_CAPSULE)->maxPlanDays, 2);
+        BOOST_CHECK_EQUAL(manned(MANNED_HW_ONE_MAN_CAPSULE)->maxFutureDuration, 2);
+        BOOST_CHECK_EQUAL(manned(MANNED_HW_TWO_MAN_CAPSULE)->maxFutureDuration, 5);
+        BOOST_CHECK_EQUAL(manned(MANNED_HW_TWO_MAN_CAPSULE)->maxPlanDays, 5);
+        BOOST_CHECK_EQUAL(manned(MANNED_HW_MINISHUTTLE)->maxFutureDuration, 4);
+        BOOST_CHECK_EQUAL(manned(MANNED_HW_MINISHUTTLE)->maxPlanDays, -1);
+        BOOST_CHECK_EQUAL(manned(MANNED_HW_THREE_MAN_CAPSULE)->maxFutureDuration, -1);
+        BOOST_CHECK_EQUAL(manned(MANNED_HW_FOUR_MAN_CAPSULE)->maxFutureDuration, -1);
+
+        // Only the Soviet Soyuz may attempt the Soyuz lunar landing
+        for (int i = 0; i < MANNED_HW_COUNT; i++) {
+            BOOST_CHECK_EQUAL(manned(i)->soyuzLL,
+                              player == 1 && i == MANNED_HW_THREE_MAN_CAPSULE);
+        }
+
+        // Kicker C is the probe kicker; the others are not
+        for (int i = MISC_HW_KICKER_A; i <= MISC_HW_KICKER_C; i++) {
+            BOOST_CHECK_EQUAL(
+                cat.FindByLegacy(player, MISC_HARDWARE, i)->probeKicker,
+                i == MISC_HW_KICKER_C);
+        }
+
+        // Kicker lists of the VAB codes 0x81 / 0x89
+        for (int i = 0; i < MANNED_PROGRAM_COUNT; i++) {
+            BOOST_CHECK_EQUAL(manned(i)->kickersWithCapsule.size(),
+                              (i == MANNED_HW_TWO_MAN_CAPSULE
+                               || i == MANNED_HW_MINISHUTTLE) ? 2u : 0u);
+            BOOST_CHECK_EQUAL(manned(i)->kickersSecondPad.size(),
+                              i == MANNED_HW_THREE_MAN_CAPSULE ? 0u : 2u);
+        }
+    }
+}
+
+// Role helpers on real Equipment replace name/ID checks in mc2.cpp,
+// mis_c.cpp and mis_m.cpp.
+BOOST_AUTO_TEST_CASE(role_helpers_replace_name_checks)
+{
+    std::unique_ptr<Players> players(new Players());
+    std::memset(players.get(), 0, sizeof(Players));
+    std::string path = locate_file("urast.json", FT_DATA);
+    BOOST_REQUIRE(!path.empty());
+    DESERIALIZE_JSON_FILE(players, path);
+
+    for (int plr = 0; plr < NUM_PLAYERS; plr++) {
+        const BuzzData& p = players->P[plr];
+
+        // strncmp(Name, "DO", 2) / "DOC"
+        BOOST_CHECK(HasRole(p.Misc[MISC_HW_DOCKING_MODULE],
+                            HardwareRole::DockingModule));
+        BOOST_CHECK_EQUAL(strncmp(p.Misc[MISC_HW_DOCKING_MODULE].Name, "DO", 2), 0);
+        // strncmp(Name, "PHO", 3)
+        BOOST_CHECK(HasRole(p.Misc[MISC_HW_PHOTO_RECON],
+                            HardwareRole::PhotoRecon));
+        // ID "M2" / "M3"
+        BOOST_CHECK(IsProbeKicker(p.Misc[MISC_HW_KICKER_C]));
+        BOOST_CHECK(!IsProbeKicker(p.Misc[MISC_HW_KICKER_A]));
+        BOOST_CHECK(HasRole(p.Misc[MISC_HW_EVA_SUITS], HardwareRole::Eva));
+        // ID[0] == 'P'
+        for (int i = 0; i < PROBE_HW_COUNT; i++) {
+            BOOST_CHECK(IsProbe(p.Probe[i]));
+        }
+
+        BOOST_CHECK(!IsProbe(p.Misc[MISC_HW_DOCKING_MODULE]));
+        // Minishuttle / Vostok-class / direct ascent by name or ID
+        BOOST_CHECK(HasRole(p.Manned[MANNED_HW_MINISHUTTLE],
+                            HardwareRole::Minishuttle));
+        BOOST_CHECK(IsOneManCapsule(p.Manned[MANNED_HW_ONE_MAN_CAPSULE]));
+        BOOST_CHECK(!IsOneManCapsule(p.Manned[MANNED_HW_ONE_MAN_MODULE]));
+        BOOST_CHECK(IsDirectAscentCapsule(p.Manned[MANNED_HW_FOUR_MAN_CAPSULE]));
+        BOOST_CHECK(!IsDirectAscentCapsule(p.Manned[MANNED_HW_THREE_MAN_CAPSULE]));
+
+        for (int i = MANNED_HW_TWO_MAN_MODULE; i <= MANNED_HW_ONE_MAN_MODULE; i++) {
+            BOOST_CHECK(HasRole(p.Manned[i], HardwareRole::Lander));
+        }
+
+        // Crew capacity per astronaut program (was {0,1,2,3,3,4})
+        const int expected[6] = {0, 1, 2, 3, 3, 4};
+
+        for (int prog = 0; prog < 6; prog++) {
+            BOOST_CHECK_EQUAL(ProgramCrewCapacity(prog), expected[prog]);
         }
     }
 }

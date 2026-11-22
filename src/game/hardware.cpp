@@ -150,55 +150,82 @@ int MannedIndexToProgram(int mannedIndex)
  * Which capsule/minishuttle programs may fly a mission, ignoring whether
  * they have been purchased.
  *
- * This is the rule set that used to be inlined in crew.cpp's
- * HardRequest() and SecondHard(); the two differ slightly (see the
- * TODOs there), so the caller selects one via `choice`.
+ * The limits come from the hardware catalog (max_future_duration,
+ * max_plan_days, max_min_equipment, reach, can_dock, direct_ascent,
+ * soyuz_ll).  Before the catalog the two selection screens of crew.cpp
+ * (HardRequest/SecondHard) used slightly different limits; they are
+ * unified to the more generous (manned) rule.
  *
  * \param plr  0 for the USA, 1 for the USSR.
  * \param missionCode  the mission per MissionValues (mStr.Index).
  * \param futureDuration  Future[pad].Duration of the planned mission.
- * \param choice  which of the two selection screens.
  * \return  true for each Manned[0..4] program that is suitable.
  */
 std::array<bool, MANNED_PROGRAM_COUNT>
-CapsuleEligibility(int plr, int missionCode, int futureDuration,
-                   CapsuleChoice choice)
+CapsuleEligibility(int plr, int missionCode, int futureDuration)
 {
     std::array<bool, MANNED_PROGRAM_COUNT> ok;
     ok.fill(true);
 
-    const bool manned = (choice == CapsuleChoice::MannedMission);
     const mStr plan = GetMissionPlan(missionCode);
+    const HardwareCatalog& catalog = GetHardwareCatalog();
 
-    // One-man capsules cannot perform Lunar missions, Docking missions.
-    if (plan.Lun == 1 || plan.Doc == 1 || plan.mEq > 1
-        || plan.Days > (manned ? 2 : 1) || futureDuration > 2) {
-        ok[0] = false;
+    // Capsules of this side that can fly the Soyuz lunar landing.
+    bool sideHasSoyuzLL = false;
+
+    for (int i = 0; i < MANNED_PROGRAM_COUNT; i++) {
+        const HardwareEntry* e = catalog.FindByLegacy(plr, MANNED_HARDWARE, i);
+
+        if (e != nullptr && e->soyuzLL) {
+            sideHasSoyuzLL = true;
+        }
     }
 
-    // Gemini/Voskhod cannot attempt Duration F
-    if (futureDuration > 5 || plan.Days > 5) {
-        ok[1] = false;
-    }
+    for (int i = 0; i < MANNED_PROGRAM_COUNT; i++) {
+        const HardwareEntry* e = catalog.FindByLegacy(plr, MANNED_HARDWARE, i);
 
-    // XMS-2 / Lapot cannot attempt Duration E+
-    if (futureDuration > (manned ? 4 : 3)) {
-        ok[3] = false;
-    }
+        if (e == nullptr) {
+            continue;
+        }
 
-    // Only Jupiter/Kvartet can attempt a Direct Ascent Lunar Landing
-    if (missionCode == Mission_DirectAscent_LL) {
-        ok[0] = ok[1] = ok[2] = ok[3] = false;
-    }
+        bool allowed = true;
 
-    // Only a USSR Soyuz capsule may attempt a Soyuz Lunar Landing
-    if (missionCode == Mission_Soyuz_LL && plr == 1) {
-        ok[0] = ok[1] = ok[3] = ok[4] = false;
-    }
+        // Lunar missions need a capsule that reaches the Moon.
+        if (plan.Lun == 1 && e->reach != "translunar"
+            && e->reach != "interplanetary") {
+            allowed = false;
+        }
 
-    // Jupiter/Kvartet can not attempt docking missions.
-    if (plan.Doc == 1) {
-        ok[4] = false;
+        // Docking missions need a capsule that can dock.
+        if (plan.Doc == 1 && !e->canDock) {
+            allowed = false;
+        }
+
+        if (e->maxMinEquipment >= 0 && plan.mEq > e->maxMinEquipment) {
+            allowed = false;
+        }
+
+        if (e->maxPlanDays >= 0 && plan.Days > e->maxPlanDays) {
+            allowed = false;
+        }
+
+        if (e->maxFutureDuration >= 0 && futureDuration > e->maxFutureDuration) {
+            allowed = false;
+        }
+
+        // Only a direct ascent capsule can attempt a Direct Ascent
+        // Lunar Landing.
+        if (missionCode == Mission_DirectAscent_LL && !e->directAscent) {
+            allowed = false;
+        }
+
+        // Only a Soyuz capsule may attempt a Soyuz Lunar Landing
+        // (checked only for a side that has one: the USA has none).
+        if (missionCode == Mission_Soyuz_LL && sideHasSoyuzLL && !e->soyuzLL) {
+            allowed = false;
+        }
+
+        ok[i] = allowed;
     }
 
     return ok;
@@ -321,4 +348,207 @@ int RocketMaxRD(int MaxRDRocket, int MaxRDBooster)
     } else {
         return ((MaxRDRocket + MaxRDBooster) / 2);
     }
+}
+
+
+namespace
+{
+
+/** Safety of the program with the given catalog id, for a player. */
+int SafetyOf(int plr, const std::string& id)
+{
+    const HardwareEntry* e = GetHardwareCatalog().FindById(id);
+
+    if (e == nullptr) {
+        throw std::invalid_argument("tech transfer: unknown program " + id);
+    }
+
+    return HardwareProgram(plr, e->legacyCat, e->legacyIdx).Safety;
+}
+
+/** All groups of a rule hold: some program of each group is at_least. */
+bool RuleHolds(int plr, const TechTransferRule& rule)
+{
+    for (const auto& group : rule.when) {
+        bool any = false;
+
+        for (const std::string& id : group) {
+            if (SafetyOf(plr, id) >= rule.atLeast) {
+                any = true;
+                break;
+            }
+        }
+
+        if (!any) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/** Safety of a new program computed by the gradual formula. */
+int GradualTransfer(int plr, const TechTransfer& tt)
+{
+    float acc = 0.0f;
+
+    for (const TechTransferStep& st : tt.steps) {
+        switch (st.op) {
+        case TechTransferStep::Op::Cap:
+            if (acc > st.capMax) {
+                acc = st.capTo;
+            }
+
+            break;
+
+        case TechTransferStep::Op::Set: {
+            const int n = SafetyOf(plr, st.from);
+
+            if (n > st.above
+                && (st.greaterThan.empty() || n > SafetyOf(plr, st.greaterThan))) {
+                acc = (float)(n - st.offset) / (float)st.divisor;
+            }
+
+            break;
+        }
+
+        case TechTransferStep::Op::Max: {
+            const int n = SafetyOf(plr, st.from);
+
+            if (n <= st.above) {
+                break;
+            }
+
+            const double cmp = st.compareDivisor > 0.0 ? st.compareDivisor
+                               : st.divisor;
+            const bool greater = st.compareDouble
+                                 ? (double)(n - st.offset) / cmp > (double)acc
+                                 : (float)(n - st.offset) / (float)cmp > acc;
+
+            if (greater) {
+                acc = (float)(n - st.offset) / (float)st.divisor;
+            }
+
+            break;
+        }
+        }
+    }
+
+    return (int)(tt.base + acc);
+}
+
+} // namespace
+
+
+/**
+ * Set the starting Safety (and Base) of a program that has just been
+ * started, from the Safety of related programs, per the catalog's
+ * tech_transfer data.
+ *
+ * \param plr  0 for the USA, 1 for the USSR.
+ * \param category  the EquipmentIndex (PROBE_HARDWARE, etc.)
+ * \param unit  the program index within the category.
+ * \param mode  the player's gradual formula or the AI's threshold rules.
+ *   Programs without data for the mode keep their Safety.
+ */
+void ApplyTechTransfer(int plr, int category, int unit, TechTransferMode mode)
+{
+    Equipment& program = HardwareProgram(plr, category, unit);
+    const HardwareEntry* entry =
+        GetHardwareCatalog().FindByLegacy(plr, category, unit);
+
+    if (entry != nullptr) {
+        const TechTransfer& tt = entry->techTransfer;
+        // All inputs are read before the program's Safety is changed.
+        int result = program.Safety;
+
+        if (mode == TechTransferMode::Gradual) {
+            if (tt.hasGradual) {
+                result = GradualTransfer(plr, tt);
+
+                for (const TechTransferRule& rule : tt.overrides) {
+                    if (RuleHolds(plr, rule)) {
+                        result = rule.safety;
+                    }
+                }
+            }
+        } else {
+            for (const TechTransferRule& rule : tt.threshold) {
+                if (RuleHolds(plr, rule)) {
+                    result = rule.safety;
+                }
+            }
+        }
+
+        program.Safety = result;
+    }
+
+    program.Base = program.Safety;
+}
+
+
+/** Catalog entry of a program, or nullptr if it is not in the catalog. */
+const HardwareEntry* HardwareInfo(const Equipment& program)
+{
+    return CatalogEntryForEquipment(program);
+}
+
+
+bool HasRole(const Equipment& program, HardwareRole role)
+{
+    const HardwareEntry* e = CatalogEntryForEquipment(program);
+    return e != nullptr && e->role == role;
+}
+
+
+/** Whether the program is an orbital, lunar or interplanetary probe. */
+bool IsProbe(const Equipment& program)
+{
+    const HardwareEntry* e = CatalogEntryForEquipment(program);
+    return e != nullptr
+           && (e->role == HardwareRole::OrbitalProbe
+               || e->role == HardwareRole::LunarProbe
+               || e->role == HardwareRole::InterplanetaryProbe);
+}
+
+
+/** Whether the program is the kicker used for unmanned probe missions. */
+bool IsProbeKicker(const Equipment& program)
+{
+    const HardwareEntry* e = CatalogEntryForEquipment(program);
+    return e != nullptr && e->role == HardwareRole::Kicker && e->probeKicker;
+}
+
+
+/** Whether the program is a capsule that flies direct ascent landings. */
+bool IsDirectAscentCapsule(const Equipment& program)
+{
+    const HardwareEntry* e = CatalogEntryForEquipment(program);
+    return e != nullptr && e->directAscent;
+}
+
+
+/** Whether the program is a capsule with a crew of one. */
+bool IsOneManCapsule(const Equipment& program)
+{
+    const HardwareEntry* e = CatalogEntryForEquipment(program);
+    return e != nullptr && e->role == HardwareRole::Capsule && e->crew == 1;
+}
+
+
+/**
+ * Crew capacity of an astronaut program.
+ *
+ * \param program  0 for unassigned, otherwise the program number
+ *   (Manned index + 1, see ProgramToMannedIndex()).
+ */
+int ProgramCrewCapacity(int program)
+{
+    if (program <= 0) {
+        return 0;
+    }
+
+    const HardwareEntry* e = GetHardwareCatalog().FindByLegacyAnySide(
+                                 MANNED_HARDWARE, ProgramToMannedIndex(program));
+    return e == nullptr ? 0 : e->crew;
 }

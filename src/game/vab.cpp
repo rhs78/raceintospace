@@ -49,6 +49,8 @@
 #include "filesystem.h"
 #include "game_main.h"
 #include "gamedata.h"
+#include "hardware.h"
+#include "hardware_catalog.h"
 #include "logging.h"
 #include "mission_util.h"
 #include "news_suq.h"
@@ -981,6 +983,93 @@ bool PayloadReady(int plr, int payload)
 }
 
 
+namespace
+{
+
+/** Mission code of the joint "Lunar Orbital: EOR/LOR-L" mission (see BuildVAB). */
+const int MISSION_JT_LUNAR_ORBITAL_EOR_LM = 52;
+
+/** Catalog entry for a legacy slot of a player, nullptr if there is none. */
+const HardwareEntry* FindEntry(int plr, int cat, int idx)
+{
+    return GetHardwareCatalog().FindByLegacy(plr, cat, idx);
+}
+
+/** Like FindEntry(), for slots that must exist. */
+const HardwareEntry& LegacyEntry(int plr, int cat, int idx)
+{
+    const HardwareEntry* e = GetHardwareCatalog().FindByLegacy(plr, cat, idx);
+
+    if (e == nullptr) {
+        throw std::logic_error("VAB: hardware is not in the catalog");
+    }
+
+    return *e;
+}
+
+/** The (first) catalog entry of a player with the given role. */
+const HardwareEntry& RoleEntry(int plr, HardwareRole role)
+{
+    const auto entries = GetHardwareCatalog().FindByRole(role, plr);
+
+    if (entries.empty()) {
+        throw std::logic_error("VAB: no hardware with the required role");
+    }
+
+    return *entries.front();
+}
+
+/** Add a catalog hardware item to the current VAS row. */
+void AddHardware(char plr, char slot, const HardwareEntry& e, int sprite = -1)
+{
+    VVals(plr, slot, HardwareProgram(plr, e.legacyCat, e.legacyIdx),
+          e.legacyIdx, sprite >= 0 ? sprite : e.images.vabSprite);
+}
+
+bool Contains(const std::vector<std::string>& ids, const HardwareEntry& e)
+{
+    return std::find(ids.begin(), ids.end(), e.id) != ids.end();
+}
+
+/**
+ * One VAS row per kicker choice for a capsule (VAB codes 0x81 and 0x89).
+ *
+ * \param kickers  the kicker ids the capsule offers; if empty, a single
+ *   row without kicker.
+ * \param specialCase  if true, only Kicker-B is offered (shown with the
+ *   Kicker-A sprite), per the special mission cases of BuildVAB().
+ */
+void AddKickerChoices(char plr, const std::vector<std::string>& kickers,
+                      bool specialCase)
+{
+    if (kickers.empty()) {
+        VASqty = 1;
+        return;
+    }
+
+    const HardwareCatalog& catalog = GetHardwareCatalog();
+
+    if (specialCase) {
+        const HardwareEntry& kickerB =
+            LegacyEntry(plr, MISC_HARDWARE, MISC_HW_KICKER_B);
+        const HardwareEntry& kickerA =
+            LegacyEntry(plr, MISC_HARDWARE, MISC_HW_KICKER_A);
+        VASqty++;
+        // TODO: Check this out - seems like the sprite image should be
+        // Kicker-B's.
+        AddHardware(plr, Mission_Kicker, kickerB, kickerA.images.vabSprite);
+        return;
+    }
+
+    for (const std::string& id : kickers) {
+        VASqty++;
+        AddHardware(plr, Mission_Kicker, *catalog.FindById(id));
+    }
+}
+
+} // namespace
+
+
 /**
  * Assigns a launch vehicle and payload to a current mission.
  *
@@ -1423,8 +1512,11 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
 
         for (int i = 1; i < 6; i++) {  // Fill all parts with CAP
             VASqty++;
-            VVals(plr, Mission_Capsule, pData.Manned[j], j,
-                  VabImg_OneManCapsule + j);
+            const HardwareEntry* capsule = FindEntry(plr, MANNED_HARDWARE, j);
+
+            if (capsule != nullptr) {
+                AddHardware(plr, Mission_Capsule, *capsule);
+            }
         }
     }
 
@@ -1432,18 +1524,22 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
 
     if (VX == 0x20 && part == 0 && mcode == Mission_Orbital_Satellite) {  // P:Sxx XX
         VASqty++;
-        VVals(plr, Mission_Probe_DM, pData.Probe[PROBE_HW_ORBITAL], PROBE_HW_ORBITAL, VabImg_OrbitalSat);
+        AddHardware(plr, Mission_Probe_DM,
+                    RoleEntry(plr, HardwareRole::OrbitalProbe));
     }
 
     if (VX == 0x20 && part == 0 && mcode != Mission_Orbital_Satellite) {  // P:xDM XX
         VASqty++;
-        VVals(plr, Mission_Probe_DM, pData.Misc[MISC_HW_DOCKING_MODULE], MISC_HW_DOCKING_MODULE, VabImg_DockingModule);
+        AddHardware(plr, Mission_Probe_DM,
+                    RoleEntry(plr, HardwareRole::DockingModule));
     } else if (VX == 0x04 && part == 0) {  // P:INTER XX
         VASqty++;
-        VVals(plr, Mission_Probe_DM, pData.Probe[PROBE_HW_INTERPLANETARY], PROBE_HW_INTERPLANETARY, VabImg_InterplanetaryProbe);
+        AddHardware(plr, Mission_Probe_DM,
+                    RoleEntry(plr, HardwareRole::InterplanetaryProbe));
     } else if (VX == 0x02 && part == 0) {  // P:PRO XX
         VASqty++;
-        VVals(plr, Mission_Probe_DM, pData.Probe[PROBE_HW_LUNAR], PROBE_HW_LUNAR, VabImg_LunarProbe);
+        AddHardware(plr, Mission_Probe_DM,
+                    RoleEntry(plr, HardwareRole::LunarProbe));
     } else if (VX == 0x60 && part == 0) {  // P:LM+SDM XX
         LMAdd(plr, ext, -1, 1);
     } else if (VX == 0xe8 && part == 0) {  // P:LM+SDM+EVA XX
@@ -1453,7 +1549,13 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
         LMAdd(plr, ext, MISC_HW_KICKER_B, 1);
     } else if (VX == 0x21 && part == 0) {  // P:SDM+KIC-C XX
         VASqty++;
-        VVals(plr, Mission_Kicker, pData.Misc[MISC_HW_KICKER_C], MISC_HW_KICKER_C, VabImg_KickerC);
+        for (const HardwareEntry* k :
+             GetHardwareCatalog().FindByRole(HardwareRole::Kicker, plr)) {
+            if (k->probeKicker) {
+                AddHardware(plr, Mission_Kicker, *k);
+                break;
+            }
+        }
     }
 
     else if (VX == 0x80) {
@@ -1467,7 +1569,8 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
 
     else if (VX == 0xa0 && part == 0) {  // P:CAP+SDM XX
         VASqty++;
-        VVals(plr, Mission_Probe_DM, pData.Misc[MISC_HW_DOCKING_MODULE], MISC_HW_DOCKING_MODULE, VabImg_DockingModule);
+        AddHardware(plr, Mission_Probe_DM,
+                    RoleEntry(plr, HardwareRole::DockingModule));
     }
 
     else if (VX == 0x90 && part == 0) {  // P:CAP+DMO XX
@@ -1476,7 +1579,8 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
 
     else if (VX == 0xa8 && part == 0) {  // P:CAP+SDM+EVA XX
         VASqty++;
-        VVals(plr, Mission_Probe_DM, pData.Misc[MISC_HW_DOCKING_MODULE], MISC_HW_DOCKING_MODULE, VabImg_DockingModule);
+        AddHardware(plr, Mission_Probe_DM,
+                    RoleEntry(plr, HardwareRole::DockingModule));
         // EVA Check
     }
 
@@ -1491,22 +1595,12 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
     }
 
     else if (VX == 0x81) {  // P/S:CAP+KIC XX
-        if (prog == MANNED_HW_TWO_MAN_CAPSULE ||
-            prog == MANNED_HW_MINISHUTTLE) {
-            if (mcode != 52) {  // Special Case EOR LM Test
-                VASqty++;
-                VVals(plr, Mission_Kicker, pData.Misc[MISC_HW_KICKER_A], MISC_HW_KICKER_A, VabImg_KickerA);
-                VASqty++;
-                VVals(plr, Mission_Kicker, pData.Misc[MISC_HW_KICKER_B], MISC_HW_KICKER_B, VabImg_KickerB);
-            } else {
-                VASqty++;
-                // TODO: Check this out - seems like the sprite image
-                // should be VabImg_KickerB.
-                VVals(plr, Mission_Kicker, pData.Misc[MISC_HW_KICKER_B], MISC_HW_KICKER_B, VabImg_KickerA);
-            }
-        } else {
-            VASqty = 1;
-        }
+        // Special Case EOR LM Test: only Kicker-B is offered.
+        const HardwareEntry* capsule = FindEntry(plr, MANNED_HARDWARE, prog);
+        AddKickerChoices(plr,
+                         capsule ? capsule->kickersWithCapsule
+                         : std::vector<std::string>(),
+                         mcode == MISSION_JT_LUNAR_ORBITAL_EOR_LM);
     }
 
     else if (VX == 0xe1 && part == 0) {  // P:CAP+LM+SDM+KIC XX
@@ -1519,21 +1613,12 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
     }
 
     else if (VX == 0x89 && part == 1) {  // S:CAP+EVA+KIC
-        if (prog != MANNED_HW_THREE_MAN_CAPSULE) {
-            if (mcode != Mission_Jt_LunarLanding_EOR) {  // Special Case EOR Lunar Landing
-                VASqty++;
-                VVals(plr, Mission_Kicker, pData.Misc[MISC_HW_KICKER_A], MISC_HW_KICKER_A, VabImg_KickerA);
-                VASqty++;
-                VVals(plr, Mission_Kicker, pData.Misc[MISC_HW_KICKER_B], MISC_HW_KICKER_B, VabImg_KickerB);
-            } else {
-                VASqty++;
-                // TODO: Check this out - seems like sprite image should
-                // be VabImg_KickerB.
-                VVals(plr, Mission_Kicker, pData.Misc[MISC_HW_KICKER_B], MISC_HW_KICKER_B, VabImg_KickerA);
-            }
-        } else {
-            VASqty = 1;
-        }
+        // Special Case EOR Lunar Landing: only Kicker-B is offered.
+        const HardwareEntry* capsule = FindEntry(plr, MANNED_HARDWARE, prog);
+        AddKickerChoices(plr,
+                         capsule ? capsule->kickersSecondPad
+                         : std::vector<std::string>(),
+                         mcode == Mission_Jt_LunarLanding_EOR);
 
         // EVA Check
     }
@@ -1548,72 +1633,45 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
  */
 void LMAdd(char plr, char prog, char kic, char part)
 {
-    auto& pData = Data->P[plr];
-    if (prog == MANNED_HW_TWO_MAN_CAPSULE) {
-        VASqty++;
-        VVals(plr, Mission_Probe_DM,
-              pData.Misc[MISC_HW_DOCKING_MODULE],
-              MISC_HW_DOCKING_MODULE,
-              VabImg_DockingModule);
-        VVals(plr, Mission_LM,
-              pData.Manned[MANNED_HW_ONE_MAN_MODULE],
-              MANNED_HW_ONE_MAN_MODULE,
-              VabImg_OneManLM);
+    const HardwareCatalog& catalog = GetHardwareCatalog();
+    const HardwareEntry* capsulePtr = FindEntry(plr, MANNED_HARDWARE, prog);
 
-        if (kic >= 0) {
-            VVals(plr, Mission_Kicker,
-                  pData.Misc[kic], kic, VabImg_KickerA + kic);
-        }
-
+    if (capsulePtr == nullptr) {
+        return;
     }
 
-    else if (prog == MANNED_HW_THREE_MAN_CAPSULE) {
-        VASqty++;
-        VVals(plr, Mission_LM,
-              pData.Manned[MANNED_HW_TWO_MAN_MODULE],
-              MANNED_HW_TWO_MAN_MODULE, VabImg_TwoManLM);
+    const HardwareEntry& capsule = *capsulePtr;
 
-        if (part == 1 && kic >= 0) {
-            VVals(plr, Mission_Kicker, pData.Misc[kic], kic,
-                  VabImg_KickerA + kic);
-        }
+    // The kicker, if the capsule can fly with it.
+    const HardwareEntry* kicker = nullptr;
 
-        VASqty++;
-        VVals(plr, Mission_LM,
-              pData.Manned[MANNED_HW_ONE_MAN_MODULE],
-              MANNED_HW_ONE_MAN_MODULE, VabImg_OneManLM);
+    if (kic >= 0) {
+        kicker = &LegacyEntry(plr, MISC_HARDWARE, kic);
 
-        if (part == 1 && kic >= 0) {
-            VVals(plr, Mission_Kicker,
-                  pData.Misc[kic], kic, VabImg_KickerA + kic);
+        if (!Contains(capsule.compatibleKickers, *kicker)) {
+            kicker = nullptr;
         }
     }
 
-    else if (prog == MANNED_HW_MINISHUTTLE) {
-        VASqty++;
-        VVals(plr, Mission_Probe_DM,
-              pData.Misc[MISC_HW_DOCKING_MODULE],
-              MISC_HW_DOCKING_MODULE, VabImg_DockingModule);
-        VVals(plr, Mission_LM,
-              pData.Manned[MANNED_HW_TWO_MAN_MODULE],
-              MANNED_HW_TWO_MAN_MODULE, VabImg_TwoManLM);
+    // A capsule that needs a docking module for its lander flies the
+    // kicker on every pad; otherwise (capsule docks directly) only the
+    // lander's pad (part 1) carries it.
+    const bool withKicker = kicker != nullptr
+                            && (part == 1 || capsule.landerNeedsDockingModule);
 
-        if (kic >= 0) {
-            VVals(plr, Mission_Kicker,
-                  pData.Misc[kic], kic, VabImg_KickerA + kic);
+    // One payload row per lander the capsule can pair with.
+    for (const std::string& landerId : capsule.compatibleLanders) {
+        VASqty++;
+
+        if (capsule.landerNeedsDockingModule) {
+            AddHardware(plr, Mission_Probe_DM,
+                        RoleEntry(plr, HardwareRole::DockingModule));
         }
 
-        VASqty++;
-        VVals(plr, Mission_Probe_DM,
-              pData.Misc[MISC_HW_DOCKING_MODULE],
-              MISC_HW_DOCKING_MODULE, VabImg_DockingModule);
-        VVals(plr, Mission_LM,
-              pData.Manned[MANNED_HW_ONE_MAN_MODULE],
-              MANNED_HW_ONE_MAN_MODULE, VabImg_OneManLM);
+        AddHardware(plr, Mission_LM, *catalog.FindById(landerId));
 
-        if (kic >= 0) {
-            VVals(plr, Mission_Kicker,
-                  pData.Misc[kic], kic, VabImg_KickerA + kic);
+        if (withKicker) {
+            AddHardware(plr, Mission_Kicker, *kicker);
         }
     }
 }

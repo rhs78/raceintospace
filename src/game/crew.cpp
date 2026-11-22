@@ -739,8 +739,7 @@ int HardRequest(char plr, char mode, char mis, char pad)
 
     // Programs that are purchased and suitable for the mission.
     const std::array<bool, MANNED_PROGRAM_COUNT> suitable =
-        CapsuleEligibility(plr, mis, Data->P[plr].Future[pad].Duration,
-                           CapsuleChoice::UnmannedMission);
+        CapsuleEligibility(plr, mis, Data->P[plr].Future[pad].Duration);
 
     for (int i = 0; i < 5; i++) {
         if (Data->P[plr].Manned[i].Num >= 0) { // Is program purchased?
@@ -879,8 +878,7 @@ int SecondHard(char plr, char mode, char mis, char pad)
 
     // Programs that are purchased and suitable for the mission.
     const std::array<bool, MANNED_PROGRAM_COUNT> suitable =
-        CapsuleEligibility(plr, mis, Data->P[plr].Future[pad].Duration,
-                           CapsuleChoice::MannedMission);
+        CapsuleEligibility(plr, mis, Data->P[plr].Future[pad].Duration);
 
     for (int i = 0; i < 5; i++) {
         if (Data->P[plr].Manned[i].Num >= 0) {
@@ -933,31 +931,31 @@ int SecondHard(char plr, char mode, char mis, char pad)
         if (mousebuttons == 0 && key == 0) continue;
         
         if (((x >= 83 && y >= 102 && x <= 156 && y <= 112 && mousebuttons != 0) || key == '1') && prog[0] != 0 && prg != 1) {
-            men = 1;
+            men = CrewSize(Data->P[plr].Manned[MANNED_HW_ONE_MAN_CAPSULE]);
             InBox(83, 102, 156, 112);
             i = 1;
             WaitForMouseUp();
         } // One-Man Program
         else if (((x >= 163 && y >= 102 && x <= 236 && y <= 112 && mousebuttons != 0) || key == '2') && prog[1] != 0 && prg != 3) {
-            men = 2;
+            men = CrewSize(Data->P[plr].Manned[MANNED_HW_TWO_MAN_CAPSULE]);
             InBox(163, 102, 236, 112);
             i = 2;
             WaitForMouseUp();
         } // Two-Man Program
         else if (((x >= 83 && y >= 119 && x <= 156 && y <= 129 && mousebuttons != 0) || key == '3') && prog[2] != 0 && prg != 2) {
-            men = 3;
+            men = CrewSize(Data->P[plr].Manned[MANNED_HW_THREE_MAN_CAPSULE]);
             InBox(83, 119, 156, 129);
             i = 3;
             WaitForMouseUp();
         } // Three-Man Program
         else if (((x >= 163 && y >= 119 && x <= 236 && y <= 129 && mousebuttons != 0) || key == '4') && prog[3] != 0 && prg != 4) {
-            men = 3;
+            men = CrewSize(Data->P[plr].Manned[MANNED_HW_MINISHUTTLE]);
             InBox(163, 119, 236, 129);
             i = 4;
             WaitForMouseUp();
         } // Minishuttle Man Program
         else if (((x >= 123 && y >= 136 && x <= 196 && y <= 146 && mousebuttons != 0) || key == '5') && prog[4] != 0 && prg != 5) {
-            men = 4;
+            men = CrewSize(Data->P[plr].Manned[MANNED_HW_FOUR_MAN_CAPSULE]);
             InBox(123, 136, 196, 146);
             i = 5;
             WaitForMouseUp();

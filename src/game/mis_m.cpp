@@ -545,7 +545,7 @@ void MisCheck(char plr, char mpad)
                 Mev[STEP].Name[5] = GetEquipment(Mev[STEP])->ID[1];
             }
 
-            if (strncmp(GetEquipment(Mev[STEP])->Name, "DO", 2) == 0) {
+            if (HasRole(*GetEquipment(Mev[STEP]), HardwareRole::DockingModule)) {
                 if (Mev[STEP].loc == 2) {
                     Data->P[plr].DockingModuleInOrbit = 2;
                 }
@@ -598,7 +598,7 @@ void MisCheck(char plr, char mpad)
                 Mev[STEP].trace = STEP + 1;
             }
 
-            if (!(strncmp(GetEquipment(Mev[STEP])->Name, "DO", 2) == 0 && Mev[STEP].loc == 0x02)) {
+            if (!(HasRole(*GetEquipment(Mev[STEP]), HardwareRole::DockingModule) && Mev[STEP].loc == 0x02)) {
                 GetEquipment(Mev[STEP])->MisSucc[Mev[STEP].pad]++;  // set for all but docking power on
             }
 
@@ -728,7 +728,7 @@ int StepSafety(const MisEval& step)
         // For joint duration tests, use the average capsule safety
         safety = (MH[0][Mission_Capsule]->MisSaf +
                   MH[1][Mission_Capsule]->MisSaf  ) / 2;
-    } else if (strncmp(Eq->Name, "DO", 2) == 0) {
+    } else if (HasRole(*Eq, HardwareRole::DockingModule)) {
         if (loc == 1 || loc == 2) {
             safety = Eq->MSF;
         }
@@ -918,7 +918,7 @@ int FailEval(char plr, const XFails& fail, MisEval& step, bool noDock)
     const int pad = step.pad;
     const int loc = step.loc;
     auto Eq = GetEquipment(step);
-    if (strncmp(Eq->Name, "DO", 2) != 0 || loc != 0x02) {
+    if (!HasRole(*Eq, HardwareRole::DockingModule) || loc != 0x02) {
         Eq->MisFail[pad]++;  // set failure for all but docking power on
     }
 
@@ -973,7 +973,7 @@ int FailEval(char plr, const XFails& fail, MisEval& step, bool noDock)
     case 3:  // Kill ALL Crew and END Mission
         FNote = 8;
 
-        if (InSpace > 0 && MANNED[pad] == 0 && strncmp(Eq->ID, "M2", 2) == 0) {
+        if (InSpace > 0 && MANNED[pad] == 0 && IsProbeKicker(*Eq)) {
             // for Kicker-C problems
             F_KillCrew(F_ALL, plr, nullptr, step, true);
         } else {
@@ -1427,7 +1427,7 @@ int FailEval(char plr, const XFails& fail, MisEval& step, bool noDock)
         }
     }
 
-    if (strncmp(Eq->ID, "M3", 2) == 0) {
+    if (HasRole(*Eq, HardwareRole::Eva)) {
         death = 0;    //what???
     }
 

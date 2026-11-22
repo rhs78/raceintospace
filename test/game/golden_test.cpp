@@ -5,6 +5,7 @@
  *  - vab_payloads.txt        BuildVAB() payload combinations
  *  - capsule_eligibility.txt CapsuleEligibility() (crew.cpp rules)
  *  - tech_transfer.txt       ApplyTechTransfer() (rdplex.cpp BuyUnit)
+ *  - ai_tech_transfer.txt    starting safety of AI programs (aipur.cpp GenPur)
  *
  * The reference files live in test/data/golden/.  To regenerate them
  * (only when a behaviour change is intended) run the tests with the
@@ -22,12 +23,14 @@
 #include <string>
 #include <vector>
 
+#include "game/aipur.h"
 #include "game/data.h"
 #include "game/fs.h"
 #include "game/game_main.h"
 #include "game/hardware.h"
 #include "game/mission_util.h"
 #include "game/options.h"
+#include "game/proto.h"
 #include "game/rdplex.h"
 #include "game/serialize.h"
 #include "game/vab.h"
@@ -191,65 +194,41 @@ std::unique_ptr<Players> VabTestData()
 
 // ---------------------------------------------------------------------
 // Capsule eligibility: the ORIGINAL inline rules of crew.cpp
-// HardRequest() (manned == false) and SecondHard() (manned == true),
-// with all programs treated as purchased.
+// SecondHard() (the more generous of the two former variants, which
+// became the unified rule in stage 4b), with all programs treated as
+// purchased.  The former HardRequest() variant differed in: one-man
+// capsule Days limit (> 1 instead of > 2) and XMS-2 duration limit
+// (> 3 instead of > 4).
 // ---------------------------------------------------------------------
 
-std::array<bool, 5> OrigEligibility(int plr, int mis, int duration, bool manned)
+std::array<bool, 5> OrigEligibility(int plr, int mis, int duration)
 {
     int pr[5] = {1, 1, 1, 1, 1};
     const mStr plan = GetMissionPlan(mis);
 
-    if (!manned) {
-        if (plan.Lun == 1 || plan.Doc == 1 || plan.mEq > 1 || plan.Days > 1 ||
-            duration > 2) {
-            pr[0] = 0;
-        }
+    if (plan.Lun == 1 || plan.Doc == 1 || plan.mEq > 1 || plan.Days > 2
+        || duration > 2) {
+        pr[0] = 0;
+    }
 
-        if (duration > 5 || plan.Days > 5) {
-            pr[1] = 0;
-        }
+    if (duration > 5 || plan.Days > 5) {
+        pr[1] = 0;
+    }
 
-        if (duration > 3) {
-            pr[3] = 0;
-        }
+    if (duration > 4) {
+        pr[3] = 0;
+    }
 
-        if (mis == Mission_DirectAscent_LL) {
-            pr[0] = pr[1] = pr[2] = pr[3] = 0;
-        }
+    if (mis == Mission_DirectAscent_LL) {
+        pr[0] = pr[1] = pr[2] = pr[3] = 0;
+    }
 
-        if (mis == Mission_Soyuz_LL && plr == 1) {
-            pr[0] = pr[1] = pr[3] = pr[4] = 0;
-        }
+    if (plan.Doc == 1) {
+        pr[4] = 0;
+    }
 
-        if (plan.Doc == 1) {
-            pr[4] = 0;
-        }
-    } else {
-        if (plan.Lun == 1 || plan.Doc == 1 || plan.mEq > 1 || plan.Days > 2
-            || duration > 2) {
-            pr[0] = 0;
-        }
-
-        if (duration > 5 || plan.Days > 5) {
-            pr[1] = 0;
-        }
-
-        if (duration > 4) {
-            pr[3] = 0;
-        }
-
-        if (mis == Mission_DirectAscent_LL) {
-            pr[0] = pr[1] = pr[2] = pr[3] = 0;
-        }
-
-        if (plan.Doc == 1) {
-            pr[4] = 0;
-        }
-
-        if (mis == Mission_Soyuz_LL && plr == 1) {
-            pr[0] = pr[1] = pr[3] = pr[4] = 0;
-        }
+    if (mis == Mission_Soyuz_LL && plr == 1) {
+        pr[0] = pr[1] = pr[3] = pr[4] = 0;
     }
 
     return {pr[0] != 0, pr[1] != 0, pr[2] != 0, pr[3] != 0, pr[4] != 0};
@@ -315,34 +294,24 @@ BOOST_AUTO_TEST_CASE(golden_vab_payloads)
 BOOST_AUTO_TEST_CASE(golden_capsule_eligibility)
 {
     std::ostringstream out;
-    out << "# CapsuleEligibility(plr, mission, futureDuration, choice): "
-        << "bits for Manned[0..4]\n"
-        << "# choice u = unmanned (HardRequest), m = manned (SecondHard)\n";
+    out << "# CapsuleEligibility(plr, mission, futureDuration): "
+        << "bits for Manned[0..4] (unified rule, stage 4b)\n";
 
     for (const mStr& m : GetMissionData()) {
         for (int plr = 0; plr < NUM_PLAYERS; plr++) {
             for (int dur = 0; dur <= 6; dur++) {
-                out << "m" << int(m.Index) << " plr" << plr << " dur" << dur;
+                out << "m" << int(m.Index) << " plr" << plr << " dur" << dur
+                    << " ";
 
-                for (CapsuleChoice choice : {CapsuleChoice::UnmannedMission,
-                                             CapsuleChoice::MannedMission
-                                            }) {
-                    out << " "
-                        << (choice == CapsuleChoice::UnmannedMission ? 'u' : 'm')
-                        << "=";
+                const auto got = CapsuleEligibility(plr, m.Index, dur);
+                const auto want = OrigEligibility(plr, m.Index, dur);
+                BOOST_CHECK_MESSAGE(got == want,
+                                    "eligibility differs from original rules"
+                                    " m" << int(m.Index) << " plr" << plr
+                                    << " dur" << dur);
 
-                    const auto got = CapsuleEligibility(plr, m.Index, dur, choice);
-                    const auto want = OrigEligibility(
-                                          plr, m.Index, dur,
-                                          choice == CapsuleChoice::MannedMission);
-                    BOOST_CHECK_MESSAGE(got == want,
-                                        "eligibility differs from original rules"
-                                        " m" << int(m.Index) << " plr" << plr
-                                        << " dur" << dur);
-
-                    for (bool ok : got) {
-                        out << (ok ? '1' : '0');
-                    }
+                for (bool ok : got) {
+                    out << (ok ? '1' : '0');
                 }
 
                 out << "\n";
@@ -436,6 +405,132 @@ BOOST_AUTO_TEST_CASE(golden_tech_transfer)
     }
 
     CheckGolden("tech_transfer.txt", out.str());
+}
+
+BOOST_AUTO_TEST_CASE(golden_ai_tech_transfer)
+{
+    // GenPur() starts a program for the AI player and sets its initial
+    // safety from the sibling programs ("threshold" rules).  Record the
+    // resulting Safety/Base of the category for many input combinations.
+    DataScope scope(LoadUrast());
+    std::ostringstream out;
+    out << "# GenPur(plr, category, unit) for a not yet started program: "
+        << "input = Safety of all programs of the category (and the "
+        << "rockets for Misc), own Safety preset to 17; output = "
+        << "Safety/Base after.\n";
+
+    const int STRUCTURED = 8;
+    const int RANDOM = 60;
+
+    for (int plr = 0; plr < NUM_PLAYERS; plr++) {
+        for (int c = PROBE_HARDWARE; c <= MISC_HARDWARE; c++) {
+            const int n = (c == MISC_HARDWARE) ? MISC_HW_DOCKING_MODULE + 1
+                          : HardwareCount(c);
+
+            for (int unit = 0; unit < n; unit++) {
+                Lcg rng(7000 * plr + 100 * c + unit + 1);
+
+                for (int sample = 0; sample < STRUCTURED + RANDOM; sample++) {
+                    std::vector<int> in(n);
+
+                    for (int i = 0; i < n; i++) {
+                        switch (sample) {
+                        case 0:
+                            in[i] = 0;
+                            break;
+
+                        case 1:
+                            in[i] = 74;
+                            break;
+
+                        case 2:
+                            in[i] = 75;
+                            break;
+
+                        case 3:
+                            in[i] = 98;
+                            break;
+
+                        case 4:
+                            in[i] = (i == unit) ? 0 : 98;
+                            break;
+
+                        case 5:
+                            in[i] = (i == unit) ? 98 : 0;
+                            break;
+
+                        case 6:
+                            in[i] = (i % 2) ? 75 : 74;
+                            break;
+
+                        case 7:
+                            in[i] = (i % 2) ? 74 : 75;
+                            break;
+
+                        default:
+                            in[i] = (rng.next() % 3 == 0) ? 75 + rng.next() % 20
+                                    : rng.next() % 101;
+                        }
+                    }
+
+                    for (int i = 0; i < n; i++) {
+                        Equipment& eq = Hw(*scope.players, plr, c, i);
+                        eq.Safety = in[i];
+                        eq.Base = in[i];
+                        eq.Num = 0;
+                    }
+
+                    Equipment& self = Hw(*scope.players, plr, c, unit);
+                    self.Num = PROGRAM_NOT_STARTED;
+                    self.Safety = 17;
+                    self.Base = 17;
+                    in[unit] = 17;
+                    // GenPur(): Docking module must not replace the kickers
+                    scope.players->P[plr].Misc[MISC_HW_DOCKING_MODULE].Num =
+                        (c == MISC_HARDWARE && unit == MISC_HW_DOCKING_MODULE)
+                        ? PROGRAM_NOT_STARTED : 0;
+                    scope.players->P[plr].Cash = 30000;
+                    // Rockets feed the Misc rules; keep them as input too.
+                    std::vector<int> rk;
+
+                    if (c == MISC_HARDWARE) {
+                        for (int i = 0; i < 5; i++) {
+                            Equipment& r = scope.players->P[plr].Rocket[i];
+                            r.Safety = (sample * 13 + i * 37 + 11 * plr) % 101;
+                            rk.push_back(r.Safety);
+                        }
+                    }
+
+                    GenPur(plr, c, unit);
+
+                    out << "plr" << plr << " c" << c << " u" << unit << " in";
+
+                    for (int v : in) {
+                        out << " " << v;
+                    }
+
+                    if (!rk.empty()) {
+                        out << " rk";
+
+                        for (int v : rk) {
+                            out << " " << v;
+                        }
+                    }
+
+                    out << " out";
+
+                    for (int i = 0; i < n; i++) {
+                        const Equipment& eq = Hw(*scope.players, plr, c, i);
+                        out << " " << eq.Safety << "/" << int(eq.Base);
+                    }
+
+                    out << "\n";
+                }
+            }
+        }
+    }
+
+    CheckGolden("ai_tech_transfer.txt", out.str());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

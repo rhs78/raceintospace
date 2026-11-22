@@ -1,7 +1,7 @@
 {
   "version": 1,
   "scenario": "classic",
-  "_comment": "Descriptive catalog of the 21 original programs per side (stage 4a). Numerical stats stay in urast.json/hist.json.",
+  "_comment": "Catalog of the 21 original programs per side (stage 4a) with the hardware rules of stage 4b (tech_transfer, capsule limits, VAB pairing). Numerical stats stay in urast.json/hist.json.",
   "hardware": [
     {
       "id": "US.EXPLORER",
@@ -28,6 +28,20 @@
       "legacy": {
         "cat": 0,
         "idx": 0
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 40,
+          "steps": [
+            {"op": "set", "from": "US.RANGER", "above": 40, "offset": 40, "divisor": 3.5},
+            {"op": "set", "from": "US.SURVEYOR", "above": 40, "offset": 40, "divisor": 3.5, "greater_than": "US.EXPLORER"},
+            {"op": "cap", "max": 10}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.RANGER"]], "safety": 50},
+          {"when": [["US.SURVEYOR"]], "safety": 60}
+        ]
       }
     },
     {
@@ -55,6 +69,21 @@
       "legacy": {
         "cat": 0,
         "idx": 1
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 40,
+          "steps": [
+            {"op": "set", "from": "US.EXPLORER", "above": 40, "offset": 40, "divisor": 7},
+            {"op": "cap", "max": 5},
+            {"op": "set", "from": "US.SURVEYOR", "above": 40, "offset": 40, "divisor": 3.5, "greater_than": "US.EXPLORER"},
+            {"op": "cap", "max": 10}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.EXPLORER"]], "safety": 45},
+          {"when": [["US.SURVEYOR"]], "safety": 50}
+        ]
       }
     },
     {
@@ -82,6 +111,21 @@
       "legacy": {
         "cat": 0,
         "idx": 2
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 40,
+          "steps": [
+            {"op": "set", "from": "US.EXPLORER", "above": 40, "offset": 40, "divisor": 7},
+            {"op": "cap", "max": 5},
+            {"op": "set", "from": "US.RANGER", "above": 40, "offset": 40, "divisor": 3.5, "greater_than": "US.EXPLORER"},
+            {"op": "cap", "max": 10}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.EXPLORER"]], "safety": 45},
+          {"when": [["US.RANGER"]], "safety": 50}
+        ]
       }
     },
     {
@@ -109,6 +153,24 @@
       "legacy": {
         "cat": 1,
         "idx": 0
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "US.TITAN", "above": 10, "offset": 10, "divisor": 2.6},
+            {"op": "cap", "max": 25},
+            {"op": "set", "from": "US.SATURN", "above": 5, "offset": 5, "divisor": 2.8},
+            {"op": "cap", "max": 25},
+            {"op": "set", "from": "US.NOVA", "above": 5, "offset": 5, "divisor": 2.8},
+            {"op": "cap", "max": 25},
+            {"op": "set", "from": "US.BOOSTERS", "above": 10, "offset": 10, "divisor": 2.6},
+            {"op": "cap", "max": 25}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.TITAN", "US.SATURN", "US.NOVA", "US.BOOSTERS"]], "safety": 35}
+        ]
       }
     },
     {
@@ -136,6 +198,29 @@
       "legacy": {
         "cat": 1,
         "idx": 1
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "US.ATLAS", "above": 10, "offset": 10, "divisor": 4.3},
+            {"op": "cap", "max": 15},
+            {"op": "set", "from": "US.BOOSTERS", "above": 10, "offset": 10, "divisor": 4.3, "greater_than": "US.ATLAS"},
+            {"op": "cap", "max": 15},
+            {"op": "max", "from": "US.SATURN", "above": 5, "offset": 5, "divisor": 2.3, "compare_divisor": 4.6, "compare_precision": "double"},
+            {"op": "cap", "max": 30},
+            {"op": "max", "from": "US.NOVA", "above": 5, "offset": 5, "divisor": 2.3, "compare_divisor": 4.6},
+            {"op": "cap", "max": 30}
+          ],
+          "overrides": [
+            {"when": [["US.ATLAS", "US.BOOSTERS"], ["US.SATURN", "US.NOVA"]], "safety": 65}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.ATLAS", "US.BOOSTERS"]], "safety": 25},
+          {"when": [["US.SATURN", "US.NOVA"]], "safety": 40},
+          {"when": [["US.ATLAS", "US.BOOSTERS"], ["US.SATURN", "US.NOVA"]], "safety": 65}
+        ]
       }
     },
     {
@@ -163,6 +248,29 @@
       "legacy": {
         "cat": 1,
         "idx": 2
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "US.ATLAS", "above": 10, "offset": 10, "divisor": 6.5},
+            {"op": "cap", "max": 10},
+            {"op": "set", "from": "US.BOOSTERS", "above": 10, "offset": 10, "divisor": 6.5, "greater_than": "US.ATLAS"},
+            {"op": "cap", "max": 10},
+            {"op": "set", "from": "US.TITAN", "above": 10, "offset": 10, "divisor": 2.16},
+            {"op": "cap", "max": 30},
+            {"op": "max", "from": "US.NOVA", "above": 5, "offset": 5, "divisor": 2.3, "compare_divisor": 3.5},
+            {"op": "cap", "max": 30}
+          ],
+          "overrides": [
+            {"when": [["US.ATLAS", "US.BOOSTERS"], ["US.TITAN", "US.NOVA"]], "safety": 60}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.ATLAS", "US.BOOSTERS"]], "safety": 15},
+          {"when": [["US.TITAN", "US.NOVA"]], "safety": 35},
+          {"when": [["US.ATLAS", "US.BOOSTERS"], ["US.TITAN", "US.NOVA"]], "safety": 60}
+        ]
       }
     },
     {
@@ -189,6 +297,29 @@
       "legacy": {
         "cat": 1,
         "idx": 3
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "US.ATLAS", "above": 10, "offset": 10, "divisor": 13},
+            {"op": "cap", "max": 5},
+            {"op": "set", "from": "US.BOOSTERS", "above": 10, "offset": 10, "divisor": 13, "greater_than": "US.ATLAS"},
+            {"op": "cap", "max": 5},
+            {"op": "set", "from": "US.TITAN", "above": 10, "offset": 5, "divisor": 3.25},
+            {"op": "cap", "max": 5, "to": 20},
+            {"op": "max", "from": "US.SATURN", "above": 10, "offset": 5, "divisor": 3.5},
+            {"op": "cap", "max": 5, "to": 20}
+          ],
+          "overrides": [
+            {"when": [["US.ATLAS", "US.BOOSTERS"], ["US.TITAN", "US.SATURN"]], "safety": 35}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.ATLAS", "US.BOOSTERS"]], "safety": 10},
+          {"when": [["US.TITAN", "US.SATURN"]], "safety": 25},
+          {"when": [["US.ATLAS", "US.BOOSTERS"], ["US.TITAN", "US.SATURN"]], "safety": 35}
+        ]
       }
     },
     {
@@ -214,6 +345,21 @@
       "legacy": {
         "cat": 1,
         "idx": 4
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "US.ATLAS", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "max", "from": "US.TITAN", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "max", "from": "US.SATURN", "above": 5, "offset": 5, "divisor": 3.5},
+            {"op": "max", "from": "US.NOVA", "above": 5, "offset": 5, "divisor": 3.5},
+            {"op": "cap", "max": 20}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.ATLAS", "US.TITAN", "US.SATURN", "US.NOVA"]], "safety": 30}
+        ]
       }
     },
     {
@@ -228,12 +374,6 @@
       "max_payload": 0,
       "duration_days": 5,
       "duration_level": "C",
-      "limits": {
-        "max_future_duration_manned": 2,
-        "max_future_duration_unmanned": 2,
-        "max_plan_days_manned": 2,
-        "max_plan_days_unmanned": 1
-      },
       "reach": "orbital",
       "can_dock": false,
       "direct_ascent": false,
@@ -252,6 +392,27 @@
       "legacy": {
         "cat": 2,
         "idx": 0
+      },
+      "max_future_duration": 2,
+      "max_plan_days": 2,
+      "max_min_equipment": 1,
+      "kickers_second_pad": [
+        "US.KICKER_A",
+        "US.KICKER_B"
+      ],
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "US.GEMINI", "above": 5, "offset": 5, "divisor": 2.0},
+            {"op": "max", "from": "US.APOLLO", "above": 5, "offset": 5, "divisor": 2.0},
+            {"op": "max", "from": "US.JUPITER", "above": 5, "offset": 5, "divisor": 2.0},
+            {"op": "cap", "max": 35}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.GEMINI", "US.APOLLO", "US.JUPITER"]], "safety": 40}
+        ]
       }
     },
     {
@@ -266,12 +427,6 @@
       "max_payload": 0,
       "duration_days": 14,
       "duration_level": "F",
-      "limits": {
-        "max_future_duration_manned": 5,
-        "max_future_duration_unmanned": 5,
-        "max_plan_days_manned": 5,
-        "max_plan_days_unmanned": 5
-      },
       "reach": "translunar",
       "can_dock": true,
       "direct_ascent": false,
@@ -298,6 +453,32 @@
       "legacy": {
         "cat": 2,
         "idx": 1
+      },
+      "max_future_duration": 5,
+      "max_plan_days": 5,
+      "kickers_with_capsule": [
+        "US.KICKER_A",
+        "US.KICKER_B"
+      ],
+      "kickers_second_pad": [
+        "US.KICKER_A",
+        "US.KICKER_B"
+      ],
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "US.MERCURY", "above": 1, "offset": 5, "divisor": 4.66},
+            {"op": "cap", "max": 15},
+            {"op": "max", "from": "US.APOLLO", "above": 5, "offset": 5, "divisor": 2.0},
+            {"op": "max", "from": "US.JUPITER", "above": 5, "offset": 5, "divisor": 2.3},
+            {"op": "cap", "max": 35}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.MERCURY"]], "safety": 20},
+          {"when": [["US.APOLLO", "US.JUPITER"]], "safety": 40}
+        ]
       }
     },
     {
@@ -312,12 +493,6 @@
       "max_payload": 0,
       "duration_days": 21,
       "duration_level": null,
-      "limits": {
-        "max_future_duration_manned": null,
-        "max_future_duration_unmanned": null,
-        "max_plan_days_manned": null,
-        "max_plan_days_unmanned": null
-      },
       "reach": "translunar",
       "can_dock": true,
       "direct_ascent": false,
@@ -345,6 +520,27 @@
       "legacy": {
         "cat": 2,
         "idx": 2
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "US.MERCURY", "above": 5, "offset": 5, "divisor": 4.66},
+            {"op": "cap", "max": 15},
+            {"op": "max", "from": "US.JUPITER", "above": 5, "offset": 5, "divisor": 2.3},
+            {"op": "cap", "max": 35},
+            {"op": "max", "from": "US.GEMINI", "above": 5, "offset": 5, "divisor": 2.3},
+            {"op": "cap", "max": 35}
+          ],
+          "overrides": [
+            {"when": [["US.MERCURY", "US.JUPITER"], ["US.GEMINI", "US.XMS2"]], "safety": 40}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.MERCURY", "US.JUPITER"]], "safety": 20},
+          {"when": [["US.GEMINI", "US.XMS2"]], "safety": 30},
+          {"when": [["US.MERCURY", "US.JUPITER"], ["US.GEMINI", "US.XMS2"]], "safety": 40}
+        ]
       }
     },
     {
@@ -359,12 +555,6 @@
       "max_payload": 0,
       "duration_days": 15,
       "duration_level": "E",
-      "limits": {
-        "max_future_duration_manned": 4,
-        "max_future_duration_unmanned": 3,
-        "max_plan_days_manned": null,
-        "max_plan_days_unmanned": null
-      },
       "reach": "translunar",
       "can_dock": true,
       "direct_ascent": false,
@@ -392,7 +582,16 @@
       "legacy": {
         "cat": 2,
         "idx": 3
-      }
+      },
+      "max_future_duration": 4,
+      "kickers_with_capsule": [
+        "US.KICKER_A",
+        "US.KICKER_B"
+      ],
+      "kickers_second_pad": [
+        "US.KICKER_A",
+        "US.KICKER_B"
+      ]
     },
     {
       "id": "US.JUPITER",
@@ -406,12 +605,6 @@
       "max_payload": 0,
       "duration_days": 24,
       "duration_level": null,
-      "limits": {
-        "max_future_duration_manned": null,
-        "max_future_duration_unmanned": null,
-        "max_plan_days_manned": null,
-        "max_plan_days_unmanned": null
-      },
       "reach": "translunar",
       "can_dock": false,
       "direct_ascent": true,
@@ -430,6 +623,32 @@
       "legacy": {
         "cat": 2,
         "idx": 4
+      },
+      "kickers_second_pad": [
+        "US.KICKER_A",
+        "US.KICKER_B"
+      ],
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "US.MERCURY", "above": 5, "offset": 5, "divisor": 14},
+            {"op": "cap", "max": 5},
+            {"op": "max", "from": "US.GEMINI", "above": 5, "offset": 5, "divisor": 7},
+            {"op": "cap", "max": 10},
+            {"op": "max", "from": "US.APOLLO", "above": 5, "offset": 5, "divisor": 3.5},
+            {"op": "cap", "max": 20}
+          ],
+          "overrides": [
+            {"when": [["US.MERCURY", "US.GEMINI", "US.APOLLO"], ["US.EAGLE", "US.CRICKET"]], "safety": 35}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.MERCURY"]], "safety": 10},
+          {"when": [["US.GEMINI"]], "safety": 15},
+          {"when": [["US.APOLLO"]], "safety": 25},
+          {"when": [["US.MERCURY", "US.GEMINI", "US.APOLLO"], ["US.EAGLE", "US.CRICKET"]], "safety": 35}
+        ]
       }
     },
     {
@@ -456,6 +675,21 @@
       "legacy": {
         "cat": 2,
         "idx": 5
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "US.CRICKET", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "cap", "max": 20},
+            {"op": "max", "from": "US.JUPITER", "above": 5, "offset": 5, "divisor": 2.3},
+            {"op": "cap", "max": 30}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.CRICKET"]], "safety": 30},
+          {"when": [["US.JUPITER"]], "safety": 40}
+        ]
       }
     },
     {
@@ -482,6 +716,21 @@
       "legacy": {
         "cat": 2,
         "idx": 6
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "US.EAGLE", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "cap", "max": 30},
+            {"op": "max", "from": "US.JUPITER", "above": 5, "offset": 5, "divisor": 2.3},
+            {"op": "cap", "max": 30}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.EAGLE"]], "safety": 30},
+          {"when": [["US.JUPITER"]], "safety": 40}
+        ]
       }
     },
     {
@@ -508,6 +757,18 @@
       "legacy": {
         "cat": 3,
         "idx": 0
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "US.TITAN", "above": 10, "offset": 10, "divisor": 2.16},
+            {"op": "cap", "max": 30}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.TITAN"]], "safety": 40}
+        ]
       }
     },
     {
@@ -534,6 +795,18 @@
       "legacy": {
         "cat": 3,
         "idx": 1
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "US.ATLAS", "above": 10, "offset": 10, "divisor": 2.6},
+            {"op": "cap", "max": 25}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.ATLAS"]], "safety": 35}
+        ]
       }
     },
     {
@@ -560,6 +833,20 @@
       "legacy": {
         "cat": 3,
         "idx": 2
+      },
+      "probe_kicker": true,
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "US.ATLAS", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "max", "from": "US.TITAN", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "cap", "max": 20}
+          ]
+        },
+        "threshold": [
+          {"when": [["US.ATLAS", "US.TITAN"]], "safety": 25}
+        ]
       }
     },
     {
@@ -663,6 +950,20 @@
       "legacy": {
         "cat": 0,
         "idx": 0
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 40,
+          "steps": [
+            {"op": "set", "from": "SV.COSMOS", "above": 40, "offset": 40, "divisor": 3.5},
+            {"op": "set", "from": "SV.LUNA", "above": 40, "offset": 40, "divisor": 3.5, "greater_than": "SV.SPUTNIK"},
+            {"op": "cap", "max": 10}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.COSMOS"]], "safety": 50},
+          {"when": [["SV.LUNA"]], "safety": 60}
+        ]
       }
     },
     {
@@ -690,6 +991,21 @@
       "legacy": {
         "cat": 0,
         "idx": 1
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 40,
+          "steps": [
+            {"op": "set", "from": "SV.SPUTNIK", "above": 40, "offset": 40, "divisor": 7},
+            {"op": "cap", "max": 5},
+            {"op": "set", "from": "SV.LUNA", "above": 40, "offset": 40, "divisor": 3.5, "greater_than": "SV.SPUTNIK"},
+            {"op": "cap", "max": 10}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.SPUTNIK"]], "safety": 45},
+          {"when": [["SV.LUNA"]], "safety": 50}
+        ]
       }
     },
     {
@@ -717,6 +1033,21 @@
       "legacy": {
         "cat": 0,
         "idx": 2
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 40,
+          "steps": [
+            {"op": "set", "from": "SV.SPUTNIK", "above": 40, "offset": 40, "divisor": 7},
+            {"op": "cap", "max": 5},
+            {"op": "set", "from": "SV.COSMOS", "above": 40, "offset": 40, "divisor": 3.5, "greater_than": "SV.SPUTNIK"},
+            {"op": "cap", "max": 10}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.SPUTNIK"]], "safety": 45},
+          {"when": [["SV.COSMOS"]], "safety": 50}
+        ]
       }
     },
     {
@@ -744,6 +1075,24 @@
       "legacy": {
         "cat": 1,
         "idx": 0
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "SV.PROTON", "above": 10, "offset": 10, "divisor": 2.6},
+            {"op": "cap", "max": 25},
+            {"op": "set", "from": "SV.N1", "above": 5, "offset": 5, "divisor": 2.8},
+            {"op": "cap", "max": 25},
+            {"op": "set", "from": "SV.UR700", "above": 5, "offset": 5, "divisor": 2.8},
+            {"op": "cap", "max": 25},
+            {"op": "set", "from": "SV.BOOSTERS", "above": 10, "offset": 10, "divisor": 2.6},
+            {"op": "cap", "max": 25}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.PROTON", "SV.N1", "SV.UR700", "SV.BOOSTERS"]], "safety": 35}
+        ]
       }
     },
     {
@@ -771,6 +1120,29 @@
       "legacy": {
         "cat": 1,
         "idx": 1
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "SV.R7", "above": 10, "offset": 10, "divisor": 4.3},
+            {"op": "cap", "max": 15},
+            {"op": "set", "from": "SV.BOOSTERS", "above": 10, "offset": 10, "divisor": 4.3, "greater_than": "SV.R7"},
+            {"op": "cap", "max": 15},
+            {"op": "max", "from": "SV.N1", "above": 5, "offset": 5, "divisor": 2.3, "compare_divisor": 4.6, "compare_precision": "double"},
+            {"op": "cap", "max": 30},
+            {"op": "max", "from": "SV.UR700", "above": 5, "offset": 5, "divisor": 2.3, "compare_divisor": 4.6},
+            {"op": "cap", "max": 30}
+          ],
+          "overrides": [
+            {"when": [["SV.R7", "SV.BOOSTERS"], ["SV.N1", "SV.UR700"]], "safety": 65}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.R7", "SV.BOOSTERS"]], "safety": 25},
+          {"when": [["SV.N1", "SV.UR700"]], "safety": 40},
+          {"when": [["SV.R7", "SV.BOOSTERS"], ["SV.N1", "SV.UR700"]], "safety": 65}
+        ]
       }
     },
     {
@@ -798,6 +1170,29 @@
       "legacy": {
         "cat": 1,
         "idx": 2
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "SV.R7", "above": 10, "offset": 10, "divisor": 6.5},
+            {"op": "cap", "max": 10},
+            {"op": "set", "from": "SV.BOOSTERS", "above": 10, "offset": 10, "divisor": 6.5, "greater_than": "SV.R7"},
+            {"op": "cap", "max": 10},
+            {"op": "set", "from": "SV.PROTON", "above": 10, "offset": 10, "divisor": 2.16},
+            {"op": "cap", "max": 30},
+            {"op": "max", "from": "SV.UR700", "above": 5, "offset": 5, "divisor": 2.3, "compare_divisor": 3.5},
+            {"op": "cap", "max": 30}
+          ],
+          "overrides": [
+            {"when": [["SV.R7", "SV.BOOSTERS"], ["SV.PROTON", "SV.UR700"]], "safety": 60}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.R7", "SV.BOOSTERS"]], "safety": 15},
+          {"when": [["SV.PROTON", "SV.UR700"]], "safety": 35},
+          {"when": [["SV.R7", "SV.BOOSTERS"], ["SV.PROTON", "SV.UR700"]], "safety": 60}
+        ]
       }
     },
     {
@@ -824,6 +1219,29 @@
       "legacy": {
         "cat": 1,
         "idx": 3
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "SV.R7", "above": 10, "offset": 10, "divisor": 13},
+            {"op": "cap", "max": 5},
+            {"op": "set", "from": "SV.BOOSTERS", "above": 10, "offset": 10, "divisor": 13, "greater_than": "SV.R7"},
+            {"op": "cap", "max": 5},
+            {"op": "set", "from": "SV.PROTON", "above": 10, "offset": 5, "divisor": 3.25},
+            {"op": "cap", "max": 5, "to": 20},
+            {"op": "max", "from": "SV.N1", "above": 10, "offset": 5, "divisor": 3.5},
+            {"op": "cap", "max": 5, "to": 20}
+          ],
+          "overrides": [
+            {"when": [["SV.R7", "SV.BOOSTERS"], ["SV.PROTON", "SV.N1"]], "safety": 35}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.R7", "SV.BOOSTERS"]], "safety": 10},
+          {"when": [["SV.PROTON", "SV.N1"]], "safety": 25},
+          {"when": [["SV.R7", "SV.BOOSTERS"], ["SV.PROTON", "SV.N1"]], "safety": 35}
+        ]
       }
     },
     {
@@ -850,6 +1268,21 @@
       "legacy": {
         "cat": 1,
         "idx": 4
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "SV.R7", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "max", "from": "SV.PROTON", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "max", "from": "SV.N1", "above": 5, "offset": 5, "divisor": 3.5},
+            {"op": "max", "from": "SV.UR700", "above": 5, "offset": 5, "divisor": 3.5},
+            {"op": "cap", "max": 20}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.R7", "SV.PROTON", "SV.N1", "SV.UR700"]], "safety": 30}
+        ]
       }
     },
     {
@@ -864,12 +1297,6 @@
       "max_payload": 0,
       "duration_days": 5,
       "duration_level": "C",
-      "limits": {
-        "max_future_duration_manned": 2,
-        "max_future_duration_unmanned": 2,
-        "max_plan_days_manned": 2,
-        "max_plan_days_unmanned": 1
-      },
       "reach": "orbital",
       "can_dock": false,
       "direct_ascent": false,
@@ -888,6 +1315,27 @@
       "legacy": {
         "cat": 2,
         "idx": 0
+      },
+      "max_future_duration": 2,
+      "max_plan_days": 2,
+      "max_min_equipment": 1,
+      "kickers_second_pad": [
+        "SV.KICKER_A",
+        "SV.KICKER_B"
+      ],
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "SV.VOSKHOD", "above": 5, "offset": 5, "divisor": 2.0},
+            {"op": "max", "from": "SV.SOYUZ", "above": 5, "offset": 5, "divisor": 2.0},
+            {"op": "max", "from": "SV.LK700", "above": 5, "offset": 5, "divisor": 2.0},
+            {"op": "cap", "max": 35}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.VOSKHOD", "SV.SOYUZ", "SV.LK700"]], "safety": 40}
+        ]
       }
     },
     {
@@ -902,12 +1350,6 @@
       "max_payload": 0,
       "duration_days": 14,
       "duration_level": "F",
-      "limits": {
-        "max_future_duration_manned": 5,
-        "max_future_duration_unmanned": 5,
-        "max_plan_days_manned": 5,
-        "max_plan_days_unmanned": 5
-      },
       "reach": "translunar",
       "can_dock": true,
       "direct_ascent": false,
@@ -934,6 +1376,32 @@
       "legacy": {
         "cat": 2,
         "idx": 1
+      },
+      "max_future_duration": 5,
+      "max_plan_days": 5,
+      "kickers_with_capsule": [
+        "SV.KICKER_A",
+        "SV.KICKER_B"
+      ],
+      "kickers_second_pad": [
+        "SV.KICKER_A",
+        "SV.KICKER_B"
+      ],
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "SV.VOSTOK", "above": 1, "offset": 5, "divisor": 4.66},
+            {"op": "cap", "max": 15},
+            {"op": "max", "from": "SV.SOYUZ", "above": 5, "offset": 5, "divisor": 2.0},
+            {"op": "max", "from": "SV.LK700", "above": 5, "offset": 5, "divisor": 2.3},
+            {"op": "cap", "max": 35}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.VOSTOK"]], "safety": 20},
+          {"when": [["SV.SOYUZ", "SV.LK700"]], "safety": 40}
+        ]
       }
     },
     {
@@ -948,12 +1416,6 @@
       "max_payload": 0,
       "duration_days": 21,
       "duration_level": null,
-      "limits": {
-        "max_future_duration_manned": null,
-        "max_future_duration_unmanned": null,
-        "max_plan_days_manned": null,
-        "max_plan_days_unmanned": null
-      },
       "reach": "translunar",
       "can_dock": true,
       "direct_ascent": false,
@@ -981,6 +1443,28 @@
       "legacy": {
         "cat": 2,
         "idx": 2
+      },
+      "soyuz_ll": true,
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "SV.VOSTOK", "above": 5, "offset": 5, "divisor": 4.66},
+            {"op": "cap", "max": 15},
+            {"op": "max", "from": "SV.LK700", "above": 5, "offset": 5, "divisor": 2.3},
+            {"op": "cap", "max": 35},
+            {"op": "max", "from": "SV.VOSKHOD", "above": 5, "offset": 5, "divisor": 2.3},
+            {"op": "cap", "max": 35}
+          ],
+          "overrides": [
+            {"when": [["SV.VOSTOK", "SV.LK700"], ["SV.VOSKHOD", "SV.LAPOT"]], "safety": 40}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.VOSTOK", "SV.LK700"]], "safety": 20},
+          {"when": [["SV.VOSKHOD", "SV.LAPOT"]], "safety": 30},
+          {"when": [["SV.VOSTOK", "SV.LK700"], ["SV.VOSKHOD", "SV.LAPOT"]], "safety": 40}
+        ]
       }
     },
     {
@@ -995,12 +1479,6 @@
       "max_payload": 0,
       "duration_days": 15,
       "duration_level": "E",
-      "limits": {
-        "max_future_duration_manned": 4,
-        "max_future_duration_unmanned": 3,
-        "max_plan_days_manned": null,
-        "max_plan_days_unmanned": null
-      },
       "reach": "translunar",
       "can_dock": true,
       "direct_ascent": false,
@@ -1028,7 +1506,16 @@
       "legacy": {
         "cat": 2,
         "idx": 3
-      }
+      },
+      "max_future_duration": 4,
+      "kickers_with_capsule": [
+        "SV.KICKER_A",
+        "SV.KICKER_B"
+      ],
+      "kickers_second_pad": [
+        "SV.KICKER_A",
+        "SV.KICKER_B"
+      ]
     },
     {
       "id": "SV.LK700",
@@ -1042,12 +1529,6 @@
       "max_payload": 0,
       "duration_days": 24,
       "duration_level": null,
-      "limits": {
-        "max_future_duration_manned": null,
-        "max_future_duration_unmanned": null,
-        "max_plan_days_manned": null,
-        "max_plan_days_unmanned": null
-      },
       "reach": "translunar",
       "can_dock": false,
       "direct_ascent": true,
@@ -1066,6 +1547,32 @@
       "legacy": {
         "cat": 2,
         "idx": 4
+      },
+      "kickers_second_pad": [
+        "SV.KICKER_A",
+        "SV.KICKER_B"
+      ],
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "SV.VOSTOK", "above": 5, "offset": 5, "divisor": 14},
+            {"op": "cap", "max": 5},
+            {"op": "max", "from": "SV.VOSKHOD", "above": 5, "offset": 5, "divisor": 7},
+            {"op": "cap", "max": 10},
+            {"op": "max", "from": "SV.SOYUZ", "above": 5, "offset": 5, "divisor": 3.5},
+            {"op": "cap", "max": 20}
+          ],
+          "overrides": [
+            {"when": [["SV.VOSTOK", "SV.VOSKHOD", "SV.SOYUZ"], ["SV.LKM", "SV.LK"]], "safety": 35}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.VOSTOK"]], "safety": 10},
+          {"when": [["SV.VOSKHOD"]], "safety": 15},
+          {"when": [["SV.SOYUZ"]], "safety": 25},
+          {"when": [["SV.VOSTOK", "SV.VOSKHOD", "SV.SOYUZ"], ["SV.LKM", "SV.LK"]], "safety": 35}
+        ]
       }
     },
     {
@@ -1092,6 +1599,21 @@
       "legacy": {
         "cat": 2,
         "idx": 5
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "SV.LK", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "cap", "max": 20},
+            {"op": "max", "from": "SV.LK700", "above": 5, "offset": 5, "divisor": 2.3},
+            {"op": "cap", "max": 30}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.LK"]], "safety": 30},
+          {"when": [["SV.LK700"]], "safety": 40}
+        ]
       }
     },
     {
@@ -1118,6 +1640,21 @@
       "legacy": {
         "cat": 2,
         "idx": 6
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "SV.LKM", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "cap", "max": 30},
+            {"op": "max", "from": "SV.LK700", "above": 5, "offset": 5, "divisor": 2.3},
+            {"op": "cap", "max": 30}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.LKM"]], "safety": 30},
+          {"when": [["SV.LK700"]], "safety": 40}
+        ]
       }
     },
     {
@@ -1144,6 +1681,18 @@
       "legacy": {
         "cat": 3,
         "idx": 0
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "SV.PROTON", "above": 10, "offset": 10, "divisor": 2.16},
+            {"op": "cap", "max": 30}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.PROTON"]], "safety": 40}
+        ]
       }
     },
     {
@@ -1170,6 +1719,18 @@
       "legacy": {
         "cat": 3,
         "idx": 1
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 10,
+          "steps": [
+            {"op": "set", "from": "SV.R7", "above": 10, "offset": 10, "divisor": 2.6},
+            {"op": "cap", "max": 25}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.R7"]], "safety": 35}
+        ]
       }
     },
     {
@@ -1196,6 +1757,20 @@
       "legacy": {
         "cat": 3,
         "idx": 2
+      },
+      "probe_kicker": true,
+      "tech_transfer": {
+        "gradual": {
+          "base": 5,
+          "steps": [
+            {"op": "set", "from": "SV.R7", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "max", "from": "SV.PROTON", "above": 10, "offset": 10, "divisor": 3.25},
+            {"op": "cap", "max": 20}
+          ]
+        },
+        "threshold": [
+          {"when": [["SV.R7", "SV.PROTON"]], "safety": 25}
+        ]
       }
     },
     {
