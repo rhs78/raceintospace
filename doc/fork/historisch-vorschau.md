@@ -293,3 +293,33 @@ Neu in dieser Runde (englische Wikipedia, abgerufen als `index.php?title=…&act
 Atlas_LV-3B, SM-65D_Atlas, List_of_Atlas_launches (1957–1959 und 1960–1969; eigene Zählung der Erfolge je Jahr), Atlas-Able, Juno_I, Juno_II, Jupiter-C,
 Vanguard_(rocket), Explorer_1, Vanguard_1, Pioneer_0, Pioneer_4, Pioneer_5, Ranger_1, Ranger_3, Mariner_1, Mariner_2, Thor-Able, Mercury-Redstone_Launch_Vehicle,
 Mercury-Atlas_10, PGM-11_Redstone. NASA-Primärseiten (history.nasa.gov, nssdc.gsfc.nasa.gov) wurden in dieser Runde nicht direkt geprüft.
+
+---
+
+## 10. Entscheidungen des Eigentümers (23.11.2026)
+
+| Nr. | Frage | Entscheidung |
+|---|---|---|
+| 1 | Reichweite (`reach`) der Raketen auswerten | ja |
+| 2 | Pioneer und Mariner als `interplanetary_probe`, Missionsauswahl nach `targets` | ja |
+| 3 | Atlas-Agena als eigene Rakete | ja |
+| 4 | Dauerstufen laut Spiel: A = 1–2 Tage, B = 3–5 Tage, C = 6–7, D = 8–12, E = 13–16, F = 17–20 (`future.cpp`); MA-9 = A, MA-10 = B; Mercury höchstens B | ja |
+| 5 | Thor-Able und Juno II aufnehmen | ja |
+| 6 | Startbudget 1955–57 reduziert (Militärprogramme), ab 1958 NASA | ja, Werte siehe 11 |
+| 7 | USA im historischen Szenario vorerst nur für menschliche Spieler | ja |
+| 8 | `basic` = `historical` für neue US-Einträge, Zufallsmodell später | ja |
+
+## 11. Budgetvorschlag 1955–1958 (zur Bestätigung bei der Umsetzung)
+
+Mechanik des Spiels: Das Jahresbudget wird im Herbst ausgezahlt und verändert sich danach mit dem
+Prestige (Obergrenze 180). Klassischer Startwert 1957: 60 MB für beide Seiten.
+
+| Startjahr | Startbudget je Seite | Begründung |
+|---|---|---|
+| 1955 | 35 MB | nur Militärprogramme (Army/Navy/Air Force), Satellitenprogramm erst ab Juli 1955 |
+| 1956 | 45 MB | Vanguard und Jupiter-C in Entwicklung |
+| 1957 | 60 MB | klassischer Wert |
+
+Zusätzlich ein Ereignis „Gründung der NASA“ (Okt. 1958) für die USA: einmalig +15 MB Budget
+(analog zum vorhandenen Ereignis „+15“). Für die UdSSR gelten dieselben Startwerte (Fairness);
+deren Budget entwickelt sich wie klassisch über das Prestige.
