@@ -14,6 +14,7 @@ BOOST_AUTO_TEST_CASE(missiontype_equals_test)
         "APOLLO XI",
         Mission_HistoricalLanding,
         29, 1, "ABCDE", // Didn't code in the actual hardware. Sorry.
+        -1, false,  // docking module, boosters
         1, 0, 7, 4, 3, MANNED_HW_THREE_MAN_CAPSULE, 1, 2, 1
     };
 
@@ -23,6 +24,7 @@ BOOST_AUTO_TEST_CASE(missiontype_equals_test)
         "APOLLO XI",
         Mission_HistoricalLanding,
         29, 1, "ABCDE", // Didn't code in the actual hardware. Sorry.
+        -1, false,  // docking module, boosters
         1, 0, 7, 4, 3, MANNED_HW_THREE_MAN_CAPSULE, 1, 2, 1
     };
 
@@ -32,6 +34,7 @@ BOOST_AUTO_TEST_CASE(missiontype_equals_test)
         "GEMINI VIII",
         21, // JT ORBITAL-DE
         17, 1, "AACDE", // Didn't code in the actual hardware. Sorry.
+        -1, false,  // docking module, boosters
         1, 0, 3, 1, 2, MANNED_HW_THREE_MAN_CAPSULE, 1, 2, 1
     };
 

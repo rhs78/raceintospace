@@ -12,6 +12,9 @@
 #   tools/autoplay.sh --seeds 100 --sampled   # one combination per seed
 #   tools/autoplay.sh --no-build --binary build/debug/raceintospace   # existing binary
 #
+# Runs of the scenario test_extra must fly the additional rocket and probe
+# at least once (result NOEXTRA otherwise).
+#
 # Options:
 #   --asan | --no-asan   sanitizer build in build-asan (default) / plain build
 #   --no-build           do not build, use the existing binary
@@ -129,6 +132,7 @@ sample_run() { # seed scenario [years]
 
 if [ "$SMOKE" = 1 ]; then
     for s in 1 2; do add_run "$s" 57 basic 0 classic; done
+    add_run 1 57 basic 0 test_extra
 else
     for s in $(seq "$FROM" "$SEEDS"); do
         if [ "$FULL" = 1 ]; then
@@ -202,6 +206,11 @@ FAILS=0
             res=UBSAN
         elif ! grep -aq 'RESULT OK' "$log"; then
             res=NOEND
+        elif [[ "$name" == *test_extra* ]] \
+             && ! { grep -aq '^\[autoplay\] hardware:.*TEST ROCKET' "$log" \
+                    && grep -aq '^\[autoplay\] hardware:.*TEST PROBE' "$log"; }; then
+            # the extra rocket and probe must have flown at least once
+            res=NOEXTRA
         else
             res=OK
         fi

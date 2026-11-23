@@ -28,8 +28,12 @@
 
 #include "aimis.h"
 
+#include <algorithm>
+#include <vector>
+
 #include "aimast.h"
 #include "aipur.h"
+#include "autoplay.h"
 #include "Buzz_inc.h"
 #include "downgrader.h"
 #include "game_main.h"
@@ -1380,6 +1384,9 @@ void AIFuture(char plr, char mis, char pad, char* prog)
 void AILaunch(char plr)
 {
     auto& pData = Data->P[plr];
+
+    // Autoplay of a test scenario: stock the test hardware (see autoplay.h).
+    AutoplayEquipExtras(plr);
     // The launch vehicles the player can assemble (rocket, with or without
     // boosters), in the order of the VAB.  boos: safety of the vehicle,
     // -1 if it is unusable (unsafe or not in stock); bwgt: payload it lifts.

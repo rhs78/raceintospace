@@ -10,6 +10,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
+#include <algorithm>
 #include <exception>
 #include <stdexcept>
 
@@ -152,6 +153,56 @@ void AutoplayNewGame()
     InitData();
     MainLoop();
     AutoplayLogEnd();
+}
+
+void AutoplayEquipExtras(int plr)
+{
+    if (!options.autoplay) {
+        return;
+    }
+
+    for (int c = PROBE_HARDWARE; c <= MISC_HARDWARE; c++) {
+        for (Equipment& e : HardwareList(Data->P[plr], c)) {
+            const HardwareEntry* entry = HardwareInfo(e);
+
+            if (entry == nullptr || !entry->testOnly) {
+                continue;
+            }
+
+            // Better than every classic program, so that the AI's choice
+            // (the safest usable one) picks the test hardware.
+            e.Num = std::max<int>(e.Num, 2);
+            e.MaxRD = std::max<int>(e.MaxRD, 99);
+            e.MaxSafety = std::max<int>(e.MaxSafety, 99);
+            e.Safety = std::max<int>(e.Safety, 99);
+            e.Delay = 0;
+        }
+    }
+}
+
+std::string AutoplayHardwareSummary(int plr, const MissionType& mission)
+{
+    static const char* const slots[] = {"capsule", "kicker", "lm", "payload",
+                                        "rocket", "eva"
+                                       };
+    std::string text;
+
+    for (int i = Mission_Capsule; i <= Mission_EVA; i++) {
+        const Equipment* e =
+            MissionEquipment(plr, mission, static_cast<MissionHardwareType>(i));
+
+        if (e == nullptr) {
+            continue;
+        }
+
+        text += std::string(text.empty() ? "" : " ") + slots[i] + "=" + e->Name;
+
+        if (i == Mission_Rocket && mission.Booster) {
+            text += "+B";
+        }
+    }
+
+    return text;
 }
 
 void AutoplayLogTurn()

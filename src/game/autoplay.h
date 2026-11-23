@@ -39,6 +39,21 @@ void AutoplayNewGame();
 /** Log the state at the start of a turn (year, season, cash, prestige). */
 void AutoplayLogTurn();
 
+/**
+ * Test hook: in a scenario with test_only hardware (test_extra) the AI is
+ * given that hardware in stock and with good safety, so that its vehicle and
+ * payload choice uses it (and the missions it flies exercise the
+ * additional rocket and probe).  Does nothing for other scenarios and
+ * outside autoplay.
+ */
+void AutoplayEquipExtras(int plr);
+
+/**
+ * "rocket=.. payload=.." description of the hardware of a mission, for the
+ * log.
+ */
+std::string AutoplayHardwareSummary(int plr, const struct MissionType& mission);
+
 /** Log the end state (winner by prestige / lunar landing). */
 void AutoplayLogEnd();
 

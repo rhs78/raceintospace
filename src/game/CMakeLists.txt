@@ -155,6 +155,7 @@ if(BUILD_TESTING)
     ${test_dir}/game/scenario_test.cpp
     ${test_dir}/game/news_events_test.cpp
     ${test_dir}/game/autoplay_test.cpp
+    ${test_dir}/game/extra_hardware_test.cpp
     )
 
   add_executable(game_test ${test_dir}/test_main.cpp ${test_sources} ${game_sources})

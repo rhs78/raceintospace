@@ -11,6 +11,7 @@ class Vehicle;
 void VAB(char plr);
 void BuildVAB(char plr, char mis, char ty, char pa, char pr);
 void ReserveHardware(int plr, int pad, int payload, Vehicle& rocket);
+bool PayloadReady(int plr, int payload);
 
 /** The payload configurations of the mission being assembled: rows
  *  1..VASqty, four components each (see vab.cpp). */

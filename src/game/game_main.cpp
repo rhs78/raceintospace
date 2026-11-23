@@ -723,6 +723,13 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
             if (Data->P[Order[i].plr].Mission[Order[i].loc].part == 1) continue; // skip 2nd launch of joint missions
             if (!HasLaunchVehicle(Data->P[Order[i].plr].Mission[Order[i].loc])) continue;  // no hardware assigned
             
+            if (options.autoplay) {
+                AutoplayLog("hardware: %s pad %d %s",
+                            Order[i].plr ? "USSR" : "USA", (int) Order[i].loc,
+                            AutoplayHardwareSummary(Order[i].plr,
+                                                    Data->P[Order[i].plr].Mission[Order[i].loc]).c_str());
+            }
+
             int prest = Launch(Order[i].plr, Order[i].loc);
 
             if (options.autoplay) {

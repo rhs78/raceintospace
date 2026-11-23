@@ -245,17 +245,22 @@ void AssignMissionName(int plr, int pad)
     MissionType& mission = Data->P[plr].Mission[pad];
     if (mission.MissionCode == Mission_None) return;
     
+    // The probe missions are named after the (first) probe of the role the
+    // mission needs; the probe actually flown is chosen in the VAB.
     Equipment* equip;
     if (mission.MissionCode == Mission_Orbital_Satellite) {
-        equip = &Data->P[plr].Probe[PROBE_HW_ORBITAL];
+        equip = &Data->P[plr].Probe.at(
+                    HardwareIndexByRole(plr, HardwareRole::OrbitalProbe));
         mission.Patch = -1;
     } else if (mission.MissionCode == Mission_Lunar_Probe) {
-        equip = &Data->P[plr].Probe[PROBE_HW_LUNAR];
+        equip = &Data->P[plr].Probe.at(
+                    HardwareIndexByRole(plr, HardwareRole::LunarProbe));
         mission.Patch = -1;
     } else if (mission.MissionCode == Mission_LunarFlyby ||
                (mission.MissionCode >= Mission_VenusFlyby &&
                 mission.MissionCode <= Mission_SaturnFlyby)) {
-        equip = &Data->P[plr].Probe[PROBE_HW_INTERPLANETARY];
+        equip = &Data->P[plr].Probe.at(
+                    HardwareIndexByRole(plr, HardwareRole::InterplanetaryProbe));
         mission.Patch = -1;
     } else {
         int capsule;
@@ -715,8 +720,24 @@ void Update()
         Data->Prestige[Prestige_MarsFlyby].Goal[plr] = 0;  // Clear Mars
         Data->Prestige[Prestige_JupiterFlyby].Goal[plr] = 0;  // Clear Jupiter
         Data->Prestige[Prestige_SaturnFlyby].Goal[plr] = 0;  // Clear Saturn
-        Data->P[plr].Probe[PROBE_HW_ORBITAL].Failures = Data->P[plr].Probe[PROBE_HW_LUNAR].Failures = 0;
-        Data->P[plr].Probe[PROBE_HW_ORBITAL].Used = Data->P[plr].Probe[PROBE_HW_LUNAR].Used = 0;
+        // The orbital and lunar probes count their missions again from the
+        // history (the probe a mission flew is in its history entry).
+        for (HardwareRole role : {HardwareRole::OrbitalProbe,
+                                  HardwareRole::LunarProbe}) {
+            for (int unit : HardwareIndicesByRole(plr, role)) {
+                Data->P[plr].Probe[unit].Failures = 0;
+                Data->P[plr].Probe[unit].Used = 0;
+            }
+        }
+
+        // The probe of a history entry: the one it flew, else the first
+        // of the role.
+        auto flownProbe = [&](const PastInfo& entry, HardwareRole role) {
+            const int flown = entry.Hard[0][Mission_Probe];
+            const int first = HardwareIndexByRole(plr, role);
+            return (flown >= 0 && flown < HardwareCount(plr, PROBE_HARDWARE)
+                    && HasRole(Data->P[plr].Probe[flown], role)) ? flown : first;
+        };
 
         for (int i = 0; i < Data->P[plr].PastMissionCount; i++) {
             auto& mission = Data->P[plr].History[i];
@@ -741,20 +762,30 @@ void Update()
 
             switch (mission.MissionCode) {
             case Mission_Orbital_Satellite:
+            {
+                Equipment& probe = Data->P[plr].Probe.at(
+                                       flownProbe(mission, HardwareRole::OrbitalProbe));
+
                 if (mission.spResult != 1) {
-                    Data->P[plr].Probe[PROBE_HW_ORBITAL].Failures++;
+                    probe.Failures++;
                 }
 
-                Data->P[plr].Probe[PROBE_HW_ORBITAL].Used++;
+                probe.Used++;
                 break;
+            }
 
             case Mission_Lunar_Probe:
+            {
+                Equipment& probe = Data->P[plr].Probe.at(
+                                       flownProbe(mission, HardwareRole::LunarProbe));
+
                 if (mission.spResult != 1) {
-                    Data->P[plr].Probe[PROBE_HW_LUNAR].Failures++;
+                    probe.Failures++;
                 }
 
-                Data->P[plr].Probe[PROBE_HW_LUNAR].Used++;
+                probe.Used++;
                 break;
+            }
             }
 
         }
