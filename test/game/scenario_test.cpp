@@ -104,7 +104,7 @@ std::string VasSnapshot()
     std::ostringstream o;
     o << "n=" << VASqty;
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < int(VAS.size()); i++) {
         for (int j = 0; j < 4; j++) {
             const VInfo& v = VAS[i][j];
             o << " [" << i << "," << j << ":" << v.name << " q" << int(v.qty)
@@ -480,7 +480,7 @@ BOOST_AUTO_TEST_CASE(old_save_games_are_rejected)
     d->P[0].Cash = 321;
     std::string text = SerializeGameState(*d);
 
-    const std::regex version("\"cereal_class_version\": ?3");
+    const std::regex version("\"cereal_class_version\": ?4");
     std::smatch match;
     BOOST_REQUIRE(std::regex_search(text, match, version));
     // the first one belongs to the Players object
@@ -613,29 +613,75 @@ BOOST_AUTO_TEST_CASE(research_cycling_uses_list_sizes)
     }
 }
 
-// The payload list of the VAB does not change with the additional programs.
+/** The rows 0..VASqty of VAS, one string per row. */
+std::vector<std::string> VasRows()
+{
+    std::vector<std::string> rows;
+
+    for (int i = 0; i <= VASqty; i++) {
+        std::ostringstream o;
+
+        for (int j = 0; j < 4; j++) {
+            const VInfo& v = VAS[i][j];
+            o << " [" << j << ":" << v.name << " q" << int(v.qty)
+              << " wt" << v.wt << " dex" << int(v.dex) << " img" << int(v.img)
+              << " dm" << int(v.docking) << "]";
+        }
+
+        rows.push_back(o.str());
+    }
+
+    return rows;
+}
+
+// The payload list of the VAB gets the additional programs where they fit
+// (every probe of the role is a payload option) and is unchanged otherwise:
+// the payloads of the classic scenario come first, unchanged, and only
+// payloads with the additional probe are added.
 BOOST_AUTO_TEST_CASE(vab_payloads_unchanged_by_extra_programs)
 {
-    std::string classicSnapshots;
-    std::string extraSnapshots;
+    int extraRows = 0;
 
-    for (int scenario = 0; scenario < 2; scenario++) {
-        DataScope scope(NewState(scenario == 0 ? "CLASSIC" : "TEST_EXTRA"));
-        std::string& out = scenario == 0 ? classicSnapshots : extraSnapshots;
+    for (const mStr& m : GetMissionData()) {
+        for (int plr = 0; plr < NUM_PLAYERS; plr++) {
+            for (int part = 0; part < 2; part++) {
+                for (int prog = 0; prog < MANNED_PROGRAM_COUNT; prog++) {
+                    std::vector<std::string> classic;
+                    std::vector<std::string> extra;
 
-        for (const mStr& m : GetMissionData()) {
-            for (int plr = 0; plr < NUM_PLAYERS; plr++) {
-                for (int part = 0; part < 2; part++) {
-                    for (int prog = 0; prog < MANNED_PROGRAM_COUNT; prog++) {
+                    {
+                        DataScope scope(NewState("CLASSIC"));
                         BuildVAB(plr, m.Index, 1, part, prog);
-                        out += VasSnapshot() + "\n";
+                        classic = VasRows();
+                    }
+                    {
+                        DataScope scope(NewState("TEST_EXTRA"));
+                        BuildVAB(plr, m.Index, 1, part, prog);
+                        extra = VasRows();
+                    }
+
+                    BOOST_REQUIRE_MESSAGE(extra.size() >= classic.size(),
+                                          "mission " << int(m.Index));
+
+                    for (size_t i = 0; i < classic.size(); i++) {
+                        BOOST_CHECK_MESSAGE(
+                            classic[i] == extra[i],
+                            "mission " << int(m.Index) << " row " << i);
+                    }
+
+                    for (size_t i = classic.size(); i < extra.size(); i++) {
+                        // an additional payload: the additional probe
+                        BOOST_CHECK(extra[i].find("TEST PROBE")
+                                    != std::string::npos);
+                        extraRows++;
                     }
                 }
             }
         }
     }
 
-    BOOST_CHECK(classicSnapshots == extraSnapshots);
+    // the additional orbital probe is offered for the satellite missions
+    BOOST_CHECK_GT(extraRows, 0);
 }
 
 // Tech transfer and AI purchase work on the programs found by catalog

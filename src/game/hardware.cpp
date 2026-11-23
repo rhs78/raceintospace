@@ -354,73 +354,161 @@ int HardwareListIndex(int player, const HardwareEntry& entry)
 
 
 /**
- * Encode a launch vehicle for MissionType.Hard[Mission_PrimaryBooster].
- *
- * The value is the rocket's index + 1, so that 0 (or less) can mean
- * "no rocket assigned", plus ROCKET_HW_BOOSTERS if boosters are fitted.
- *
- * \param rocketIndex  an EquipRocketIndex, excluding the Boosters.
- * \param boosters  true if the rocket is fitted with boosters.
+ * Positions in the player's hardware lists of all programs with a role,
+ * in list order.  The programs may be in any category (e.g. probes in
+ * Probe, docking module and kickers in Misc).
  */
-int EncodeRocket(int rocketIndex, bool boosters)
+std::vector<int> HardwareIndicesByRole(int player, HardwareRole role)
 {
-    return rocketIndex + 1 + (boosters ? ROCKET_HW_BOOSTERS : 0);
+    assert(player >= 0 && player < NUM_PLAYERS);
+    std::vector<int> result;
+
+    for (int c = PROBE_HARDWARE; c <= MISC_HARDWARE; c++) {
+        const std::vector<Equipment>& list =
+            HardwareList(Data->P[player], c);
+
+        for (size_t i = 0; i < list.size(); i++) {
+            if (HasRole(list[i], role)) {
+                result.push_back(int(i));
+            }
+        }
+
+        if (!result.empty()) {
+            break;  // a role lives in one category
+        }
+    }
+
+    return result;
+}
+
+
+/** The first program with a role in the player's lists, -1 if none. */
+int HardwareIndexByRole(int player, HardwareRole role)
+{
+    const std::vector<int> all = HardwareIndicesByRole(player, role);
+    return all.empty() ? -1 : all.front();
+}
+
+
+/** Misc index of the docking module of the player (-1 if there is none). */
+int DockingModuleIndex(int player)
+{
+    return HardwareIndexByRole(player, HardwareRole::DockingModule);
+}
+
+
+/** Rocket index of the boosters of the player (-1 if there is none). */
+int BoosterIndex(int player)
+{
+    return HardwareIndexByRole(player, HardwareRole::Booster);
+}
+
+
+/** Misc index of the EVA suits of the player (-1 if there is none). */
+int EvaSuitsIndex(int player)
+{
+    return HardwareIndexByRole(player, HardwareRole::Eva);
 }
 
 
 /**
- * Rocket index from a MissionType.Hard[Mission_PrimaryBooster] value.
- *
- * \param hardValue  an encoded rocket, see EncodeRocket().
- * \return  the index into the Rocket array (never the Boosters), or -1
- *   if hardValue means no rocket is assigned (<= 0).
+ * Put the hardware of a mission into the "nothing assigned" state: every
+ * slot -1, no docking module, no boosters.  A mission with a launch
+ * vehicle (HasLaunchVehicle()) has its hardware assigned.
  */
-int DecodeRocketIndex(int hardValue)
+void ClearMissionHardware(MissionType& mission)
 {
-    if (hardValue <= 0) {
+    for (int8_t& h : mission.Hard) {
+        h = -1;
+    }
+
+    mission.DockingModule = -1;
+    mission.Booster = false;
+}
+
+
+/** Whether a rocket (and with it the payload) is assigned to a mission. */
+bool HasLaunchVehicle(const MissionType& mission)
+{
+    return mission.Hard[Mission_Rocket] >= 0;
+}
+
+
+/**
+ * The hardware program of one slot of a mission.
+ *
+ * \param slot  Mission_Capsule .. Mission_EVA; Mission_Probe_DM gives the
+ *   probe, or the docking module if the mission has no probe.
+ * \return  nullptr if the slot is empty.
+ */
+Equipment* MissionEquipment(int player, const MissionType& mission,
+                            MissionHardwareType slot)
+{
+    assert(player >= 0 && player < NUM_PLAYERS);
+    BuzzData& p = Data->P[player];
+    const int index = (slot <= Mission_EVA) ? mission.Hard[slot] : -1;
+    auto at = [](std::vector<Equipment>& list, int i) -> Equipment* {
+        return (i >= 0 && size_t(i) < list.size()) ? &list[i] : nullptr;
+    };
+
+    switch (slot) {
+    case Mission_Capsule:
+    case Mission_LM:
+        return at(p.Manned, index);
+
+    case Mission_Kicker:
+    case Mission_EVA:
+        return at(p.Misc, index);
+
+    case Mission_Probe_DM:
+        if (index >= 0) {
+            return at(p.Probe, index);
+        }
+
+        return at(p.Misc, mission.DockingModule);
+
+    case Mission_PrimaryBooster:
+        return at(p.Rocket, index);
+
+    case Mission_SecondaryBooster:
+        return mission.Booster ? at(p.Rocket, BoosterIndex(player)) : nullptr;
+
+    default:
+        return nullptr;
+    }
+}
+
+
+/**
+ * Which of the three classic probe images (orbital 0, interplanetary 1,
+ * lunar 2) shows a probe, per its role; -1 for no probe or a probe without
+ * such a role.  The mission history images exist for these three only.
+ */
+int ProbeImageSlot(int player, int probeIndex)
+{
+    if (probeIndex < 0) {
         return -1;
     }
 
-    return (hardValue - 1) % ROCKET_HW_BOOSTERS;
-}
+    const HardwareEntry* e = HardwareEntryAt(player, PROBE_HARDWARE, probeIndex);
 
-
-/**
- * Whether an encoded rocket (see EncodeRocket()) has boosters fitted.
- * False for the "no rocket" value.
- */
-bool HasBoosters(int hardValue)
-{
-    return hardValue > 0 && (hardValue - 1) >= ROCKET_HW_BOOSTERS;
-}
-
-
-/**
- * Whether a MissionType.Hard[Mission_Probe_DM] value selects the
- * Docking Module rather than a Probe.
- */
-bool IsDockingModule(int hardValue)
-{
-    return hardValue == HARD_DOCKING_MODULE;
-}
-
-
-/**
- * Resolve the overloaded MissionType.Hard[Mission_Probe_DM] value.
- *
- * \param player  0 for the USA, 1 for the USSR
- * \param hardValue  HARD_DOCKING_MODULE for the Docking Module
- *   (Misc[MISC_HW_DOCKING_MODULE]), otherwise a Probe index.
- */
-Equipment &ProbeOrDockingModule(int player, int hardValue)
-{
-    assert(player >= 0 && player < NUM_PLAYERS);
-
-    if (IsDockingModule(hardValue)) {
-        return Data->P[player].Misc[MISC_HW_DOCKING_MODULE];
+    if (e == nullptr) {
+        return -1;
     }
 
-    return Data->P[player].Probe[hardValue];
+    switch (e->role) {
+    case HardwareRole::OrbitalProbe:
+        return 0;
+
+    case HardwareRole::InterplanetaryProbe:
+        return 1;
+
+    case HardwareRole::LunarProbe:
+        return 2;
+
+    default:
+        return -1;
+    }
 }
 
 

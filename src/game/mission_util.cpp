@@ -40,6 +40,7 @@ bool Equals(const MissionType& m1, const MissionType& m2)
            // (memcmp(&m1.Name[0], &m2.Name[0], sizeof(m1.Name)) == 0) &&
            m1.Patch == m2.Patch && m1.part == m2.part &&
            (memcmp(&m1.Hard[0], &m2.Hard[0], sizeof(m1.Hard)) == 0) &&
+           m1.DockingModule == m2.DockingModule && m1.Booster == m2.Booster &&
            m1.Joint == m2.Joint && m1.Rushing == m2.Rushing &&
            m1.Month == m2.Month && m1.Duration == m2.Duration &&
            m1.Men == m2.Men && m1.Prog == m2.Prog &&

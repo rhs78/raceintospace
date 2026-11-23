@@ -39,12 +39,14 @@
 #include "mission_util.h"
 #include "state_utils.h"
 #include "vab.h"
+#include "vehicle.h"
 
 LOG_DEFAULT_CATEGORY(mission)
 
-struct {
+struct MewInfo {
     int16_t cost, sf, i;
-} Mew[5];
+};
+std::vector<MewInfo> Mew;   // one entry per VAS row (and row 0)
 int whe[2], rck[2];
 char pc[2], bc[2], Alt_A[2] = {0, 0}, Alt_B[2] = {0, 0};
 void Strategy_One(char plr, int* m_1, int* m_2, int* m_3);
@@ -53,7 +55,7 @@ void Strategy_Thr(char plr, int* m_1, int* m_2, int* m_3);
 
 void AIVabCheck(char plr, char mis, char prog);
 char Best();
-int ICost(char plr, char h, char i);
+int ICost(char plr, char h, const VInfo& item);
 void CalcSaf(char plr, char vs);
 char Panic_Level(char plr, int* m_1, int* m_2);
 
@@ -120,7 +122,7 @@ void AIVabCheck(char plr, char mis, char prog)
 
 char Best()
 {
-    char valid[5]{};
+    std::vector<char> valid(VASqty + 1, 0);
 
     for (int i = 1; i < VASqty + 1; i++) {
         int ct = 0;
@@ -149,8 +151,9 @@ char Best()
 }
 
 
-int ICost(char plr, char h, char i)
+int ICost(char plr, char h, const VInfo& item)
 {
+    const int i = item.dex;
     auto& pData = Data->P[plr];
     int cost = 0;
 
@@ -182,14 +185,14 @@ int ICost(char plr, char h, char i)
         }
 
     case Mission_Probe_DM:
-        if (i < 4) {
+        if (!item.docking) {
             auto& Probe = pData.Probe[i];
             cost += Probe.MaxRD - Probe.Safety;
             cost /= 3.5;
             cost *= Probe.RDCost;
             cost += next_price(Probe);
         } else {
-            auto& DockingModule = pData.Misc[MISC_HW_DOCKING_MODULE];
+            auto& DockingModule = pData.Misc[i];
             cost += next_price(DockingModule);
         }
         break;
@@ -204,9 +207,8 @@ int ICost(char plr, char h, char i)
 
 void CalcSaf(char plr, char vs)
 {
-    for (int i = 0; i < 5; i++) {
-        Mew[i].cost = Mew[i].sf = 0;    // Clear thing
-    }
+    // One entry per payload row (the number of rows is not limited).
+    Mew.assign(std::max<int>(5, vs + 1), MewInfo());
 
     // Do first part
 
@@ -222,7 +224,7 @@ void CalcSaf(char plr, char vs)
             }
 
             if (VAS[j][k].wt > 0)  {
-                Mew[j].cost += ICost(plr, k, VAS[j][k].dex);
+                Mew[j].cost += ICost(plr, k, VAS[j][k]);
             }
         }
         
@@ -1378,35 +1380,80 @@ void AIFuture(char plr, char mis, char pad, char* prog)
 void AILaunch(char plr)
 {
     auto& pData = Data->P[plr];
-    int bwgt[7];
-    char boos[7]; // safety of first stage combination?
-    
-    for (int i = 0; i < 7; i++) {
-        auto& RocketData = pData.Rocket;
-        
-        boos[i] = (i > 3) ?
-                  RocketBoosterSafety(RocketData[i - 4].Safety, RocketData[ROCKET_HW_BOOSTERS].Safety)
-                  : RocketData[i].Safety;
-        bwgt[i] = (i > 3) ?
-                  (RocketData[i - 4].MaxPay + RocketData[ROCKET_HW_BOOSTERS].MaxPay)
-                  : RocketData[i].MaxPay;
+    // The launch vehicles the player can assemble (rocket, with or without
+    // boosters), in the order of the VAB.  boos: safety of the vehicle,
+    // -1 if it is unusable (unsafe or not in stock); bwgt: payload it lifts.
+    const std::vector<VehicleOption> vehicles = LaunchVehicleOptions(plr);
+    std::vector<int> bwgt(vehicles.size());
+    std::vector<int> boos(vehicles.size());  // safety of first stage combination?
 
-        if (boos[i] < 60) {
-            boos[i] = -1;    // Get Rid of any Unsafe rocket systems
-        }
+    for (size_t k = 0; k < vehicles.size(); k++) {
+        const Equipment& rocket = pData.Rocket[vehicles[k].rocket];
 
-        if (RocketData[ROCKET_HW_BOOSTERS].Num < 1) {
-            for (int j = 4; j < 7; j++) {
-                boos[j] = -1;
+        if (vehicles[k].boosters) {
+            const Equipment& boosters = pData.Rocket[BoosterIndex(plr)];
+            boos[k] = RocketBoosterSafety(rocket.Safety, boosters.Safety);
+            bwgt[k] = rocket.MaxPay + boosters.MaxPay;
+
+            if (boosters.Num < 1) {
+                boos[k] = -1;
+            }
+        } else {
+            boos[k] = rocket.Safety;
+            bwgt[k] = rocket.MaxPay;
+
+            if (rocket.Num < 1) {
+                boos[k] = -1;
             }
         }
 
-        for (int j = 0; j < 4; j++) {
-            if (RocketData[j].Num < 1) {
-                boos[j] = -1;
-            }
+        if (boos[k] < 60) {
+            boos[k] = -1;    // Get Rid of any Unsafe rocket systems
         }
     }
+
+    // Picks the vehicle for a payload of the given weight: the safest
+    // usable one (the last of equals), -1 if none.
+    auto chooseVehicle = [&](int wgt) {
+        int choice = -1;
+
+        for (int k = 0; k < int(vehicles.size()); k++) {
+            if (boos[k] == -1) continue;
+            if (bwgt[k] < wgt) continue;
+
+            if (choice == -1) {
+                choice = k;
+            } else if (boos[k] >= boos[choice]) {
+                choice = k;
+            }
+        }
+
+        return choice;
+    };
+
+    // The payload of a VAS row to a mission part (Capsule .. Probe/DM).
+    auto assignPayload = [&](MissionType& part, int row) {
+        for (int j = Mission_Capsule; j <= Mission_Probe_DM; j++) {
+            const VInfo& item = VAS[row][j];
+
+            if (j == Mission_Probe_DM && item.docking) {
+                part.Hard[Mission_Probe] = -1;
+                part.DockingModule = item.dex;
+            } else {
+                part.Hard[j] = item.dex;
+            }
+        }
+    };
+
+    auto assignVehicle = [&](MissionType& part, int choice) {
+        if (choice < 0) {
+            part.Hard[Mission_Rocket] = -1;
+            part.Booster = false;
+        } else {
+            part.Hard[Mission_Rocket] = vehicles[choice].rocket;
+            part.Booster = vehicles[choice].boosters;
+        }
+    };
 
     // iterate over planned launches
     for (int i = 0; i < 3; i++) {
@@ -1433,49 +1480,41 @@ void AILaunch(char plr)
             BuildVAB(plr, PlannedMission.MissionCode, 1, 0, (PlannedMission.Prog == 0)? PlannedMission.Prog
                                                                                       : PlannedMission.Prog - 1);
 
-            for (int j = Mission_Capsule; j <= Mission_Probe_DM; j++) {
-                PlannedMission.Hard[j] = VAS[whe[0]][j].dex;
-            }
+            assignPayload(PlannedMission, whe[0]);
 
             int wgt = 0;
             for (int j = 0; j < 4; j++) {
                 wgt += VAS[whe[0]][j].wt;
             }
 
-            rck[0] = -1;
-
-            for (int k = 0; k < 7; k++) {
-                if (boos[k] == -1) continue;
-                if (bwgt[k] < wgt) continue;
-                
-                if (rck[0] == -1) {
-                    rck[0] = k;
-                } else if (boos[k] >= boos[rck[0]]) {
-                    rck[0] = k;
-                }
-            }
+            rck[0] = chooseVehicle(wgt);
 
             if (rck[0] == -1) {
                 ScrubMission(plr, i - PlannedMission.part);
             } else {
+                // Preferred vehicles: the first one (the Atlas class) for
+                // satellites, the second one (the Titan class) for flybys,
+                // sub-orbital and docking test flights.
+                const int last = int(vehicles.size()) - 1;
+
                 if (PlannedMission.MissionCode == Mission_Orbital_Satellite) {
-                    rck[0] = 0;
+                    rck[0] = std::min(0, last);
                 }
 
                 if (PlannedMission.MissionCode >= Mission_LunarFlyby &&
                     PlannedMission.MissionCode <= Mission_SaturnFlyby) {
-                    rck[0] = 1;
+                    rck[0] = std::min(1, last);
                 }
 
                 if (PlannedMission.MissionCode == Mission_U_SubOrbital) {
-                    rck[0] = 1;
+                    rck[0] = std::min(1, last);
                 }
 
                 if (PlannedMission.MissionCode == Mission_U_Orbital_D) {
-                    rck[0] = 1;
+                    rck[0] = std::min(1, last);
                 }
 
-                PlannedMission.Hard[Mission_PrimaryBooster] = rck[0] + 1;
+                assignVehicle(PlannedMission, rck[0]);
             }
         } else {
             // Clear Mission
@@ -1488,63 +1527,76 @@ void AILaunch(char plr)
             BuildVAB(plr, PlannedMission.MissionCode, 1, 1, (PlannedMission.Prog == 0)? PlannedMission.Prog
                                                                                       : PlannedMission.Prog - 1);
 
-            for (int j = Mission_Capsule ; j <= Mission_Probe_DM; j++) {
-                JoinedMissionSecond.Hard[j] = VAS[whe[1]][j].dex;
-            }
+            assignPayload(JoinedMissionSecond, whe[1]);
 
             int wgt = 0;
             for (int j = 0; j < 4; j++) {
                 wgt += VAS[whe[1]][j].wt;
             }
 
-            rck[1] = -1;
-
-            for (int k = 0; k < 7; k++) {
-                if (boos[k] == -1) continue;
-                if (bwgt[k] < wgt) continue;
-                
-                if (rck[1] == -1) {
-                    rck[1] = k;
-                } else if (boos[k] >= boos[rck[1]]) {
-                    rck[1] = k;
-                }
-            }
+            rck[1] = chooseVehicle(wgt);
 
             if (rck[1] == -1) {
-                rck[1] = PlannedMission.Hard[Mission_PrimaryBooster] - 1;
+                // No vehicle for the second part: the one of the first part.
+                JoinedMissionSecond.Hard[Mission_Rocket] =
+                    PlannedMission.Hard[Mission_Rocket];
+                JoinedMissionSecond.Booster = PlannedMission.Booster;
+            } else {
+                assignVehicle(JoinedMissionSecond, rck[1]);
             }
-
-            JoinedMissionSecond.Hard[Mission_PrimaryBooster] = rck[1] + 1;
         }
     }
     
     auto& MisData = pData.Mission;
 
 // JOINT MISSION KLUDGE MISSION Mission_Jt_LunarLanding_EOR & Mission_Jt_LunarLanding_LOR
+    const std::vector<int> landers =
+        HardwareIndicesByRole(plr, HardwareRole::Lander);
+
     if (MisData[0].MissionCode == Mission_Jt_LunarLanding_EOR) {
         MisData[1].Hard[Mission_Capsule] = MisData[1].Prog - 1;
-        MisData[0].Hard[Mission_LM] = 6; // LM
-        MisData[0].Hard[Mission_Probe_DM] = 4; // DM
+        MisData[0].Hard[Mission_LM] = landers.empty() ? -1 : landers.back(); // LM
+        MisData[0].Hard[Mission_Probe] = -1;
+        MisData[0].DockingModule = DockingModuleIndex(plr); // DM
         pData.Misc[MISC_HW_KICKER_B].Safety = MAX(pData.Misc[MISC_HW_KICKER_B].Safety, pData.Misc[MISC_HW_KICKER_B].MaxRD);
-        MisData[1].Hard[Mission_Kicker] = 1; // kicker second part
+        MisData[1].Hard[Mission_Kicker] = MISC_HW_KICKER_B; // kicker second part
     };
 
     if (MisData[0].MissionCode == Mission_Jt_LunarLanding_LOR) {
         MisData[1].Hard[Mission_Capsule] = MisData[1].Prog - 1;
-        MisData[0].Hard[Mission_LM] = 6; // LM
-        MisData[0].Hard[Mission_Probe_DM] = 4; // DM
+        MisData[0].Hard[Mission_LM] = landers.empty() ? -1 : landers.back(); // LM
+        MisData[0].Hard[Mission_Probe] = -1;
+        MisData[0].DockingModule = DockingModuleIndex(plr); // DM
         pData.Misc[MISC_HW_KICKER_B].Safety = MAX(pData.Misc[MISC_HW_KICKER_B].Safety, pData.Misc[MISC_HW_KICKER_B].MaxRD);
-        MisData[0].Hard[Mission_Kicker] = 1;
-        MisData[1].Hard[Mission_Kicker] = 1;
+        MisData[0].Hard[Mission_Kicker] = MISC_HW_KICKER_B;
+        MisData[1].Hard[Mission_Kicker] = MISC_HW_KICKER_B;
     };
 
-    // lunar module kludge
+    // lunar module kludge: fly the safest lander (the first of equals)
     for (int i = 0; i < 3; i++) {
-        if (MisData[i].Hard[Mission_LM] < 5) continue;
-        
-        int two_man = pData.Manned[MANNED_HW_TWO_MAN_MODULE].Safety;
-        int one_man = pData.Manned[MANNED_HW_ONE_MAN_MODULE].Safety;
-        MisData[i].Hard[Mission_LM] = (two_man >= one_man) ? 5 : 6;
+        const int lm = MisData[i].Hard[Mission_LM];
+
+        if (lm < 0 || !HasRole(pData.Manned[lm], HardwareRole::Lander)) continue;
+
+        int best = landers.front();
+
+        for (int lander : landers) {
+            if (pData.Manned[lander].Safety > pData.Manned[best].Safety) {
+                best = lander;
+            }
+        }
+
+        MisData[i].Hard[Mission_LM] = best;
+    }
+
+    // The AI's missions always carry the EVA suits (they are not flown
+    // as hardware of the plan, but their safety is evaluated).
+    const int suits = EvaSuitsIndex(plr);
+
+    for (int i = 0; i < 3; i++) {
+        if (MisData[i].MissionCode != Mission_None) {
+            MisData[i].Hard[Mission_EVA] = suits;
+        }
     }
 
     int number_of_missions = 0;

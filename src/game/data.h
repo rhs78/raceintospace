@@ -345,12 +345,15 @@ struct Equipment {
    0=Capsule
    1=Kicker
    2=LM
-   3=Probe/DM
-   4=Primary Booster
+   3=Probe/DM   (the payload slot; the docking module has its own field)
+   4=Primary Booster (the launch vehicle's rocket)
    5=EVA
    6=Photo Recon
-   7=Secondary Booster
+   7=Secondary Booster (the boosters of a rocket with boosters)
  * \endverbatim
+ *
+ * The slots index MissionType::Hard[] (slots 0-5) and the MH[][] array of
+ * hardware pointers of a running mission (slots 0-7).
 */
 enum MissionHardwareType {
     Mission_Capsule = 0,            // 0
@@ -360,7 +363,10 @@ enum MissionHardwareType {
     Mission_PrimaryBooster,     // 4
     Mission_EVA,                            // 5
     Mission_PhotoRecon,             // 6
-    Mission_SecondaryBooster    // 7 - unused
+    Mission_SecondaryBooster,   // 7
+    // Names for the slots of MissionType::Hard[]:
+    Mission_Probe = Mission_Probe_DM,       // probe (list index in Probe)
+    Mission_Rocket = Mission_PrimaryBooster // rocket (list index in Rocket)
 };
 
 struct MissionType {
@@ -368,7 +374,16 @@ struct MissionType {
     int8_t MissionCode;   /**< internal code of mission type */
     int8_t Patch;         /**< Patch Used on this Mission */
     int8_t part;          /**< primary/secondary portion */
-    int8_t Hard[6];       /**< Prime,Kick,LEM,PayLoad,Rocket */
+    /**
+     * Hardware of the mission, one entry per slot (enum MissionHardwareType):
+     * Capsule and LM: index into Manned, Kicker and EVA: index into Misc,
+     * Probe: index into Probe, Rocket: index into Rocket (the rocket
+     * itself, see Booster); -1 if the slot is not used.  No encodings:
+     * the values are positions in the player's hardware lists.
+     */
+    int8_t Hard[6];
+    int8_t DockingModule; /**< index into Misc of the docking module, -1 if none */
+    bool Booster;         /**< the rocket is flown with boosters */
     int8_t Joint;         /**< Joint Mission flag */
     int8_t Rushing;       /**< rushing time 0-3 */
     int8_t Month;         /**< Month of Launch */
@@ -388,6 +403,8 @@ struct MissionType {
         ar(CEREAL_NVP(Patch));
         ar(CEREAL_NVP(part));
         ar(CEREAL_NVP(Hard));
+        ar(CEREAL_NVP(DockingModule));
+        ar(CEREAL_NVP(Booster));
         ar(CEREAL_NVP(Joint));
         ar(CEREAL_NVP(Rushing));
         ar(CEREAL_NVP(Month));
@@ -408,16 +425,13 @@ struct MissionType {
         ASSERT(Crew >= 0 && Crew <= MAX_CREWS_IN_PROGRAM);
         ASSERT(Men >= 0 && Men <= ASTRONAUT_FLT_CREW_MAX);
 
-        for (int i = 0; i < Mission_PrimaryBooster; i++) {
-            ASSERT(Hard[i] >= -1 && Hard[i] < 7);
+        // The values are list positions (checked against the lists when
+        // the state is validated), or -1.
+        for (int i = 0; i <= Mission_EVA; i++) {
+            ASSERT(Hard[i] >= -1);
         }
 
-        // Saturn V / N1 with boosters has a hardware index of 7
-        ASSERT(Hard[Mission_PrimaryBooster] >= -1
-               && Hard[Mission_PrimaryBooster] < 8);
-        ASSERT(Hard[Mission_EVA] == -1
-               || Hard[Mission_EVA] == 0
-               || Hard[Mission_EVA] == MISC_HW_EVA_SUITS);
+        ASSERT(DockingModule >= -1);
     }
 };
 
@@ -593,7 +607,9 @@ struct PastInfo {
     int8_t Month;                    /**< Month of Launch (0-11)*/
     int8_t Time;                     /**< Early / Late Flag */
     int8_t Man[2][ASTRONAUT_FLT_CREW_MAX]; /**< Astros # involved in Mis */
-    int8_t Hard[2][5];               /**< Set of hardware */
+    int8_t Hard[2][5];               /**< Hardware per pad as in MissionType::Hard (slots 0-4), -1 if none */
+    int8_t DockingModule[2];         /**< Docking module (Misc index) per pad, -1 if none */
+    int8_t Booster[2];               /**< 1 if the rocket had boosters, per pad */
     uint16_t result;               /**< Success / Failure */
     uint16_t spResult;             /**< Actual deciding Result */
     int8_t Event;                    /**< Single event code */
@@ -619,6 +635,8 @@ struct PastInfo {
         ar(CEREAL_NVP(Time));
         ar(CEREAL_NVP(Man));
         ar(CEREAL_NVP(Hard));
+        ar(CEREAL_NVP(DockingModule));
+        ar(CEREAL_NVP(Booster));
         ar(CEREAL_NVP(result));
         ar(CEREAL_NVP(spResult));
         ar(CEREAL_NVP(Event));
@@ -933,9 +951,11 @@ struct Players {
     template<class Archive>
     void serialize(Archive& ar, uint32_t const version)
     {
-        // Version 3 (stage 4c): dynamic hardware lists.  Older saves have
-        // fixed arrays and cannot be converted.
-        if (version < 3) {
+        // Version 3 (stage 4c): dynamic hardware lists.
+        // Version 4 (stage 4d): missions refer to hardware by list index
+        // (no rocket/booster/docking module encodings).  Older saves cannot
+        // be converted.
+        if (version < 4) {
             throw SavegameVersionError(
                 "save game version " + std::to_string(version)
                 + " is no longer supported");
@@ -998,7 +1018,7 @@ struct Players {
     bool IsLastTurn() const { return Year == EndYear && Season == 1; }
 };
 
-CEREAL_CLASS_VERSION(struct Players, 3)
+CEREAL_CLASS_VERSION(struct Players, 4)
 
 struct MisAst {  // This struct will be -1's if empty
     Astros* A;
@@ -1126,11 +1146,14 @@ struct mStr {
 // wt = unit weight, used to deterine launch vehicle
 // dmg = Equipment->Damage flag
 // MaxRD = Mar R&D
+// docking = payload slot only: dex indexes Misc (the docking module) instead
+//           of Probe
 struct VInfo {
     char name[15], qty, ac, sf, dex, img;
     int16_t wt;
     char dmg;
     int MaxRD;
+    bool docking;
 };
 struct ManPool {
     char Name[15];
@@ -1501,9 +1524,9 @@ struct AssetData {
 // Errors in these lines mean that the struct is the wrong shape
 #include <boost/static_assert.hpp>
 BOOST_STATIC_ASSERT(sizeof(PrestType) == 16);
-BOOST_STATIC_ASSERT(sizeof(MissionType) == 43);
+BOOST_STATIC_ASSERT(sizeof(MissionType) == 45);
 BOOST_STATIC_ASSERT(sizeof(Astros) == 65);
-BOOST_STATIC_ASSERT(sizeof(PastInfo) == 84);
+BOOST_STATIC_ASSERT(sizeof(PastInfo) == 88);
 BOOST_STATIC_ASSERT(sizeof(MisEval) == 40);
 
 #endif // RIS_DATA_H

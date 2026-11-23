@@ -26,12 +26,43 @@
 #include "data.h"
 #include "game_main.h"
 #include "hardware.h"
+#include "hardware_catalog.h"
+
+
+std::vector<VehicleOption> LaunchVehicleOptions(int player)
+{
+    std::vector<VehicleOption> options;
+    const std::vector<Equipment>& rockets =
+        HardwareList(Data->P[player], ROCKET_HARDWARE);
+    const bool haveBoosters = BoosterIndex(player) >= 0;
+
+    for (size_t i = 0; i < rockets.size(); i++) {
+        if (HasRole(rockets[i], HardwareRole::Launcher)) {
+            options.push_back({int(i), false});
+        }
+    }
+
+    if (haveBoosters) {
+        for (size_t i = 0; i < rockets.size(); i++) {
+            const HardwareEntry* entry = HardwareInfo(rockets[i]);
+
+            if (entry != nullptr && entry->role == HardwareRole::Launcher
+                && entry->acceptsBoosters) {
+                options.push_back({int(i), true});
+            }
+        }
+    }
+
+    return options;
+}
 
 
 /**
  * \param player  player index.
- * \param rocketIndex  rocket index in range [0, ROCKET_HW_BOOSTERS).
- * \param hasBoosters
+ * \param rocketIndex  position of the rocket in the player's Rocket list;
+ *   the entry must be a launcher (not the boosters).
+ * \param hasBoosters  fit the player's boosters; only for rockets that
+ *   accept boosters (catalog accepts_boosters).
  */
 Vehicle::Vehicle(int player, int rocketIndex, bool hasBoosters)
     : mPrimary(nullptr), mSecondary(nullptr)
@@ -43,16 +74,13 @@ Vehicle::Vehicle(int player, int rocketIndex, bool hasBoosters)
         throw std::out_of_range(err.str());
     }
 
-    if (rocketIndex < 0 || rocketIndex >= ROCKET_HW_BOOSTERS) {
+    const int rockets = HardwareCount(player, ROCKET_HARDWARE);
+
+    if (rocketIndex < 0 || rocketIndex >= rockets) {
         std::stringstream err;
         err << "rocketIndex = " << rocketIndex << " out of range,"
-            << " must be 0 <= rocketIndex < " << ROCKET_HW_BOOSTERS << '\n';
+            << " must be 0 <= rocketIndex < " << rockets << '\n';
         throw std::out_of_range(err.str());
-    }
-
-    if (rocketIndex == ROCKET_HW_MEGA_STAGE && hasBoosters) {
-        std::stringstream err;
-        throw std::logic_error("Mega rockets do not support boosters.");
     }
 
     mPlayer = player;
@@ -61,10 +89,24 @@ Vehicle::Vehicle(int player, int rocketIndex, bool hasBoosters)
 
     assert(mPrimary);
 
+    if (!HasRole(*mPrimary, HardwareRole::Launcher)) {
+        throw std::logic_error("The rocket program is not a launcher.");
+    }
+
     if (hasBoosters) {
-        mSecondary =
-            &HardwareProgram(player, ROCKET_HARDWARE, ROCKET_HW_BOOSTERS);
-        mIndex += ROCKET_HW_BOOSTERS;
+        const HardwareEntry* entry = HardwareInfo(*mPrimary);
+
+        if (entry == nullptr || !entry->acceptsBoosters) {
+            throw std::logic_error("This rocket does not support boosters.");
+        }
+
+        const int boosters = BoosterIndex(player);
+
+        if (boosters < 0) {
+            throw std::logic_error("The player has no booster program.");
+        }
+
+        mSecondary = &HardwareProgram(player, ROCKET_HARDWARE, boosters);
     }
 }
 
@@ -102,7 +144,7 @@ void Vehicle::assignTo(int pad)
         throw std::logic_error(err.str());
     }
 
-    if (mission.Hard[Mission_PrimaryBooster] > 0) {
+    if (HasLaunchVehicle(mission)) {
         std::stringstream err;
         err << "Cannot assign launch vehicle to pad " << 'A' + pad
             << ": Hardware already assigned.";
@@ -110,7 +152,8 @@ void Vehicle::assignTo(int pad)
     }
 
     reserve();
-    mission.Hard[Mission_PrimaryBooster] = mIndex + 1;
+    mission.Hard[Mission_Rocket] = mIndex;
+    mission.Booster = (mSecondary != nullptr);
 }
 
 
@@ -245,8 +288,29 @@ int Vehicle::thrust() const
 
 /**
  * Is the launch vehicle able to carry a payload beyond Low Earth Orbit?
+ * (catalog reach of the rocket: translunar or interplanetary)
  */
 bool Vehicle::translunar() const
 {
-    return (mIndex % ROCKET_HW_BOOSTERS) != ROCKET_HW_ONE_STAGE;
+    const HardwareEntry* entry = HardwareInfo(*mPrimary);
+    return entry != nullptr
+           && (entry->reach == "translunar" || entry->reach == "interplanetary");
+}
+
+
+/**
+ * The VAB image of the launch vehicle, per the catalog: the rocket's
+ * sprite, or the one of the rocket with boosters.
+ */
+int Vehicle::sprite() const
+{
+    const HardwareEntry* entry = HardwareInfo(*mPrimary);
+
+    if (entry == nullptr) {
+        return 0;
+    }
+
+    const int sprite = mSecondary ? entry->images.vabSpriteBoosters
+                       : entry->images.vabSprite;
+    return sprite >= 0 ? sprite : 0;
 }

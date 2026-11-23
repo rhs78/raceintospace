@@ -703,53 +703,74 @@ void MissionSetup(char plr, char mis)
 	auto& mission = Data->P[plr].Mission[mis];
     const mStr plan = GetMissionPlan(mission.MissionCode);
 
+    // The docking module is not consumed when it is in orbit already ("fake"
+    // docking module); the mission gets it as its docking module for the
+    // steps.
+    const int dockingModule = DockingModuleIndex(plr);
+
     for (int j = 0; j < (1 + mission.Joint); j++) {
-        if ((plan.mVab[j] & 0x10) > 0 
-			&& Data->P[plr].DockingModuleInOrbit > 0) {  // DMO
-            Data->P[plr].Mission[mis + j].Hard[Mission_Probe_DM] = HARD_DOCKING_MODULE;
+        auto& part = Data->P[plr].Mission[mis + j];
+
+        if ((plan.mVab[j] & 0x10) > 0
+            && Data->P[plr].DockingModuleInOrbit > 0) {  // DMO
+            part.DockingModule = dockingModule;
             DMFake = 1;
         }
 
         if (j == 0) {
+            // A capsule that flies with a lander without a docking module
+            // of its own (Apollo, Soyuz): the lander docks, simulated by
+            // the docking module.
+            auto implicitDocking = [&](const MissionType& m) {
+                const Equipment* cap = MissionEquipment(plr, m, Mission_Capsule);
+                const HardwareEntry* entry = cap ? HardwareInfo(*cap) : nullptr;
+                return entry != nullptr && !entry->compatibleLanders.empty()
+                       && !entry->landerNeedsDockingModule;
+            };
+
             // Apollo (1) + LM (1)
-            if (mission.Hard[Mission_Capsule] == 2 && mission.Hard[Mission_LM] >= 0) {
-                mission.Hard[Mission_Probe_DM] = HARD_DOCKING_MODULE;
+            if (implicitDocking(mission) && mission.Hard[Mission_LM] >= 0) {
+                mission.DockingModule = dockingModule;
                 DMFake = 1;
             }
 
             if (mission.Joint) {
                 // Apollo (2) + LM (1)
-                if (Data->P[plr].Mission[mis + 1].Hard[Mission_Capsule] == 2 && mission.Hard[Mission_LM] >= 0) {
-                    mission.Hard[Mission_Probe_DM] = HARD_DOCKING_MODULE;
+                if (implicitDocking(Data->P[plr].Mission[mis + 1])
+                    && mission.Hard[Mission_LM] >= 0) {
+                    mission.DockingModule = dockingModule;
                     DMFake = 1;
                 }
             }
         }
 
         if (mission.MissionCode == Mission_Soyuz_LL) {  // Soyuz Kicker-C
-            mission.Hard[Mission_Probe_DM] = HARD_DOCKING_MODULE;
+            mission.DockingModule = dockingModule;
             DMFake = 1;
         }
 
         for (int i = Mission_Capsule; i < Mission_PhotoRecon; i++) {
             Equipment* eq = nullptr;  // Clear Pointers
 
-            int t = Data->P[plr].Mission[mis + j].Hard[i];
+            const int t = part.Hard[i];
 
-            if (t >= 0) {
-                switch (i) {
-                case Mission_Capsule:
-                case Mission_LM:   // Cap - LM
+            switch (i) {
+            case Mission_Capsule:
+            case Mission_LM:   // Cap - LM
+                if (t >= 0) {
                     eq = &Data->P[plr].Manned[t];
 
-                    if (eq->Num && t != MANNED_HW_MINISHUTTLE) {
+                    if (eq->Num && !HasRole(*eq, HardwareRole::Minishuttle)) {
                         eq->Num--;
                     }
 
                     eq->Used++;
-                    break;
+                }
 
-                case Mission_Kicker:           // Kicker
+                break;
+
+            case Mission_Kicker:           // Kicker
+                if (t >= 0) {
                     eq = &Data->P[plr].Misc[t];
 
                     if (eq->Num) {
@@ -757,33 +778,45 @@ void MissionSetup(char plr, char mis)
                     }
 
                     eq->Used++;
-                    break;
+                }
 
-                case Mission_Probe_DM:           // Secondary Equipment
-                    eq = &ProbeOrDockingModule(plr, t);
+                break;
 
-                    if (!IsDockingModule(t)) {
-                        eq->Used++;
+            case Mission_Probe_DM:           // Probe, or docking module
+                if (t >= 0) {
+                    eq = &Data->P[plr].Probe[t];
+                    eq->Used++;
 
-                        if (eq->Num > 0) {
-                            eq->Num -= 1;
+                    if (eq->Num > 0) {
+                        eq->Num -= 1;
+                    }
+                }
+
+                if (part.DockingModule >= 0) {
+                    Equipment* dm = &Data->P[plr].Misc[part.DockingModule];
+
+                    if (DMFake == 0) {
+                        if (dm->Num > 0) {
+                            dm->Num--;
                         }
-                    } else {
-                        if (DMFake == 0) {
-                            if (eq->Num > 0) {
-                                eq->Num--;
-                            }
 
-                            eq->Used++;
-                        }
+                        dm->Used++;
                     }
 
-                    break;
+                    dm->MisSaf = dm->Safety + dm->SMods + dm->Damage;
 
-                case Mission_PrimaryBooster:            // Rocket XX
-                    eq = &Data->P[plr].Rocket[DecodeRocketIndex(t)];
+                    if (eq == nullptr) {
+                        eq = dm;
+                    }
+                }
 
-                    if (!HasBoosters(t)) {
+                break;
+
+            case Mission_PrimaryBooster:            // Rocket XX
+                if (t >= 0) {
+                    eq = &Data->P[plr].Rocket[t];
+
+                    if (!part.Booster) {
                         if (eq->Num > 0) {
                             eq->Num--;
                         }
@@ -791,7 +824,7 @@ void MissionSetup(char plr, char mis)
                         eq->Used++;
                     } else {
                         MH[j][Mission_SecondaryBooster] =
-                            &Data->P[plr].Rocket[ROCKET_HW_BOOSTERS];
+                            &Data->P[plr].Rocket[BoosterIndex(plr)];
                         eq->Used++;
                         MH[j][Mission_SecondaryBooster]->Used++;
 
@@ -803,35 +836,38 @@ void MissionSetup(char plr, char mis)
                             MH[j][Mission_SecondaryBooster]->Num--;
                         }
                     }
-
-                    break;
-
-                case Mission_EVA:  // EVA
-                    eq = &Data->P[plr].Misc[MISC_HW_EVA_SUITS];
-                    break;
                 }
 
-                if (eq != nullptr) {
-                    eq->MisSaf = eq->Safety + eq->SMods + eq->Damage;
+                break;
 
-                    if (i == Mission_LM && HasRole(*eq, HardwareRole::Lander) &&
-                        Data->P[plr].Mission[mis].MissionCode >= 53) {
-                        switch (Data->P[plr].LMpts) {
-                        case 0:
-                            eq->MisSaf -= 9;
-                            break;
+            case Mission_EVA:  // EVA
+                if (t >= 0) {
+                    eq = &Data->P[plr].Misc[t];
+                }
 
-                        case 1:
-                            eq->MisSaf -= 6;
-                            break;
+                break;
+            }
 
-                        case 2:
-                            eq->MisSaf -= 3;
-                            break;
-                        }
+            if (eq != nullptr) {
+                eq->MisSaf = eq->Safety + eq->SMods + eq->Damage;
+
+                if (i == Mission_LM && HasRole(*eq, HardwareRole::Lander) &&
+                    Data->P[plr].Mission[mis].MissionCode >= 53) {
+                    switch (Data->P[plr].LMpts) {
+                    case 0:
+                        eq->MisSaf -= 9;
+                        break;
+
+                    case 1:
+                        eq->MisSaf -= 6;
+                        break;
+
+                    case 2:
+                        eq->MisSaf -= 3;
+                        break;
                     }
                 }
-            }  // if t>=0
+            }
 
             MH[j][i] = eq;
         }  // for (i<7)
@@ -846,7 +882,7 @@ void MissionSetup(char plr, char mis)
     }  // for (j<2)
 
     if (DMFake == 1) {
-        Data->P[plr].Mission[mis].Hard[Mission_Probe_DM] = -1;
+        Data->P[plr].Mission[mis].DockingModule = -1;
     }
 }
 

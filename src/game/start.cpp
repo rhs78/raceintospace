@@ -673,6 +673,7 @@ void Update()
         for (int i = 0; i < MAX_MISSIONS; i++) {
             memcpy(&Data->P[plr].Mission[i], &Data->P[plr].Future[i], sizeof(struct MissionType));
             memset(&Data->P[plr].Future[i], 0x00, sizeof(struct MissionType));
+            ClearMissionHardware(Data->P[plr].Future[i]);
             strcpy(Data->P[plr].Future[i].Name, "UNDETERMINED");
 
         }  /* End i for loop */

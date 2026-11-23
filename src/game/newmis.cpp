@@ -264,7 +264,13 @@ void MisAnn(char plr, char pad)
 
         for (int j = Mission_Capsule; j <= Mission_EVA; j++) {
             int hold = pData.Mission[pad + i].Hard[j];
-            if (hold <= -1) continue;
+
+            // (the docking module is listed with the payload slot)
+            if (hold <= -1
+                && !(j == Mission_Probe
+                     && pData.Mission[pad + i].DockingModule >= 0)) {
+                continue;
+            }
 
             switch (j) {
             case Mission_Capsule:
@@ -344,64 +350,73 @@ void MisAnn(char plr, char pad)
 
             case Mission_Probe_DM:
                 {
-//draw_number(150, 116, pData.Probe[hold].MaxRD);
-                if (hold > 4) break;
-                auto& item = (hold < 3)? pData.Probe[hold]
-                                       : pData.Misc[hold];
-                    
-                if (item.SaveCard > 0) {
+                // The payload probe, then the docking module (if any).
+                for (int pass = 0; pass < 2; pass++) {
+                    const bool docking = (pass == 1);
+                    const int unit = docking ?
+                                     pData.Mission[pad + i].DockingModule : hold;
+
+                    if (unit < 0) continue;
+
+                    auto& item = docking ? pData.Misc.at(unit)
+                                         : pData.Probe.at(unit);
+
+                    if (item.SaveCard > 0) {
+                        display::graphics.setForegroundColor(11);
+                        draw_string(bud - 8, 100 + 14 * k, "+");
+                    }
+
+                    display::graphics.setForegroundColor(7);
+                    draw_string(bud, 100 + 14 * k,
+                                docking ? "DOCKING: " : "PROBE: ");
+
+                    display::graphics.setForegroundColor(1);
+                    draw_string(0, 0, item.Name);
+
                     display::graphics.setForegroundColor(11);
-                    draw_string(bud - 8, 100 + 14 * k, "+");
+                    draw_string(bud, 107 + 14 * k, "SAFETY FACTOR: ");
+
+                    if (item.Damage != 0) display::graphics.setForegroundColor(9);
+                    else if (item.Safety < item.MaxRD) display::graphics.setForegroundColor(11);
+                    else display::graphics.setForegroundColor(1);
+                    draw_number(0, 0, item.Safety + item.Damage);
+                    draw_string(0, 0, "%");
+
+                    ++k;
                 }
-                    
-                display::graphics.setForegroundColor(7);
-                const char* str1 = (hold < 3)?"PROBE: "
-                                             :"DOCKING: ";
-                draw_string(bud, 100 + 14 * k, str1);
-                    
-                display::graphics.setForegroundColor(1);
-                draw_string(0, 0, item.Name);
-                    
-                display::graphics.setForegroundColor(11);
-                draw_string(bud, 107 + 14 * k, "SAFETY FACTOR: ");
-                    
-                if (item.Damage != 0) display::graphics.setForegroundColor(9);
-                else if (item.Safety < item.MaxRD) display::graphics.setForegroundColor(11);
-                else display::graphics.setForegroundColor(1);
-                draw_number(0, 0, item.Safety + item.Damage);
-                draw_string(0, 0, "%");
-                    
-                ++k;
+
                 break;
                 }
 
             case Mission_PrimaryBooster:
                 {
-                auto& Rocket = pData.Rocket[DecodeRocketIndex(hold)];
-                auto& Boosters = pData.Rocket[ROCKET_HW_BOOSTERS];
-                    
+                const bool withBoosters = pData.Mission[pad + i].Booster;
+                auto& Rocket = pData.Rocket.at(hold);
+                auto& Boosters = pData.Rocket.at(
+                                     withBoosters ? BoosterIndex(plr) : hold);
+
                 if (Rocket.SaveCard > 0) {
                     display::graphics.setForegroundColor(11);
                     draw_string(bud - 8, 100 + 14 * k, "+");
                 }
                 display::graphics.setForegroundColor(7);
                 draw_string(bud, 100 + 14 * k, "ROCKET: ");
-                    
+
                 display::graphics.setForegroundColor(1);
                 draw_string(0, 0, &Rocket.Name[0]);
-                if (hold >= 5) draw_string(0, 0, " W/B");
+                if (withBoosters) draw_string(0, 0, " W/B");
 
                 display::graphics.setForegroundColor(11);
                 draw_string(bud, 107 + 14 * k, "SAFETY FACTOR: ");
 
-                if (Rocket.Damage != 0 || (hold >= 5 && Boosters.Damage != 0)) {
+                if (Rocket.Damage != 0 || (withBoosters && Boosters.Damage != 0)) {
                     display::graphics.setForegroundColor(9);
-                } else if (Rocket.Safety < Rocket.MaxRD 
-                           || (hold >= 5 && Boosters.Safety < Boosters.MaxRD)) {
+                } else if (Rocket.Safety < Rocket.MaxRD
+                           || (withBoosters && Boosters.Safety < Boosters.MaxRD)) {
                     display::graphics.setForegroundColor(11);
                 }
                 else display::graphics.setForegroundColor(1);
-                if (hold < 5) {
+                if (!withBoosters) {
                     draw_number(0, 0, Rocket.Safety + Rocket.Damage);
                 } else {
                     draw_number(0, 0, RocketBoosterSafety(Rocket.Safety + Rocket.Damage, Boosters.Safety + Boosters.Damage));

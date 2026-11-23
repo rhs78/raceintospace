@@ -1,46 +1,57 @@
 #ifndef VEHICLE_SELECTOR_H
 #define VEHICLE_SELECTOR_H
 
+#include <stdexcept>
+#include <vector>
+
 #include "hardware.h"
 #include "vehicle.h"
 
 
 /**
  * This class cycles through the available launch vehicle options,
- * composed of a rocket and optional boosters.
+ * composed of a rocket and optional boosters (see LaunchVehicleOptions()):
+ * every launcher of the player's Rocket list, then the launchers that
+ * accept boosters combined with the boosters.
  */
 class VehicleSelector
 {
 public:
-    VehicleSelector(int plr) :  mIndex(0), mPlayer(plr) {};
+    VehicleSelector(int plr) :  mIndex(0), mPlayer(plr),
+        mOptions(LaunchVehicleOptions(plr)) {};
     Vehicle start();
     Vehicle next();
+    /** Number of vehicle options. */
+    int count() const { return int(mOptions.size()); }
 private:
     int mIndex;
     const int mPlayer;
+    const std::vector<VehicleOption> mOptions;
 };
 
 
-Vehicle VehicleSelector::start()
+inline Vehicle VehicleSelector::start()
 {
     mIndex = 0;
     return next();
 }
 
 
-Vehicle VehicleSelector::next()
+inline Vehicle VehicleSelector::next()
 {
-    // mIndex counts launch vehicles as encoded in Mission.Hard, less one.
-    bool boosters = HasBoosters(mIndex + 1);
-    int rkIndex = DecodeRocketIndex(mIndex + 1);
+    if (mOptions.empty()) {
+        throw std::logic_error("The player has no launch vehicle.");
+    }
 
     // By having mIndex track the next vehicle to be used, rather than the
     // current one, there is no need to initially call start()
-    if (++mIndex >= 7) {
+    const VehicleOption& option = mOptions[mIndex];
+
+    if (++mIndex >= int(mOptions.size())) {
         mIndex = 0;
     }
 
-    return Vehicle(mPlayer, rkIndex, boosters);
+    return Vehicle(mPlayer, option.rocket, option.boosters);
 }
 
 

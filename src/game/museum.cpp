@@ -41,6 +41,7 @@
 #include "game_main.h"
 #include "gr.h"
 #include "hardef.h"
+#include "hardware.h"
 #include "ioexception.h"
 #include "mission_util.h"
 #include "newmis.h"
@@ -986,10 +987,11 @@ void DrawMisHist(char plr, int turn)
             }
 
             // TODO: Use something like NUM_PROGRAMS instead of a
-            // hardcoded '5'.
+            // hardcoded '5'.  The probe's image is the one of the classic
+            // probe of its role (orbital 0, interplanetary 1, lunar 2).
             prog = (mission.Hard[PAD_A][Mission_Capsule] != -1) ?
                    mission.Hard[PAD_A][Mission_Capsule] :
-                   mission.Hard[PAD_A][Mission_Probe_DM] + 5;
+                   ProbeImageSlot(plr, mission.Hard[PAD_A][Mission_Probe]) + 5;
 
             int8_t pmis = mission.MissionCode;
 

@@ -141,6 +141,7 @@
       "duration_days": 0,
       "can_dock": false,
       "direct_ascent": false,
+      "reach": "orbital",
       "accepts_boosters": true,
       "anim_id": "R0",
       "images": {
@@ -186,6 +187,7 @@
       "duration_days": 0,
       "can_dock": false,
       "direct_ascent": false,
+      "reach": "translunar",
       "accepts_boosters": true,
       "anim_id": "R1",
       "images": {
@@ -236,6 +238,7 @@
       "duration_days": 0,
       "can_dock": false,
       "direct_ascent": false,
+      "reach": "translunar",
       "accepts_boosters": true,
       "anim_id": "R2",
       "images": {
@@ -286,6 +289,7 @@
       "duration_days": 0,
       "can_dock": false,
       "direct_ascent": false,
+      "reach": "translunar",
       "accepts_boosters": false,
       "anim_id": "R3",
       "images": {
@@ -1075,6 +1079,7 @@
       "duration_days": 0,
       "can_dock": false,
       "direct_ascent": false,
+      "reach": "orbital",
       "accepts_boosters": true,
       "anim_id": "R0",
       "images": {
@@ -1120,6 +1125,7 @@
       "duration_days": 0,
       "can_dock": false,
       "direct_ascent": false,
+      "reach": "translunar",
       "accepts_boosters": true,
       "anim_id": "R1",
       "images": {
@@ -1170,6 +1176,7 @@
       "duration_days": 0,
       "can_dock": false,
       "direct_ascent": false,
+      "reach": "translunar",
       "accepts_boosters": true,
       "anim_id": "R2",
       "images": {
@@ -1220,6 +1227,7 @@
       "duration_days": 0,
       "can_dock": false,
       "direct_ascent": false,
+      "reach": "translunar",
       "accepts_boosters": false,
       "anim_id": "R3",
       "images": {
@@ -1914,6 +1922,7 @@
       "duration_days": 0,
       "can_dock": false,
       "direct_ascent": false,
+      "reach": "translunar",
       "accepts_boosters": false,
       "anim_id": "R0",
       "images": {
@@ -1967,6 +1976,7 @@
       "duration_days": 0,
       "can_dock": false,
       "direct_ascent": false,
+      "reach": "translunar",
       "accepts_boosters": false,
       "anim_id": "R0",
       "images": {

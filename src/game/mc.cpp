@@ -35,6 +35,7 @@
 #include "data.h"
 #include "filesystem.h"
 #include "game_main.h"
+#include "hardware.h"
 #include "logging.h"
 #include "mc2.h"
 #include "mis.h"
@@ -250,8 +251,17 @@ int Launch(char plr, char mis)
     mStr misType = GetMissionPlan(mcode);
 
     // Fixup for Mercury Duration C stuff
-    if (mission.Hard[Mission_Capsule] == 0) {
-        mission.Duration = MIN(2, mission.Duration);
+    // (the one-man capsules, Mercury and Vostok: their duration limit
+    // from the catalog)
+    {
+        const Equipment* capsule =
+            MissionEquipment(plr, mission, Mission_Capsule);
+        const HardwareEntry* entry = capsule ? HardwareInfo(*capsule) : nullptr;
+
+        if (entry != nullptr && IsOneManCapsule(*capsule)
+            && entry->maxFutureDuration >= 0) {
+            mission.Duration = MIN(entry->maxFutureDuration, mission.Duration);
+        }
     }
 
     LOG_DEBUG("Calling MissionCodes()");
@@ -542,12 +552,22 @@ void MissionPast(char plr, char pad, int prest)
         }
     }
 
-    for (int i = Mission_Capsule; i <= Mission_PrimaryBooster; i++) {
+    for (int i = Mission_Capsule; i <= Mission_Rocket; i++) {
         hist.Hard[PAD_A][i] = mission.Hard[i];
 
         if (mission.Joint == 1) {
             hist.Hard[PAD_B][i] = pData.Mission[pad + 1].Hard[i];
         }
+    }
+
+    hist.DockingModule[PAD_A] = mission.DockingModule;
+    hist.Booster[PAD_A] = mission.Booster ? 1 : 0;
+    hist.DockingModule[PAD_B] = -1;
+    hist.Booster[PAD_B] = 0;
+
+    if (mission.Joint == 1) {
+        hist.DockingModule[PAD_B] = pData.Mission[pad + 1].DockingModule;
+        hist.Booster[PAD_B] = pData.Mission[pad + 1].Booster ? 1 : 0;
     }
 
     hist.result = FINAL;

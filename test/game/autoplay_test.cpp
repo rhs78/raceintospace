@@ -11,6 +11,7 @@
 #include "game/autoplay.h"
 #include "game/data.h"
 #include "game/game_main.h"
+#include "game/hardware.h"
 #include "game/news_suq.h"
 #include "game/scenario.h"
 
@@ -60,6 +61,7 @@ MissionType& ManMission(int plr, int prog, int pCrew, int bCrew)
 {
     MissionType& m = Data->P[plr].Mission[0];
     m = MissionType{};
+    ClearMissionHardware(m);
     m.MissionCode = Mission_Earth_Orbital;
     m.Men = 1;
     m.Prog = prog;
@@ -133,16 +135,14 @@ BOOST_AUTO_TEST_CASE(mission_go_check_without_rocket)
     DataScope scope;
     AI[0] = 1;
 
-    // Hard[Mission_PrimaryBooster] == 0 means "no rocket" (index + 1);
+    // Hard[Mission_Rocket] == -1 means "no rocket" (rocket 0 is a rocket);
     // CheckIfMissionGo() used to read Rocket[-1].
     MissionType& m = ManMission(0, 1, 1, 0);
     SetUpCrew(0, 1, 0, 1);
 
-    for (int i = 0; i < 5; i++) {
-        m.Hard[i] = -1;
-    }
+    ClearMissionHardware(m);
 
-    m.Hard[Mission_PrimaryBooster] = 0;
+    m.Hard[Mission_Rocket] = -1;
     BOOST_CHECK_EQUAL(CheckIfMissionGo(0, 0), 1);
 }
 

@@ -1391,7 +1391,7 @@ void RDHelpWarnings(int plr)
         && Data->P[plr].Cash <= chkAmt) {
         for (auto& mis : Data->P[plr].Mission) {
             if (mis.MissionCode <= 0) continue;
-            if (mis.Hard[Mission_PrimaryBooster] != 0) continue;
+            if (HasLaunchVehicle(mis)) continue;
             
             Help("i173");
             WarningVABShown = true;

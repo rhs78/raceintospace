@@ -138,7 +138,7 @@ std::string VasSnapshot()
     std::ostringstream o;
     o << "n=" << VASqty;
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < int(VAS.size()); i++) {
         for (int j = 0; j < 4; j++) {
             const VInfo& v = VAS[i][j];
 

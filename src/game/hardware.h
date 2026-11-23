@@ -18,12 +18,6 @@ const int MANNED_HW_COUNT = 7;   // includes the Lunar Modules
 const int MISC_HW_COUNT = 6;
 
 /**
- * MissionType.Hard[Mission_Probe_DM] is overloaded: values 0..2 select
- * a Probe program, this value selects the Docking Module (Misc).
- */
-const int HARD_DOCKING_MODULE = 4;
-
-/**
  * Number of crewed programs (Manned[0..4] - capsules/minishuttle) in the
  * CLASSIC scenario.  See ProgramCount() for the general value.
  */
@@ -44,11 +38,18 @@ int FirstResearchableUnit(const BuzzData& player, int equipmentIndex);
 int CycleResearchableUnit(const BuzzData& player, int equipmentIndex,
                           int unit, int step);
 int HardwareListIndex(int player, const HardwareEntry& entry);
-int EncodeRocket(int rocketIndex, bool boosters);
-int DecodeRocketIndex(int hardValue);
-bool HasBoosters(int hardValue);
-bool IsDockingModule(int hardValue);
-Equipment &ProbeOrDockingModule(int player, int hardValue);
+
+// Mission hardware (stage 4d): list positions, no encodings.
+std::vector<int> HardwareIndicesByRole(int player, HardwareRole role);
+int HardwareIndexByRole(int player, HardwareRole role);
+int DockingModuleIndex(int player);
+int BoosterIndex(int player);
+int EvaSuitsIndex(int player);
+void ClearMissionHardware(MissionType& mission);
+bool HasLaunchVehicle(const MissionType& mission);
+Equipment* MissionEquipment(int player, const MissionType& mission,
+                            MissionHardwareType slot);
+int ProbeImageSlot(int player, int probeIndex);
 int ProgramToMannedIndex(int program);
 int MannedIndexToProgram(int mannedIndex);
 

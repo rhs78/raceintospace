@@ -49,6 +49,7 @@
 #include "draw.h"
 #include "filesystem.h"
 #include "game_main.h"
+#include "hardware.h"
 #include "intel.h"
 #include "museum.h"
 #include "pace.h"
@@ -663,7 +664,7 @@ int MissionStatus(int plr)
     for (int i = 0; i < MAX_MISSIONS; i++) {
         auto& mission = Data->P[plr].Mission[i];
         if (mission.MissionCode != Mission_None
-            && mission.Hard[Mission_PrimaryBooster] == 0) {
+            && !HasLaunchVehicle(mission)) {
             return MISSIONS_UNSTAGED;
         }
 
@@ -1537,7 +1538,7 @@ char MisReq(char plr)
     for (int i = 0; i < 3; i++) {
         auto& mission = Data->P[plr].Mission[i];
         if ((mission.MissionCode != Mission_None)
-            && (mission.Hard[Mission_PrimaryBooster] == 0)) {
+            && !HasLaunchVehicle(mission)) {
             num++;
         }
     }
@@ -1586,7 +1587,7 @@ char MisReq(char plr)
             draw_string(86, 65 + 20 * i, "UNMANNED MISSION");
         }
 
-        if (mission.Hard[Mission_PrimaryBooster] == 0) {
+        if (!HasLaunchVehicle(mission)) {
             display::graphics.setForegroundColor(9);
             draw_string(86, 71 + 20 * i, "HARDWARE UNASSIGNED");
         } else {

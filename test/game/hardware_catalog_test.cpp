@@ -922,8 +922,9 @@ BOOST_AUTO_TEST_CASE(anim_ids_match_sequence_keys)
     }
 
     // Everything the sequence files reference exists in the catalog,
-    // except R5/R6, which are rocket + booster combinations
-    // (EncodeRocket(), see mc2.cpp / mis_c.cpp), not programs.
+    // except R5/R6, which are rocket + booster combinations (the animation
+    // id of the rocket with the booster offset 4 added, see mc2.cpp), not
+    // programs.
     for (const auto& u : used) {
         if (u.second == "R5" || u.second == "R6") {
             continue;

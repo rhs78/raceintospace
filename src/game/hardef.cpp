@@ -250,7 +250,21 @@ void HDispIt(const DisplayContext& dctx, int x1, int y1, int x2, int y2, int s, 
 void PInfo(char plr, char loc, DisplayContext& dctx)
 {
     auto& pData = Data->P[plr];
-    int PrestigeTable[4][7]{}, prestigeSum;
+    // Prestige per program, indexed by the positions in the player's lists
+    // (at least the seven slots of the classic game).
+    std::vector<int> PrestigeTable[4];
+    int prestigeSum;
+
+    for (int c = PROBE_HARDWARE; c <= MISC_HARDWARE; c++) {
+        PrestigeTable[c].assign(std::max(7, HardwareCount(plr, c)), 0);
+    }
+
+    // Adds prestige to a program of a list; ignores positions outside.
+    auto addPrestige = [&](int category, int unit, int amount) {
+        if (unit >= 0 && size_t(unit) < PrestigeTable[category].size()) {
+            PrestigeTable[category][unit] += amount;
+        }
+    };
 
     GradRect(4, 23, 315, 159, 0);
 
@@ -266,35 +280,21 @@ void PInfo(char plr, char loc, DisplayContext& dctx)
         
         prestigeSum = mission.Prestige;
 
-        if (mission.Hard[0][Mission_Capsule] > -1) {
-            PrestigeTable[MANNED_HARDWARE][mission.Hard[0][Mission_Capsule]] += prestigeSum;
+        addPrestige(MANNED_HARDWARE, mission.Hard[0][Mission_Capsule], prestigeSum);
+        addPrestige(MISC_HARDWARE, mission.Hard[0][Mission_Kicker], prestigeSum);
+
+        addPrestige(MANNED_HARDWARE, mission.Hard[0][Mission_LM], prestigeSum);
+
+        addPrestige(PROBE_HARDWARE, mission.Hard[0][Mission_Probe], prestigeSum);
+        addPrestige(MISC_HARDWARE, mission.DockingModule[0], prestigeSum);
+
+        // The rocket, and the boosters if it flew with them
+        addPrestige(ROCKET_HARDWARE, mission.Hard[0][Mission_Rocket], prestigeSum);
+
+        if (mission.Hard[0][Mission_Rocket] >= 0 && mission.Booster[0]) {
+            addPrestige(ROCKET_HARDWARE, BoosterIndex(plr), prestigeSum);
         }
-
-        if (mission.Hard[0][Mission_Kicker] > -1) {
-            PrestigeTable[MISC_HARDWARE][mission.Hard[0][Mission_Kicker]] += prestigeSum;
-        }
-
-        if (mission.Hard[0][Mission_LM] > -1) {
-            PrestigeTable[MANNED_HARDWARE][mission.Hard[0][Mission_LM]] += prestigeSum;
-        }
-
-        if (mission.Hard[0][Mission_Probe_DM] > -1) {
-            if (mission.Hard[0][Mission_Probe_DM] < 4) {
-                PrestigeTable[PROBE_HARDWARE][mission.Hard[0][Mission_Probe_DM]] += prestigeSum;
-            } else {
-                PrestigeTable[MISC_HARDWARE][MISC_HW_DOCKING_MODULE] += prestigeSum;
-            }
-        }
-
-        // This is for boosters
-        if (mission.Hard[0][Mission_PrimaryBooster] > 0) {
-            const int rocketHard = mission.Hard[0][Mission_PrimaryBooster];
-            PrestigeTable[ROCKET_HARDWARE][DecodeRocketIndex(rocketHard)] += prestigeSum;
-
-            if (HasBoosters(rocketHard)) {
-                PrestigeTable[ROCKET_HARDWARE][ROCKET_HW_BOOSTERS] += prestigeSum;
-            }
-        }                    // end if
+        // end if
     }                       // end for
 
     //EVA suit kludge
@@ -302,8 +302,8 @@ void PInfo(char plr, char loc, DisplayContext& dctx)
 
     // make sure there are no negative vals in Pt
     for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 7; j++) {
-            PrestigeTable[i][j] = MAX(PrestigeTable[i][j], 0);
+        for (int& value : PrestigeTable[i]) {
+            value = MAX(value, 0);
         }
     }
 

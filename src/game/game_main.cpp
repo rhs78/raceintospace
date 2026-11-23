@@ -413,21 +413,13 @@ int CheckIfMissionGo(char plr, char launchIdx)
     // suits are _always_ included in missions that will require
     // reworking the EVA suit inclusion.
     for (int idx = Mission_Capsule; idx <= Mission_PrimaryBooster; idx++) {
-        // Mission components in struct MissionType.Hard are indexed
-        // starting at 0 per EquipProbeIndex, EquipMannedIndex, etc.
-        // EXCEPT for rockets (more below) so a missing component is
-        // flagged with a negative value.
+        // Mission components in struct MissionType.Hard are positions in
+        // the player's lists (EquipProbeIndex, etc.), so a missing component
+        // is flagged with a negative value.
         if (pMission.Hard[idx] < 0) {
             continue;
         }
 
-        // Autoplay fix: the primary booster is stored as rocket index + 1,
-        // so 0 means "no rocket assigned"; DecodeRocketIndex(0) == -1 read
-        // Rocket[-1].
-        if (idx == Mission_PrimaryBooster && pMission.Hard[idx] == 0) {
-            continue;
-        }
-        
         Equipment* E;
         switch (idx) {
         case Mission_Capsule:
@@ -441,18 +433,13 @@ int CheckIfMissionGo(char plr, char launchIdx)
             E->MisSaf = E->Safety;
             break;
 
-        case Mission_PrimaryBooster:
-            // Vab sets Hard[Mission_PrimaryBooster] to the rocket's
-            // index + 1 so the game can check if mission hardware
-            // has been assigned by testing
-            //     Hard[Mission_PrimaryBooster] > 0
-            // MissionSetup() will correct for that in mc2.cpp.
+        case Mission_Rocket:
         {
-            E = &pData.Rocket[DecodeRocketIndex(pMission.Hard[idx])];
+            E = &pData.Rocket[pMission.Hard[idx]];
 
-            if (HasBoosters(pMission.Hard[idx])) {
+            if (pMission.Booster) {
                 const Equipment& boosters =
-                    pData.Rocket[ROCKET_HW_BOOSTERS];
+                    pData.Rocket[BoosterIndex(plr)];
                 E->MisSaf =
                     RocketBoosterSafety(E->Safety, boosters.Safety);
             } else {
@@ -462,7 +449,7 @@ int CheckIfMissionGo(char plr, char launchIdx)
 
         break;
 
-        case Mission_Probe_DM:
+        case Mission_Probe:
             E = nullptr;  // TODO: Might want to consider checking DM.
             break;
 
@@ -474,7 +461,7 @@ int CheckIfMissionGo(char plr, char launchIdx)
             break;
         }
 
-        if (E && idx != Mission_Probe_DM && pMission.Hard[idx] >= 0) {
+        if (E && idx != Mission_Probe) {
             // If mission Safety is not within 15 points of the MaxRD
             // then NO Go
             if (E->MisSaf < (E->MaxRD - 15)) {
@@ -734,7 +721,7 @@ restart:                              // ON A LOAD PROG JUMPS TO HERE
             }
 
             if (Data->P[Order[i].plr].Mission[Order[i].loc].part == 1) continue; // skip 2nd launch of joint missions
-            if (Data->P[Order[i].plr].Mission[Order[i].loc].Hard[4] == 0) continue; // ??
+            if (!HasLaunchVehicle(Data->P[Order[i].plr].Mission[Order[i].loc])) continue;  // no hardware assigned
             
             int prest = Launch(Order[i].plr, Order[i].loc);
 

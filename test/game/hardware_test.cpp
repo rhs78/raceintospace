@@ -168,53 +168,77 @@ BOOST_AUTO_TEST_CASE(HardwareCount_per_category)
     BOOST_CHECK_THROW(HardwareCount(-1), std::invalid_argument);
 }
 
-// Mission.Hard[Mission_PrimaryBooster] holds rocketIndex + 1, plus
-// ROCKET_HW_BOOSTERS (4) when boosters are fitted.
-BOOST_AUTO_TEST_CASE(rocket_encoding)
+// Mission hardware (stage 4d): list positions, the boosters are a flag and
+// the docking module has its own field.
+BOOST_AUTO_TEST_CASE(mission_hardware_is_cleared_to_minus_one)
 {
-    BOOST_CHECK_EQUAL(EncodeRocket(ROCKET_HW_ONE_STAGE, false), 1);
-    BOOST_CHECK_EQUAL(EncodeRocket(ROCKET_HW_TWO_STAGE, false), 2);
-    BOOST_CHECK_EQUAL(EncodeRocket(ROCKET_HW_THREE_STAGE, false), 3);
-    BOOST_CHECK_EQUAL(EncodeRocket(ROCKET_HW_MEGA_STAGE, false), 4);
-    BOOST_CHECK_EQUAL(EncodeRocket(ROCKET_HW_ONE_STAGE, true), 5);
-    BOOST_CHECK_EQUAL(EncodeRocket(ROCKET_HW_TWO_STAGE, true), 6);
-    BOOST_CHECK_EQUAL(EncodeRocket(ROCKET_HW_THREE_STAGE, true), 7);
-}
+    MissionType mission;
+    memset(&mission, 0x00, sizeof mission);
+    ClearMissionHardware(mission);
 
-BOOST_AUTO_TEST_CASE(rocket_decoding)
-{
-    for (int i = 0; i < ROCKET_HW_BOOSTERS; i++) {
-        for (int b = 0; b < 2; b++) {
-            const int hard = EncodeRocket(i, b != 0);
-            BOOST_CHECK_EQUAL(DecodeRocketIndex(hard), i);
-            BOOST_CHECK_EQUAL(HasBoosters(hard), b != 0);
-        }
+    for (int i = 0; i <= Mission_EVA; i++) {
+        BOOST_CHECK_EQUAL(int(mission.Hard[i]), -1);
     }
 
-    // "No rocket assigned"
-    BOOST_CHECK_EQUAL(DecodeRocketIndex(0), -1);
-    BOOST_CHECK_EQUAL(DecodeRocketIndex(-1), -1);
-    BOOST_CHECK(!HasBoosters(0));
-    BOOST_CHECK(!HasBoosters(-1));
+    BOOST_CHECK_EQUAL(int(mission.DockingModule), -1);
+    BOOST_CHECK(!mission.Booster);
+    BOOST_CHECK(!HasLaunchVehicle(mission));
+
+    // rocket 0 is a rocket, not "no rocket"
+    mission.Hard[Mission_Rocket] = 0;
+    BOOST_CHECK(HasLaunchVehicle(mission));
 }
 
-BOOST_AUTO_TEST_CASE(probe_or_docking_module)
+BOOST_AUTO_TEST_CASE(role_lookups)
 {
     Players* saved = Data;
     std::unique_ptr<Players> players = LoadUrast();
     Data = players.get();
 
     for (int plr = 0; plr < NUM_PLAYERS; plr++) {
-        for (int i = 0; i < PROBE_HW_COUNT; i++) {
-            BOOST_CHECK(&ProbeOrDockingModule(plr, i)
-                        == &Data->P[plr].Probe[i]);
-            BOOST_CHECK(!IsDockingModule(i));
-        }
-
-        BOOST_CHECK(&ProbeOrDockingModule(plr, 4)
-                    == &Data->P[plr].Misc[MISC_HW_DOCKING_MODULE]);
-        BOOST_CHECK(IsDockingModule(4));
+        BOOST_CHECK_EQUAL(DockingModuleIndex(plr), MISC_HW_DOCKING_MODULE);
+        BOOST_CHECK_EQUAL(BoosterIndex(plr), ROCKET_HW_BOOSTERS);
+        BOOST_CHECK_EQUAL(EvaSuitsIndex(plr), MISC_HW_EVA_SUITS);
+        BOOST_CHECK_EQUAL(HardwareIndicesByRole(plr, HardwareRole::OrbitalProbe).size(), 1u);
+        BOOST_CHECK_EQUAL(HardwareIndexByRole(plr, HardwareRole::LunarProbe),
+                          PROBE_HW_LUNAR);
+        BOOST_CHECK_EQUAL(ProbeImageSlot(plr, PROBE_HW_INTERPLANETARY), 1);
+        BOOST_CHECK_EQUAL(ProbeImageSlot(plr, -1), -1);
     }
+
+    Data = saved;
+}
+
+BOOST_AUTO_TEST_CASE(mission_equipment_resolves_the_slots)
+{
+    Players* saved = Data;
+    std::unique_ptr<Players> players = LoadUrast();
+    Data = players.get();
+    BuzzData& p = Data->P[0];
+
+    MissionType mission;
+    memset(&mission, 0x00, sizeof mission);
+    ClearMissionHardware(mission);
+    BOOST_CHECK(MissionEquipment(0, mission, Mission_Rocket) == nullptr);
+
+    mission.Hard[Mission_Capsule] = MANNED_HW_TWO_MAN_CAPSULE;
+    mission.Hard[Mission_Rocket] = ROCKET_HW_TWO_STAGE;
+    mission.Booster = true;
+    BOOST_CHECK(MissionEquipment(0, mission, Mission_Capsule)
+                == &p.Manned[MANNED_HW_TWO_MAN_CAPSULE]);
+    BOOST_CHECK(MissionEquipment(0, mission, Mission_Rocket)
+                == &p.Rocket[ROCKET_HW_TWO_STAGE]);
+    BOOST_CHECK(MissionEquipment(0, mission, Mission_SecondaryBooster)
+                == &p.Rocket[ROCKET_HW_BOOSTERS]);
+
+    // payload slot: probe, else docking module
+    BOOST_CHECK(MissionEquipment(0, mission, Mission_Probe_DM) == nullptr);
+    mission.DockingModule = MISC_HW_DOCKING_MODULE;
+    BOOST_CHECK(MissionEquipment(0, mission, Mission_Probe_DM)
+                == &p.Misc[MISC_HW_DOCKING_MODULE]);
+    mission.Hard[Mission_Probe] = PROBE_HW_LUNAR;
+    BOOST_CHECK(MissionEquipment(0, mission, Mission_Probe_DM)
+                == &p.Probe[PROBE_HW_LUNAR]);
 
     Data = saved;
 }
@@ -316,8 +340,9 @@ BOOST_AUTO_TEST_CASE(players_json_round_trip)
     original->P[0].Cash = 123;
     original->P[1].Manned[MANNED_HW_ONE_MAN_MODULE].Safety = 77;
     original->P[0].Rocket[ROCKET_HW_BOOSTERS].Num = 3;
-    original->P[0].Mission[1].Hard[Mission_PrimaryBooster] =
-        EncodeRocket(ROCKET_HW_TWO_STAGE, true);
+    original->P[0].Mission[1].Hard[Mission_Rocket] = ROCKET_HW_TWO_STAGE;
+    original->P[0].Mission[1].Booster = true;
+    original->P[0].Mission[1].DockingModule = MISC_HW_DOCKING_MODULE;
 
     const std::string json = ToJson(*original);
 
@@ -331,7 +356,12 @@ BOOST_AUTO_TEST_CASE(players_json_round_trip)
     BOOST_CHECK_EQUAL(copy->P[0].Cash, 123);
     BOOST_CHECK_EQUAL(copy->P[1].Manned[MANNED_HW_ONE_MAN_MODULE].Safety, 77);
     BOOST_CHECK_EQUAL(copy->P[0].Rocket[ROCKET_HW_BOOSTERS].Num, 3);
-    BOOST_CHECK_EQUAL(copy->P[0].Mission[1].Hard[Mission_PrimaryBooster], 6);
+    BOOST_CHECK_EQUAL(copy->P[0].Mission[1].Hard[Mission_Rocket],
+                      ROCKET_HW_TWO_STAGE);
+    BOOST_CHECK(copy->P[0].Mission[1].Booster);
+    BOOST_CHECK_EQUAL(int(copy->P[0].Mission[1].DockingModule),
+                      MISC_HW_DOCKING_MODULE);
+    BOOST_CHECK_EQUAL(int(copy->P[0].Mission[0].Hard[Mission_Rocket]), -1);
     BOOST_CHECK_EQUAL(std::string(copy->P[1].Misc[MISC_HW_DOCKING_MODULE].Name),
                       "DOCKING");
     BOOST_CHECK(ToJson(*copy) == json);

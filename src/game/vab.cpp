@@ -34,7 +34,9 @@
 #include <cassert>
 
 #include <algorithm>
+#include <array>
 #include <stdexcept>
+#include <vector>
 
 #include <boost/shared_ptr.hpp>
 
@@ -74,11 +76,13 @@ LOG_DEFAULT_CATEGORY(LOG_ROOT_CAT);
  *   1: Kicker
  *   2: LM
  *   3: Payload (Probe / DM)
- * Any of which may be empty. There are only ever a maximum of seven
- * potential payload combinations available at assembly time, each of
- * which is stored in VAS.
+ * Any of which may be empty.  The payloads are in the rows 1..VASqty (row 0
+ * is the empty "no payload" row).  The number of rows is not limited: every
+ * probe of the matching role the player has is a payload of its own.  There
+ * are always at least seven rows, so that the rows of the classic game
+ * exist even if empty.
  */
-struct VInfo VAS[7][4];
+std::vector<std::array<VInfo, 4>> VAS(7);
 int VASqty;  // How many payload configurations there are
 
 /* MI contains the location of a vehicle equipment image and its
@@ -166,8 +170,7 @@ void ShowRkt(const Vehicle& rocket, int payloadWeight);
 void DispVA(char plr, char f, const display::LegacySurface* hw);
 void DispRck(char plr, char wh, const display::LegacySurface* hw);
 void DispWts(int payload, int thrust);
-Equipment* MissionHardware(char plr, enum MissionHardwareType slot,
-                           int program);
+Equipment* VasHardware(char plr, const VInfo& item, int slot);
 bool PayloadReady(int plr, int payload);
 void ReserveHardware(int plr, int pad, int payload, Vehicle& rocket);
 void LMAdd(char plr, char prog, char kic, char part);
@@ -440,9 +443,7 @@ int FillVab(char plr, char f, char mode)
     bool sale = (pData.TurnOnly == 3);
 
     for (int i = 0; i < 4; i++) {
-        Equipment* equip =
-            MissionHardware(plr, static_cast<MissionHardwareType>(i),
-                            VAS[f][i].dex);
+        Equipment* equip = VasHardware(plr, VAS[f][i], i);
 
         if (equip == nullptr || equip->Num == PROGRAM_NOT_STARTED) {
             continue;
@@ -478,9 +479,7 @@ int FillVab(char plr, char f, char mode)
 int ChkDelVab(char plr, char f)
 {
     for (int i = 0; i < 4; i++) {
-        Equipment* equip = MissionHardware(plr, 
-                                           static_cast<MissionHardwareType>(i),
-                                           VAS[f][i].dex);
+        Equipment* equip = VasHardware(plr, VAS[f][i], i);
 
         if (equip != nullptr && (equip->Num - equip->Spok) <= 0 && equip->Delay > 0) {
             return 0;
@@ -894,69 +893,45 @@ void DispRck(char plr, char wh, const display::LegacySurface* hw)
 
 
 /**
- * Return the hardware program given the payload slot and program index.
+ * Return the hardware program of one component of a payload (a VAS item).
  *
- * MissionHardware doesn't handle VIB/VAB rocket indexing by accounting
- * for Rocket+Booster. It's strictly one or the other.
- *
- * TODO: MissionHardware doesn't have protections against array
- * overflow issues. Consider running through HardwareProgram()?
- *
- * \param plr      the player index
- * \param slot     the mission payload slot
- * \param program  the equipment index (EquipProbeIndex, etc.)
- * \return   the equipment entry, or nullptr if no match (program < 0).
+ * \param plr   the player index
+ * \param item  the payload component, VAS[row][slot]
+ * \param slot  the mission payload slot (enum MissionHardwareType, 0-3)
+ * \return   the equipment entry, or nullptr if the slot is empty
+ *   (dex < 0) or out of the list.
  */
-Equipment* MissionHardware(char plr, enum MissionHardwareType slot,
-                           int program)
+Equipment* VasHardware(char plr, const VInfo& item, int slot)
 {
     assert(0 <= plr && plr < NUM_PLAYERS);
     auto& pData = Data->P[plr];
+    const int program = item.dex;
 
     if (program < 0) {
         return nullptr;
     }
 
+    std::vector<Equipment>* list = nullptr;
+
     switch (slot) {
     case Mission_Capsule:
     case Mission_LM:
-        return &pData.Manned[program];
+        list = &pData.Manned;
         break;
 
     case Mission_Kicker:
-        return &pData.Misc[program];
+        list = &pData.Misc;
         break;
 
     case Mission_Probe_DM:
-        if (program == MISC_HW_DOCKING_MODULE) {
-            return &pData.Misc[program];
-        } else {
-            return &pData.Probe[program];
-        }
-
+        list = item.docking ? &pData.Misc : &pData.Probe;
         break;
-
-    case Mission_PrimaryBooster:
-        return &pData.Rocket[program];
-        break;
-
-    case Mission_EVA:
-        // Should program == MISC_HW_EVA_SUITS be enforced?
-        return &pData.Misc[MISC_HW_EVA_SUITS];
-        break;
-
-    case Mission_PhotoRecon:
-        // Should program == MISC_HW_PHOTO_RECON be enforced?
-        return &pData.Misc[MISC_HW_PHOTO_RECON];
-        break;
-
-    // Mission_SecondaryBooster isn't used, per data.h
-    // case Mission_SecondaryBooster:
 
     default:
-        throw std::logic_error("Illegal hardware type passed to MissionHardware");
-        break;
+        throw std::logic_error("Illegal hardware type passed to VasHardware");
     }
+
+    return (size_t(program) < list->size()) ? &(*list)[program] : nullptr;
 }
 
 
@@ -970,9 +945,7 @@ Equipment* MissionHardware(char plr, enum MissionHardwareType slot,
 bool PayloadReady(int plr, int payload)
 {
     for (int i = 0; i < 4; i++) {
-        Equipment* equip =
-            MissionHardware(plr, static_cast<MissionHardwareType>(i),
-                            VAS[payload][i].dex);
+        Equipment* equip = VasHardware(plr, VAS[payload][i], i);
 
         if (equip && (equip->Num - equip->Spok) <= 0) {
             return false;
@@ -985,6 +958,22 @@ bool PayloadReady(int plr, int payload)
 
 namespace
 {
+
+/** An empty VAS row: no hardware. */
+std::array<VInfo, 4> BlankVasRow()
+{
+    std::array<VInfo, 4> row;
+
+    for (VInfo& v : row) {
+        v = VInfo();
+        strcpy(v.name, "NONE");
+        v.qty = v.sf = v.wt = v.dmg = 0;
+        v.dex = v.img = -1;
+        v.docking = false;
+    }
+
+    return row;
+}
 
 /** Mission code of the joint "Lunar Orbital: EOR/LOR-L" mission (see BuildVAB). */
 const int MISSION_JT_LUNAR_ORBITAL_EOR_LM = 52;
@@ -1011,16 +1000,14 @@ const HardwareEntry& LegacyEntry(int plr, int cat, int idx)
     return *e;
 }
 
-/** The (first) catalog entry of a player with the given role. */
-const HardwareEntry& RoleEntry(int plr, HardwareRole role)
+/** Start the next VAS row (the rows are not limited in number). */
+void NextVasRow()
 {
-    const auto entries = GetHardwareCatalog().FindByRole(role, plr);
+    VASqty++;
 
-    if (entries.empty()) {
-        throw std::logic_error("VAB: no hardware with the required role");
+    if (size_t(VASqty) >= VAS.size()) {
+        VAS.resize(VASqty + 1, BlankVasRow());
     }
-
-    return *entries.front();
 }
 
 /** Add a catalog hardware item to the current VAS row. */
@@ -1035,6 +1022,38 @@ void AddHardware(char plr, char slot, const HardwareEntry& e, int sprite = -1)
 
     VVals(plr, slot, HardwareProgram(plr, category, unit), unit,
           sprite >= 0 ? sprite : e.images.vabSprite);
+}
+
+/** Add the program at a list position to the current VAS row. */
+void AddListHardware(char plr, char slot, int category, int unit)
+{
+    const HardwareEntry* e = HardwareEntryAt(plr, category, unit);
+    VVals(plr, slot, HardwareProgram(plr, category, unit), unit,
+          e ? e->images.vabSprite : -1);
+}
+
+/** The docking module of the player as the payload of a new VAS row. */
+void AddDockingModule(char plr)
+{
+    const int unit = DockingModuleIndex(plr);
+
+    if (unit < 0) {
+        throw std::logic_error("VAB: no docking module");
+    }
+
+    AddListHardware(plr, Mission_Probe_DM, MISC_HARDWARE, unit);
+}
+
+/**
+ * One VAS row per program with the role in the player's Probe list: every
+ * probe of the role is a payload option.
+ */
+void AddProbeChoices(char plr, HardwareRole role)
+{
+    for (int unit : HardwareIndicesByRole(plr, role)) {
+        NextVasRow();
+        AddListHardware(plr, Mission_Probe_DM, PROBE_HARDWARE, unit);
+    }
 }
 
 bool Contains(const std::vector<std::string>& ids, const HardwareEntry& e)
@@ -1058,6 +1077,7 @@ void AddKickerChoices(char plr, const std::vector<std::string>& kickers,
         return;
     }
 
+
     const HardwareCatalog& catalog = GetHardwareCatalog();
 
     if (specialCase) {
@@ -1065,7 +1085,7 @@ void AddKickerChoices(char plr, const std::vector<std::string>& kickers,
             LegacyEntry(plr, MISC_HARDWARE, MISC_HW_KICKER_B);
         const HardwareEntry& kickerA =
             LegacyEntry(plr, MISC_HARDWARE, MISC_HW_KICKER_A);
-        VASqty++;
+        NextVasRow();
         // TODO: Check this out - seems like the sprite image should be
         // Kicker-B's.
         AddHardware(plr, Mission_Kicker, kickerB, kickerA.images.vabSprite);
@@ -1073,7 +1093,7 @@ void AddKickerChoices(char plr, const std::vector<std::string>& kickers,
     }
 
     for (const std::string& id : kickers) {
-        VASqty++;
+        NextVasRow();
         AddHardware(plr, Mission_Kicker, *catalog.FindById(id));
     }
 }
@@ -1086,38 +1106,46 @@ void AddKickerChoices(char plr, const std::vector<std::string>& kickers,
  *
  * This reserves both rocket hardware and payload together, because
  * hardware assignment is normally tracked by
- *   Mission.Hard[Mission_PrimaryBooster] > 0
+ *   HasLaunchVehicle(mission)
  * so allowing rocket or payload to be assigned without the other
  * could break game assumptions.
  *
  * \param plr      the player index.
  * \param pad      the pad index for the mission.
  * \param payload  the payload index in VAS.
- * \param rocket   the rocket index (+ ROCKET_HW_BOOSTERS if B/Rocket).
+ * \param rocket   the launch vehicle (rocket and optional boosters).
  */
 void ReserveHardware(int plr, int pad, int payload, Vehicle& rocket)
 {
     assert(0 <= plr && plr < NUM_PLAYERS);
     assert(0 <= pad && pad < MAX_MISSIONS);
-    assert(0 <= payload && payload < 7);
+    assert(0 <= payload && size_t(payload) < VAS.size());
     auto& pData = Data->P[plr];
     auto& mission = pData.Mission[pad];
 
     for (int i = Mission_Capsule; i <= Mission_Probe_DM; i++) {
-        int index = VAS[payload][i].dex;
-        mission.Hard[i] = index;
-        Equipment* equip = MissionHardware(plr, 
-                                           static_cast<MissionHardwareType>(i),
-                                           index);
+        const VInfo& item = VAS[payload][i];
+        const int index = item.dex;
+        Equipment* equip = VasHardware(plr, item, i);
+
+        if (i == Mission_Probe_DM && item.docking) {
+            // The payload is the docking module, not a probe.
+            mission.Hard[Mission_Probe] = -1;
+            mission.DockingModule = index;
+        } else {
+            mission.Hard[i] = index;
+        }
 
         if (index >= 0 && equip) {
             equip->Spok++;
         }
     }
 
-    if (IsManned(mission.MissionCode) &&
-        pData.Misc[MISC_HW_EVA_SUITS].Num != PROGRAM_NOT_STARTED) {
-        mission.Hard[Mission_EVA] = MISC_HW_EVA_SUITS;
+    const int suits = EvaSuitsIndex(plr);
+
+    if (IsManned(mission.MissionCode) && suits >= 0
+        && pData.Misc[suits].Num != PROGRAM_NOT_STARTED) {
+        mission.Hard[Mission_EVA] = suits;
     } else {
         mission.Hard[Mission_EVA] = -1;
     }
@@ -1192,9 +1220,7 @@ void VAB(char plr)
         FreeLaunchHardware(plr, mis);
 
         // Clear mission hardware
-        for (int i = Mission_Capsule; i <= Mission_PrimaryBooster; i++) {
-            mission.Hard[i] = 0;
-        }
+        ClearMissionHardware(mission);
 
         BuildVAB(plr, mis, 0, 0, 0);  // now holds the mission info
         Vehicle rocket = rocketList.start();
@@ -1216,13 +1242,16 @@ void VAB(char plr)
             weight += VAS[ccc][i].wt;
         }
 
-        while (rocket.thrust() < weight) {
+        // Pick the first launch vehicle that can lift the payload (the
+        // first one if none can).
+        for (int n = 1; n < rocketList.count() && rocket.thrust() < weight;
+             n++) {
             rocket = rocketList.next();
         }
 
         ShowVA(ccc);
         ShowRkt(rocket, weight);
-        DispRck(plr, rocket.index(), hw.get());
+        DispRck(plr, rocket.sprite(), hw.get());
         DispVA(plr, ccc, hw.get());
         DispWts(weight, rocket.thrust());
         // display cost (XX of YY)
@@ -1385,9 +1414,11 @@ void VAB(char plr)
 
                 rocket = rocketList.next();
 
-                if (! IsLEORegion(mcode) &&
-                    ! rocket.translunar()) {
-                    if (options.cheat_atlasOnMoon == 0) {
+                // Beyond Earth orbit only the vehicles of translunar reach
+                // are offered.
+                if (! IsLEORegion(mcode) && options.cheat_atlasOnMoon == 0) {
+                    for (int n = 0;
+                         n < rocketList.count() && ! rocket.translunar(); n++) {
                         rocket = rocketList.next();
                     }
                 }
@@ -1396,7 +1427,7 @@ void VAB(char plr)
                 ShowAutopurchase(plr, ccc, rocket);
                 ShowRkt(rocket, weight);
                 DispWts(weight, rocket.thrust());
-                DispRck(plr, rocket.index(), hw.get());
+                DispRck(plr, rocket.sprite(), hw.get());
                 WaitForMouseUp();
 
                 if (key > 0) {
@@ -1443,7 +1474,7 @@ void VAB(char plr)
         }
     }
 
-    Vab_Spot = (pData.Mission[PAD_A].Hard[Mission_PrimaryBooster] > 0) ? 1 : 0;
+    Vab_Spot = HasLaunchVehicle(pData.Mission[PAD_A]) ? 1 : 0;
     music_stop();
 }
 
@@ -1487,8 +1518,6 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
     char part, prog, ext = 0;
     unsigned char VX;
 
-    memset(VAS, 0x00, sizeof VAS);
-
     char mcode;
     if (ty == 0) {
         auto& mission = *missionPtr;
@@ -1511,21 +1540,14 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
 
     VX = GetMissionPlan(mcode).mVab[part];
 
-    for (int i = 0; i < 7; i++) {
-        for (int j = 0; j < 4; j++) {
-            strcpy(&VAS[i][j].name[0], "NONE");
-            VAS[i][j].qty = VAS[i][j].sf = VAS[i][j].wt = VAS[i][j].dmg = 0;
-            VAS[i][j].dex = VAS[i][j].img = -1;
-        }
-    }
-
+    VAS.assign(7, BlankVasRow());
     VASqty = 0;
 
     if (VX & 0x80) {  // Capsule
         int j = (part == 0) ? prog : ext;
 
         for (int i = 1; i < 6; i++) {  // Fill all parts with CAP
-            VASqty++;
+            NextVasRow();
             const HardwareEntry* capsule = FindEntry(plr, MANNED_HARDWARE, j);
 
             if (capsule != nullptr) {
@@ -1536,24 +1558,19 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
 
     VASqty = 0;
 
+    // The probe missions offer every probe of the matching role the player
+    // has (one payload row each).
     if (VX == 0x20 && part == 0 && mcode == Mission_Orbital_Satellite) {  // P:Sxx XX
-        VASqty++;
-        AddHardware(plr, Mission_Probe_DM,
-                    RoleEntry(plr, HardwareRole::OrbitalProbe));
+        AddProbeChoices(plr, HardwareRole::OrbitalProbe);
     }
 
     if (VX == 0x20 && part == 0 && mcode != Mission_Orbital_Satellite) {  // P:xDM XX
-        VASqty++;
-        AddHardware(plr, Mission_Probe_DM,
-                    RoleEntry(plr, HardwareRole::DockingModule));
+        NextVasRow();
+        AddDockingModule(plr);
     } else if (VX == 0x04 && part == 0) {  // P:INTER XX
-        VASqty++;
-        AddHardware(plr, Mission_Probe_DM,
-                    RoleEntry(plr, HardwareRole::InterplanetaryProbe));
+        AddProbeChoices(plr, HardwareRole::InterplanetaryProbe);
     } else if (VX == 0x02 && part == 0) {  // P:PRO XX
-        VASqty++;
-        AddHardware(plr, Mission_Probe_DM,
-                    RoleEntry(plr, HardwareRole::LunarProbe));
+        AddProbeChoices(plr, HardwareRole::LunarProbe);
     } else if (VX == 0x60 && part == 0) {  // P:LM+SDM XX
         LMAdd(plr, ext, -1, 1);
     } else if (VX == 0xe8 && part == 0) {  // P:LM+SDM+EVA XX
@@ -1562,7 +1579,7 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
         LMAdd(plr, ext, MISC_HW_KICKER_A, 1);
         LMAdd(plr, ext, MISC_HW_KICKER_B, 1);
     } else if (VX == 0x21 && part == 0) {  // P:SDM+KIC-C XX
-        VASqty++;
+        NextVasRow();
         for (const HardwareEntry* k :
              GetHardwareCatalog().FindByRole(HardwareRole::Kicker, plr)) {
             if (k->probeKicker) {
@@ -1582,9 +1599,8 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
     }
 
     else if (VX == 0xa0 && part == 0) {  // P:CAP+SDM XX
-        VASqty++;
-        AddHardware(plr, Mission_Probe_DM,
-                    RoleEntry(plr, HardwareRole::DockingModule));
+        NextVasRow();
+        AddDockingModule(plr);
     }
 
     else if (VX == 0x90 && part == 0) {  // P:CAP+DMO XX
@@ -1592,9 +1608,8 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
     }
 
     else if (VX == 0xa8 && part == 0) {  // P:CAP+SDM+EVA XX
-        VASqty++;
-        AddHardware(plr, Mission_Probe_DM,
-                    RoleEntry(plr, HardwareRole::DockingModule));
+        NextVasRow();
+        AddDockingModule(plr);
         // EVA Check
     }
 
@@ -1636,6 +1651,14 @@ void BuildVAB(char plr, char mis, char ty, char pa, char pr)
 
         // EVA Check
     }
+
+    // The capsule flies with every payload row; the classic five rows were
+    // filled above, further rows (many payload options) get it here.
+    if (VX & 0x80) {
+        for (int i = 6; i <= VASqty; i++) {
+            VAS[i][Mission_Capsule] = VAS[1][Mission_Capsule];
+        }
+    }
 }
 
 
@@ -1675,11 +1698,10 @@ void LMAdd(char plr, char prog, char kic, char part)
 
     // One payload row per lander the capsule can pair with.
     for (const std::string& landerId : capsule.compatibleLanders) {
-        VASqty++;
+        NextVasRow();
 
         if (capsule.landerNeedsDockingModule) {
-            AddHardware(plr, Mission_Probe_DM,
-                        RoleEntry(plr, HardwareRole::DockingModule));
+            AddDockingModule(plr);
         }
 
         AddHardware(plr, Mission_LM, *catalog.FindById(landerId));
@@ -1708,8 +1730,10 @@ void VVals(char plr, char tx, Equipment& EQ, char v4, char sprite)
     VAS[VASqty][tx].wt = EQ.UnitWeight;
     VAS[VASqty][tx].MaxRD = EQ.MaxRD;
 
-    if (tx == Mission_Probe_DM && v4 == MISC_HW_DOCKING_MODULE &&
-        AI[plr] == 1) {
+    VAS[VASqty][tx].docking =
+        (tx == Mission_Probe_DM && HasRole(EQ, HardwareRole::DockingModule));
+
+    if (VAS[VASqty][tx].docking && AI[plr] == 1) {
         VAS[VASqty][tx].sf = EQ.MSF;
     } else {
         VAS[VASqty][tx].sf = EQ.Safety;

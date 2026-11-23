@@ -231,6 +231,9 @@ void DelayMission(const char plr, int pad)
     for (int i = pad; i < pad + padsUsed; i++) {
         ClrFut(plr, i);
         Data->P[plr].Future[i] = Data->P[plr].Mission[i];
+        // The hardware is released below; the delayed mission is assembled
+        // again.
+        ClearMissionHardware(Data->P[plr].Future[i]);
 
         const int program = Data->P[plr].Future[i].Prog;
         const int pCrew = Data->P[plr].Future[i].PCrew;
@@ -282,39 +285,26 @@ void FreeLaunchHardware(const char plr, const int pad)
 
     struct MissionType &launch = Data->P[plr].Mission[pad];
 
-    if (launch.Hard[Mission_PrimaryBooster] <= 0) {
+    if (!HasLaunchVehicle(launch)) {
         return;
     }
 
-    for (int i = Mission_Capsule; i <= Mission_Probe_DM; i++) {
-        const uint8_t hardwareID = launch.Hard[i];
-
-        if (hardwareID != 0xFF) { // 0xFF means unused
-
-            switch (i) {
-            case Mission_Capsule:
-            case Mission_LM:  // Manned+LM
-                Data->P[plr].Manned[hardwareID].Spok--;
-                break;
-
-            case Mission_Kicker:  // Kicker
-                Data->P[plr].Misc[hardwareID].Spok--;
-                break;
-
-            case Mission_Probe_DM:  // DM+Probes
-                ProbeOrDockingModule(plr, hardwareID).Spok--;
-
-                break;
-            }
-
+    auto release = [](std::vector<Equipment>& list, int index) {
+        if (index >= 0 && size_t(index) < list.size()) {
+            list[index].Spok--;
         }
-    }
+    };
+    auto& pData = Data->P[plr];
 
-    const int rocket = DecodeRocketIndex(launch.Hard[Mission_PrimaryBooster]);
-    Data->P[plr].Rocket[rocket].Spok--;
+    release(pData.Manned, launch.Hard[Mission_Capsule]);
+    release(pData.Misc, launch.Hard[Mission_Kicker]);
+    release(pData.Manned, launch.Hard[Mission_LM]);
+    release(pData.Probe, launch.Hard[Mission_Probe]);
+    release(pData.Misc, launch.DockingModule);
+    release(pData.Rocket, launch.Hard[Mission_Rocket]);
 
-    if (HasBoosters(launch.Hard[Mission_PrimaryBooster])) {
-        Data->P[plr].Rocket[ROCKET_HW_BOOSTERS].Spok--;
+    if (launch.Booster) {
+        release(pData.Rocket, BoosterIndex(plr));
     }
 }
 
@@ -420,7 +410,7 @@ void ResetMission(struct MissionType &mission)
     mission.MissionCode = Mission_None;
     mission.Patch = 0;
     mission.part = 0;
-    memset(&mission.Hard[0], 0x00, sizeof(mission.Hard));
+    ClearMissionHardware(mission);
     mission.Joint = 0;
     mission.Rushing = 0;
     mission.Month = 0;
