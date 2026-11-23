@@ -1,0 +1,956 @@
+{
+  "_comment": "DRAFT, not loaded by the game. Proposal for the historical US preview scenario (see doc/fork/historisch-vorschau.md). catalog_entries use the hardware.json schema; available_from/requires/obsolete_from follow hardware-katalog.md (not yet parsed by the loader).",
+  "version": 1,
+  "scale": {
+    "kg_per_unit": 2.7,
+    "musd_per_mb_unit_cost_probe_capsule": 0.85,
+    "musd_per_mb_unit_cost_rocket": 1.25,
+    "musd_per_mb_init_cost": 2.0
+  },
+  "catalog_entries": [
+    {
+      "id": "US.EXPLORER",
+      "side": "US",
+      "category": "probe",
+      "role": "orbital_probe",
+      "name": "EXPLORER",
+      "type_label": "SATELLITE",
+      "crew": 0,
+      "unit_weight": 6,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P0",
+      "images": {
+        "rd": "images/rd/rdfull.but.0.png",
+        "liftoff": "images/liftoff.abz.USP0.png",
+        "vab_sprite": 9
+      },
+      "help_id": "i201",
+      "probe_type": "satellite",
+      "targets": [
+        "earth"
+      ],
+      "satellite_purpose": "research",
+      "available_from": {
+        "year": 57,
+        "season": 1
+      },
+      "requires": []
+    },
+    {
+      "id": "US.VANGUARD_SAT",
+      "side": "US",
+      "category": "probe",
+      "role": "orbital_probe",
+      "name": "VANGUARD",
+      "type_label": "SATELLITE",
+      "crew": 0,
+      "unit_weight": 4,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P0",
+      "images": {
+        "rd": "images/rd/rdfull.but.0.png",
+        "liftoff": "images/liftoff.abz.USP0.png",
+        "vab_sprite": 9
+      },
+      "help_id": "i201",
+      "probe_type": "satellite",
+      "targets": [
+        "earth"
+      ],
+      "satellite_purpose": "research",
+      "available_from": {
+        "year": 55,
+        "season": 1
+      },
+      "requires": [],
+      "obsolete_from": {
+        "year": 60,
+        "season": 0
+      }
+    },
+    {
+      "id": "US.PIONEER",
+      "side": "US",
+      "category": "probe",
+      "role": "interplanetary_probe",
+      "name": "PIONEER",
+      "type_label": "PROBE",
+      "crew": 0,
+      "unit_weight": 16,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "translunar",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P1",
+      "images": {
+        "rd": "images/rd/rdfull.but.1.png",
+        "liftoff": "images/liftoff.abz.USP1.png",
+        "vab_sprite": 10
+      },
+      "help_id": "i203",
+      "probe_type": "flyby",
+      "targets": [
+        "moon"
+      ],
+      "available_from": {
+        "year": 58,
+        "season": 0
+      },
+      "requires": []
+    },
+    {
+      "id": "US.RANGER",
+      "side": "US",
+      "category": "probe",
+      "role": "lunar_probe",
+      "name": "RANGER",
+      "type_label": "PROBE",
+      "crew": 0,
+      "unit_weight": 122,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "translunar",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P2",
+      "images": {
+        "rd": "images/rd/rdfull.but.2.png",
+        "liftoff": "images/liftoff.abz.USP2.png",
+        "vab_sprite": 11
+      },
+      "help_id": "i205",
+      "probe_type": "impact",
+      "targets": [
+        "moon"
+      ],
+      "available_from": {
+        "year": 59,
+        "season": 1
+      },
+      "requires": []
+    },
+    {
+      "id": "US.MARINER",
+      "side": "US",
+      "category": "probe",
+      "role": "interplanetary_probe",
+      "name": "MARINER",
+      "type_label": "PROBE",
+      "crew": 0,
+      "unit_weight": 75,
+      "max_payload": 0,
+      "duration_days": 0,
+      "reach": "interplanetary",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "P1",
+      "images": {
+        "rd": "images/rd/rdfull.but.1.png",
+        "liftoff": "images/liftoff.abz.USP1.png",
+        "vab_sprite": 10
+      },
+      "help_id": "i203",
+      "probe_type": "flyby",
+      "targets": [
+        "venus"
+      ],
+      "available_from": {
+        "year": 61,
+        "season": 0
+      },
+      "requires": [
+        "US.RANGER"
+      ],
+      "tech_transfer": {
+        "gradual": {
+          "base": 35,
+          "steps": [
+            {
+              "op": "set",
+              "from": "US.RANGER",
+              "above": 40,
+              "offset": 40,
+              "divisor": 3.5
+            },
+            {
+              "op": "cap",
+              "max": 10
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "US.REDSTONE",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "REDSTONE",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 500,
+      "duration_days": 0,
+      "reach": "suborbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R0",
+      "images": {
+        "rd": "images/rd/rdfull.but.8.png",
+        "liftoff": "images/liftoff.abz.USR0.png",
+        "vab_sprite": 0
+      },
+      "help_id": "i207",
+      "available_from": {
+        "year": 55,
+        "season": 0
+      },
+      "requires": []
+    },
+    {
+      "id": "US.JUNO_I",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "JUNO I",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 7,
+      "duration_days": 0,
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R0",
+      "images": {
+        "rd": "images/rd/rdfull.but.8.png",
+        "liftoff": "images/liftoff.abz.USR0.png",
+        "vab_sprite": 0
+      },
+      "help_id": "i207",
+      "available_from": {
+        "year": 57,
+        "season": 1
+      },
+      "requires": [
+        "US.REDSTONE"
+      ],
+      "obsolete_from": {
+        "year": 60,
+        "season": 0
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 18,
+          "steps": [
+            {
+              "op": "set",
+              "from": "US.REDSTONE",
+              "above": 30,
+              "offset": 30,
+              "divisor": 2.5
+            },
+            {
+              "op": "cap",
+              "max": 15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "US.VANGUARD",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "VANGUARD",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 4,
+      "duration_days": 0,
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R0",
+      "images": {
+        "rd": "images/rd/rdfull.but.8.png",
+        "liftoff": "images/liftoff.abz.USR0.png",
+        "vab_sprite": 0
+      },
+      "help_id": "i207",
+      "available_from": {
+        "year": 55,
+        "season": 1
+      },
+      "requires": [],
+      "obsolete_from": {
+        "year": 60,
+        "season": 0
+      }
+    },
+    {
+      "id": "US.ATLAS_D",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "ATLAS D",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 500,
+      "duration_days": 0,
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R0",
+      "images": {
+        "rd": "images/rd/rdfull.but.8.png",
+        "liftoff": "images/liftoff.abz.USR0.png",
+        "vab_sprite": 0
+      },
+      "help_id": "i207",
+      "available_from": {
+        "year": 58,
+        "season": 1
+      },
+      "requires": []
+    },
+    {
+      "id": "US.ATLAS_AGENA",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "ATLAS-AGENA",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 970,
+      "duration_days": 0,
+      "reach": "translunar",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R1",
+      "images": {
+        "rd": "images/rd/rdfull.but.9.png",
+        "liftoff": "images/liftoff.abz.USR1.png",
+        "vab_sprite": 1
+      },
+      "help_id": "i209",
+      "available_from": {
+        "year": 60,
+        "season": 0
+      },
+      "requires": [
+        "US.ATLAS_D"
+      ],
+      "tech_transfer": {
+        "gradual": {
+          "base": 16,
+          "steps": [
+            {
+              "op": "set",
+              "from": "US.ATLAS_D",
+              "above": 30,
+              "offset": 30,
+              "divisor": 2.6
+            },
+            {
+              "op": "cap",
+              "max": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "US.MERCURY",
+      "side": "US",
+      "category": "manned",
+      "role": "capsule",
+      "name": "MERCURY",
+      "type_label": "CAPSULE",
+      "crew": 1,
+      "abort_system": "escape_tower",
+      "unit_weight": 500,
+      "max_payload": 0,
+      "duration_days": 3,
+      "duration_level": "B",
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "prestige_first": "OnePerson",
+      "anim_id": "C0",
+      "images": {
+        "rd": "images/rd/rdfull.but.16.png",
+        "liftoff": "images/liftoff.abz.USC0.png",
+        "vab_sprite": 13,
+        "aprog": "images/aprog/aprog.0.1.png",
+        "patch_base": 0,
+        "mhist": 7
+      },
+      "help_id": "i217",
+      "legacy": {
+        "cat": 2,
+        "idx": 0
+      },
+      "max_future_duration": 2,
+      "max_plan_days": 2,
+      "max_min_equipment": 1,
+      "kickers_second_pad": [],
+      "available_from": {
+        "year": 58,
+        "season": 1
+      },
+      "requires": []
+    },
+    {
+      "id": "US.PHOTO_RECON",
+      "side": "US",
+      "category": "misc",
+      "role": "photo_recon",
+      "researchable": false,
+      "name": "PHOTO RECON",
+      "type_label": "",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 0,
+      "duration_days": 0,
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "M5",
+      "images": {
+        "rd": "images/rd/rdfull.but.29.png",
+        "liftoff": "images/liftoff.abz.USM5.png"
+      },
+      "help_id": "i241",
+      "legacy": {
+        "cat": 3,
+        "idx": 5
+      },
+      "available_from": {
+        "year": 55,
+        "season": 0
+      },
+      "requires": []
+    }
+  ],
+  "optional_catalog_entries": [
+    {
+      "id": "US.THOR_ABLE",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "THOR-ABLE",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 45,
+      "duration_days": 0,
+      "reach": "translunar",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R0",
+      "images": {
+        "rd": "images/rd/rdfull.but.8.png",
+        "liftoff": "images/liftoff.abz.USR0.png",
+        "vab_sprite": 0
+      },
+      "help_id": "i207",
+      "available_from": {
+        "year": 58,
+        "season": 0
+      },
+      "requires": [],
+      "obsolete_from": {
+        "year": 61,
+        "season": 0
+      }
+    },
+    {
+      "id": "US.JUNO_II",
+      "side": "US",
+      "category": "rocket",
+      "role": "launcher",
+      "name": "JUNO II",
+      "type_label": "ROCKET",
+      "crew": 0,
+      "unit_weight": 0,
+      "max_payload": 17,
+      "duration_days": 0,
+      "reach": "orbital",
+      "can_dock": false,
+      "direct_ascent": false,
+      "accepts_boosters": false,
+      "anim_id": "R0",
+      "images": {
+        "rd": "images/rd/rdfull.but.8.png",
+        "liftoff": "images/liftoff.abz.USR0.png",
+        "vab_sprite": 0
+      },
+      "help_id": "i207",
+      "available_from": {
+        "year": 58,
+        "season": 1
+      },
+      "requires": [
+        "US.JUNO_I"
+      ],
+      "obsolete_from": {
+        "year": 62,
+        "season": 0
+      },
+      "tech_transfer": {
+        "gradual": {
+          "base": 15,
+          "steps": [
+            {
+              "op": "set",
+              "from": "US.JUNO_I",
+              "above": 30,
+              "offset": 30,
+              "divisor": 2.5
+            },
+            {
+              "op": "cap",
+              "max": 15
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "scenario": {
+    "id": "HISTORICAL_US_PREVIEW",
+    "name": "HISTORICAL (US PREVIEW)",
+    "description": "Preview: real US programs 1955-1963 (Redstone, Juno I, Vanguard, Atlas, Explorer, Pioneer, Ranger, Mariner, Mercury); USSR classic.",
+    "hidden": true,
+    "start_year": 55,
+    "end_year": 63,
+    "hardware": {
+      "US": {
+        "probe": [
+          "US.EXPLORER",
+          "US.VANGUARD_SAT",
+          "US.PIONEER",
+          "US.RANGER",
+          "US.MARINER"
+        ],
+        "rocket": [
+          "US.REDSTONE",
+          "US.JUNO_I",
+          "US.VANGUARD",
+          "US.ATLAS_D",
+          "US.ATLAS_AGENA"
+        ],
+        "manned": [
+          "US.MERCURY"
+        ],
+        "misc": [
+          "US.PHOTO_RECON"
+        ]
+      },
+      "SV": {
+        "probe": [
+          "SV.SPUTNIK",
+          "SV.COSMOS",
+          "SV.LUNA"
+        ],
+        "rocket": [
+          "SV.R7",
+          "SV.PROTON",
+          "SV.N1",
+          "SV.UR700",
+          "SV.BOOSTERS"
+        ],
+        "manned": [
+          "SV.VOSTOK",
+          "SV.VOSKHOD",
+          "SV.SOYUZ",
+          "SV.LAPOT",
+          "SV.LK700",
+          "SV.LKM",
+          "SV.LK"
+        ],
+        "misc": [
+          "SV.KICKER_A",
+          "SV.KICKER_B",
+          "SV.KICKER_C",
+          "SV.EVA_SUITS",
+          "SV.DOCKING",
+          "SV.PHOTO_RECON"
+        ]
+      }
+    },
+    "hardware_optional_insert": {
+      "_comment": "Optional entries: append to the US rocket list (ids in optional_catalog_entries).",
+      "US": {
+        "rocket": [
+          "US.THOR_ABLE",
+          "US.JUNO_II"
+        ]
+      }
+    },
+    "start_stats": {
+      "_comment": "Only the US.* entries are new. SV.* entries are taken unchanged from classic.json (same ids) when merging. 'historical' is identical to 'basic' for the new US entries (open question 8).",
+      "basic": {
+        "US.EXPLORER": {
+          "safety": 40,
+          "init_cost": 6,
+          "unit_cost": 1,
+          "unit_weight": 6,
+          "max_pay": 0,
+          "rd_cost": 1,
+          "max_rd": 95,
+          "max_safety": 98,
+          "duration": 0
+        },
+        "US.VANGUARD_SAT": {
+          "safety": 45,
+          "init_cost": 4,
+          "unit_cost": 1,
+          "unit_weight": 4,
+          "max_pay": 0,
+          "rd_cost": 1,
+          "max_rd": 95,
+          "max_safety": 98,
+          "duration": 0
+        },
+        "US.PIONEER": {
+          "safety": 25,
+          "init_cost": 20,
+          "unit_cost": 3,
+          "unit_weight": 16,
+          "max_pay": 0,
+          "rd_cost": 2,
+          "max_rd": 85,
+          "max_safety": 90,
+          "duration": 0
+        },
+        "US.RANGER": {
+          "safety": 25,
+          "init_cost": 28,
+          "unit_cost": 5,
+          "unit_weight": 122,
+          "max_pay": 0,
+          "rd_cost": 3,
+          "max_rd": 82,
+          "max_safety": 88,
+          "duration": 0
+        },
+        "US.MARINER": {
+          "safety": 35,
+          "init_cost": 26,
+          "unit_cost": 5,
+          "unit_weight": 75,
+          "max_pay": 0,
+          "rd_cost": 3,
+          "max_rd": 88,
+          "max_safety": 92,
+          "duration": 0
+        },
+        "US.REDSTONE": {
+          "safety": 25,
+          "init_cost": 12,
+          "unit_cost": 1,
+          "unit_weight": 0,
+          "max_pay": 500,
+          "rd_cost": 1,
+          "max_rd": 88,
+          "max_safety": 96,
+          "duration": 0
+        },
+        "US.JUNO_I": {
+          "safety": 18,
+          "init_cost": 16,
+          "unit_cost": 2,
+          "unit_weight": 0,
+          "max_pay": 7,
+          "rd_cost": 2,
+          "max_rd": 83,
+          "max_safety": 91,
+          "duration": 0
+        },
+        "US.VANGUARD": {
+          "safety": 10,
+          "init_cost": 22,
+          "unit_cost": 2,
+          "unit_weight": 0,
+          "max_pay": 4,
+          "rd_cost": 2,
+          "max_rd": 81,
+          "max_safety": 89,
+          "duration": 0
+        },
+        "US.ATLAS_D": {
+          "safety": 20,
+          "init_cost": 24,
+          "unit_cost": 4,
+          "unit_weight": 0,
+          "max_pay": 500,
+          "rd_cost": 2,
+          "max_rd": 89,
+          "max_safety": 97,
+          "duration": 0
+        },
+        "US.ATLAS_AGENA": {
+          "safety": 16,
+          "init_cost": 46,
+          "unit_cost": 8,
+          "unit_weight": 0,
+          "max_pay": 970,
+          "rd_cost": 3,
+          "max_rd": 88,
+          "max_safety": 96,
+          "duration": 0
+        },
+        "US.MERCURY": {
+          "safety": 5,
+          "init_cost": 20,
+          "unit_cost": 3,
+          "unit_weight": 500,
+          "max_pay": 0,
+          "rd_cost": 1,
+          "max_rd": 80,
+          "max_safety": 94,
+          "duration": 3
+        },
+        "US.PHOTO_RECON": {
+          "safety": 55,
+          "init_cost": 0,
+          "unit_cost": 0,
+          "unit_weight": 0,
+          "max_pay": 0,
+          "rd_cost": 0,
+          "max_rd": 0,
+          "max_safety": 99,
+          "duration": 0,
+          "num": 0
+        }
+      },
+      "historical": {
+        "US.EXPLORER": {
+          "safety": 40,
+          "init_cost": 6,
+          "unit_cost": 1,
+          "unit_weight": 6,
+          "max_pay": 0,
+          "rd_cost": 1,
+          "max_rd": 95,
+          "max_safety": 98,
+          "duration": 0
+        },
+        "US.VANGUARD_SAT": {
+          "safety": 45,
+          "init_cost": 4,
+          "unit_cost": 1,
+          "unit_weight": 4,
+          "max_pay": 0,
+          "rd_cost": 1,
+          "max_rd": 95,
+          "max_safety": 98,
+          "duration": 0
+        },
+        "US.PIONEER": {
+          "safety": 25,
+          "init_cost": 20,
+          "unit_cost": 3,
+          "unit_weight": 16,
+          "max_pay": 0,
+          "rd_cost": 2,
+          "max_rd": 85,
+          "max_safety": 90,
+          "duration": 0
+        },
+        "US.RANGER": {
+          "safety": 25,
+          "init_cost": 28,
+          "unit_cost": 5,
+          "unit_weight": 122,
+          "max_pay": 0,
+          "rd_cost": 3,
+          "max_rd": 82,
+          "max_safety": 88,
+          "duration": 0
+        },
+        "US.MARINER": {
+          "safety": 35,
+          "init_cost": 26,
+          "unit_cost": 5,
+          "unit_weight": 75,
+          "max_pay": 0,
+          "rd_cost": 3,
+          "max_rd": 88,
+          "max_safety": 92,
+          "duration": 0
+        },
+        "US.REDSTONE": {
+          "safety": 25,
+          "init_cost": 12,
+          "unit_cost": 1,
+          "unit_weight": 0,
+          "max_pay": 500,
+          "rd_cost": 1,
+          "max_rd": 88,
+          "max_safety": 96,
+          "duration": 0
+        },
+        "US.JUNO_I": {
+          "safety": 18,
+          "init_cost": 16,
+          "unit_cost": 2,
+          "unit_weight": 0,
+          "max_pay": 7,
+          "rd_cost": 2,
+          "max_rd": 83,
+          "max_safety": 91,
+          "duration": 0
+        },
+        "US.VANGUARD": {
+          "safety": 10,
+          "init_cost": 22,
+          "unit_cost": 2,
+          "unit_weight": 0,
+          "max_pay": 4,
+          "rd_cost": 2,
+          "max_rd": 81,
+          "max_safety": 89,
+          "duration": 0
+        },
+        "US.ATLAS_D": {
+          "safety": 20,
+          "init_cost": 24,
+          "unit_cost": 4,
+          "unit_weight": 0,
+          "max_pay": 500,
+          "rd_cost": 2,
+          "max_rd": 89,
+          "max_safety": 97,
+          "duration": 0
+        },
+        "US.ATLAS_AGENA": {
+          "safety": 16,
+          "init_cost": 46,
+          "unit_cost": 8,
+          "unit_weight": 0,
+          "max_pay": 970,
+          "rd_cost": 3,
+          "max_rd": 88,
+          "max_safety": 96,
+          "duration": 0
+        },
+        "US.MERCURY": {
+          "safety": 5,
+          "init_cost": 20,
+          "unit_cost": 3,
+          "unit_weight": 500,
+          "max_pay": 0,
+          "rd_cost": 1,
+          "max_rd": 80,
+          "max_safety": 94,
+          "duration": 3
+        },
+        "US.PHOTO_RECON": {
+          "safety": 55,
+          "init_cost": 0,
+          "unit_cost": 0,
+          "unit_weight": 0,
+          "max_pay": 0,
+          "rd_cost": 0,
+          "max_rd": 0,
+          "max_safety": 99,
+          "duration": 0,
+          "num": 0
+        }
+      }
+    },
+    "start_stats_optional": {
+      "US.THOR_ABLE": {
+        "safety": 16,
+        "init_cost": 22,
+        "unit_cost": 3,
+        "unit_weight": 0,
+        "max_pay": 45,
+        "rd_cost": 2,
+        "max_rd": 83,
+        "max_safety": 91,
+        "duration": 0
+      },
+      "US.JUNO_II": {
+        "safety": 15,
+        "init_cost": 14,
+        "unit_cost": 3,
+        "unit_weight": 0,
+        "max_pay": 17,
+        "rd_cost": 2,
+        "max_rd": 82,
+        "max_safety": 90,
+        "duration": 0
+      }
+    }
+  },
+  "dropped_classic_us": {
+    "probe": [
+      "US.SURVEYOR"
+    ],
+    "rocket": [
+      "US.ATLAS (replaced by US.ATLAS_D)",
+      "US.TITAN",
+      "US.SATURN",
+      "US.NOVA",
+      "US.BOOSTERS"
+    ],
+    "manned": [
+      "US.GEMINI",
+      "US.APOLLO",
+      "US.XMS2",
+      "US.JUPITER",
+      "US.EAGLE",
+      "US.CRICKET"
+    ],
+    "misc": [
+      "US.KICKER_A",
+      "US.KICKER_B",
+      "US.KICKER_C",
+      "US.EVA_SUITS",
+      "US.DOCKING"
+    ]
+  },
+  "provenance": {
+    "US.EXPLORER": "14 kg Explorer 1 [W Explorer_1]; Explorer 4 ~25 kg; game 6 = 16 kg class. Spacecraft reliability: all Explorer failures 1958 were launcher failures [recherche 2]",
+    "US.VANGUARD_SAT": "Vanguard 1 1.47 kg, Vanguard 2 9.8 kg, Vanguard 3 22.7 kg [W Vanguard_(rocket)]; design capacity 11.3 kg [P SP-4012] -> 4",
+    "US.PIONEER": "Pioneer 0/1/2 ~38 kg (83.8 lb) [W Pioneer_0], Pioneer 4 6.08 kg [W], Pioneer 5 43.2 kg [W]; 0 full lunar flyby successes 1958-60 [recherche 2]",
+    "US.RANGER": "Ranger 1/2 306.2 kg [W Ranger_1], Ranger 3-5 330 kg [W Ranger_3]; Ranger 1-5 no full success [recherche 2]; Block II carried hard-landing seismometer capsule [W Ranger_3]",
+    "US.MARINER": "Mariner 2 203.6 kg [W Mariner_2]; Mariner 1 lost (launch failure), Mariner 2 first successful planetary flyby 14.12.1962 [W]",
+    "US.REDSTONE": "Mercury-Redstone 1.814 kg to 189 km ballistic [P SP-4012 Tab 1-59]; MR record 5/6 [P SP-4201 App D]; 25 Cape launches 1955-58 [W]",
+    "US.JUNO_I": "Juno I 18 kg [P SP-4012 Tab 1-51] (11 kg [W]); 6 launches 3 successes [W Juno_I]",
+    "US.VANGUARD": "11.3 kg [P SP-4012]; 11 launches 3 successes [W Vanguard_(rocket)]; program ended 1959",
+    "US.ATLAS_D": "Mercury-Atlas ~1360 kg to LEO [W Atlas_LV-3B, cites Astronautix]; Mercury-Atlas 7/9 [P SP-4201 App D]; Atlas D 1959-63 own count of W list: 56 S/20 F/4 partial of 80",
+    "US.ATLAS_AGENA": "Atlas-Agena B 2627 kg to 555 km, 340 kg escape, 204 kg Mars/Venus [P SP-4012]; 21/28 successes 1961-65 [W]",
+    "US.MERCURY": "Capsule orbital mass ~1360 kg (~3000 lb) [M, consistent with Atlas payload]; MA-9 34 h 19 min 49 s [P SP-4201 App D]; MA-10 planned ~3 days, launch mass ~1490 kg [W Mercury-Atlas_10; P SP-4201 p.502]; McDonnell dev 40.2 M$, 20 units 49.4 M$ [P SP-4201 App F]",
+    "US.THOR_ABLE": "122 kg to 850 km [P SP-4012]; 16 launches, 9 suborbital (7 S), 7 orbital/probe (3 S) [W Thor-Able]",
+    "US.JUNO_II": "41 kg [W] / 45 kg [P SP-4012] LEO, ~6 kg TLI; 10 launches, 3-4 successes; 2.9 M$ per launch (1958) [W Juno_II]"
+  }
+}
